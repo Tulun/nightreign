@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: theme("colors.night.950");
+  color: theme("colors.parchment.DEFAULT");
+  font-family: theme("fontFamily.body");
+  /* Faint vignette + parchment grain so the night never reads as flat black. */
+  background-image:
+    radial-gradient(120% 90% at 50% -10%, rgba(201, 162, 39, 0.06), transparent 60%),
+    radial-gradient(100% 80% at 50% 120%, rgba(20, 24, 40, 0.6), transparent 55%);
+  background-attachment: fixed;
+}
+
+/* Visible keyboard focus everywhere — part of the quality floor. */
+:focus-visible {
+  outline: 2px solid theme("colors.gold.bright");
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@layer components {
+  /* Eyebrow / small-caps label used for section and field headings. */
+  .eyebrow {
+    @apply font-display uppercase tracking-[0.22em] text-gold-dim;
+    font-size: 0.7rem;
+  }
+
+  /* A hairline gold frame reused for cards and the icon placeholder. */
+  .frame {
+    @apply border border-night-600;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
