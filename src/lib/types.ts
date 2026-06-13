@@ -1,33 +1,41 @@
-// Core data shapes for the reference app.
-// Add new reference categories by creating new types alongside these.
+import type { Tier } from "@/lib/tiers";
 
-/** A single item sold by the town merchant for a given seed. */
-export interface MerchantItem {
-  /** Display name, e.g. "Cracked Pot". */
+// Core data shapes for the reference app.
+
+/** A single weapon entry sold by a merchant, with its passive. */
+export interface WeaponEntry {
+  /** Weapon name, e.g. "Envoy's Horn". */
   name: string;
-  /** Optional grouping, e.g. "Weapon" | "Talisman" | "Consumable" | "Key Item". */
-  category?: string;
-  /** Optional rune cost. Leave undefined if unknown / not applicable. */
-  cost?: number;
-  /** Optional one-line effect or note shown beneath the name. */
-  effect?: string;
+  /** The weapon passive, e.g. "Multiple periodical glintblades". */
+  passive: string;
+  /** Source tier color: "common" (grey), "blue", or "purple". */
+  tier: Tier;
+  /** True if the entry was shown in yellow text in the source sheet. */
+  highlighted?: boolean;
+  /**
+   * Path to the icon under /public, e.g. "/icons/envoys-horn.png".
+   * Leave undefined to show the framed placeholder until you add art.
+   */
+  icon?: string;
 }
 
-/** One of the 20 town map seeds. */
-export interface Seed {
-  /** 1–20. Used in the URL (/town-map/3) and as the displayed seal number. */
+/**
+ * One town map set (the screenshots are labelled "Set 0", "Set 1", ...).
+ * Each set lists the Special Merchant and Normal Merchant inventories.
+ */
+export interface MerchantSet {
+  /** 0–19. Used in the URL (/town-map/0) and shown as the seal number. */
   id: number;
-  /** The weapon associated with this seed. */
-  weapon: {
-    name: string;
-    /** The weapon passive, e.g. "Lightning damage negation up". */
-    passive: string;
-    /**
-     * Path to the icon under /public, e.g. "/icons/st-trinas-sword.png".
-     * Leave undefined to show the framed placeholder until you add art.
-     */
-    icon?: string;
-  };
-  /** Everything available at the town merchant for this seed. */
-  merchantItems: MerchantItem[];
+  /** Items under the "Special Merchant" heading. */
+  specialMerchant: WeaponEntry[];
+  /** Items under the "Normal Merchant" heading. */
+  normalMerchant: WeaponEntry[];
+}
+
+/**
+ * The set's representative weapon = the LAST item in the Normal Merchant list
+ * (per the source sheets). This is what the grid card icon + label use.
+ */
+export function getSetSignature(set: MerchantSet): WeaponEntry | undefined {
+  return set.normalMerchant[set.normalMerchant.length - 1];
 }

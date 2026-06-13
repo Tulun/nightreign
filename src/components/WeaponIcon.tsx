@@ -1,22 +1,32 @@
 import Image from "next/image";
+import type { Tier } from "@/lib/tiers";
+import { TIER_STYLES } from "@/lib/tiers";
 
 interface WeaponIconProps {
   src?: string;
   alt: string;
   /** Pixel size of the square. Defaults to 64. */
   size?: number;
+  /** Optional tier — colours the frame to match the entry's rarity. */
+  tier?: Tier;
 }
 
 /**
  * Renders the weapon's icon if `src` is set, otherwise a framed placeholder
- * with a simple blade glyph. Drop images in /public/icons and set
- * weapon.icon in src/data/seeds.ts to replace the placeholder.
+ * with a simple blade glyph. Drop images in /public/icons and set an entry's
+ * `icon` in src/data/sets.ts to replace the placeholder.
  */
-export function WeaponIcon({ src, alt, size = 64 }: WeaponIconProps) {
+export function WeaponIcon({ src, alt, size = 64, tier }: WeaponIconProps) {
+  const ring = tier ? TIER_STYLES[tier].bar : undefined;
+
   return (
     <div
       className="frame relative grid shrink-0 place-items-center overflow-hidden rounded bg-night-900"
-      style={{ width: size, height: size }}
+      style={{
+        width: size,
+        height: size,
+        ...(ring ? { borderColor: ring, boxShadow: `0 0 0 1px ${ring}55` } : {}),
+      }}
     >
       {src ? (
         <Image src={src} alt={alt} fill sizes={`${size}px`} className="object-contain p-1.5" />

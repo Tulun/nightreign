@@ -1,5 +1,5 @@
-import { seeds } from "@/data/seeds";
-import { SeedCard } from "@/components/SeedCard";
+import { sets } from "@/data/sets";
+import { SetCard } from "@/components/SetCard";
 
 export default function TownMapPage() {
   return (
@@ -10,14 +10,14 @@ export default function TownMapPage() {
           Town Map Seeds
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
-          The twenty town layouts and their signature weapon. Select a seed to
-          view everything stocked by its town merchant.
+          Twenty sets, each shown by its signature weapon. Select a set to view
+          its Special Merchant stock and passives.
         </p>
       </header>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {seeds.map((seed) => (
-          <SeedCard key={seed.id} seed={seed} />
+        {sets.map((set) => (
+          <SetCard key={set.id} set={set} />
         ))}
       </div>
     </div>
