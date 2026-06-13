@@ -1,5 +1,4 @@
-import { sets } from "@/data/sets";
-import { SetCard } from "@/components/SetCard";
+import { FilteredSetGrid } from "@/components/FilteredSetGrid";
 
 export default function TownMapPage() {
   return (
@@ -11,15 +10,12 @@ export default function TownMapPage() {
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
           Twenty-one sets (0–20), each shown by its signature weapon. Select a
-          set to view its Special Merchant stock and passives.
+          set to view its Special Merchant stock and passives, or filter by
+          passive and weapon type.
         </p>
       </header>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {sets.map((set) => (
-          <SetCard key={set.id} set={set} />
-        ))}
-      </div>
+      <FilteredSetGrid />
     </div>
   );
 }
