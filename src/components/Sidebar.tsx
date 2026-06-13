@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 /**
- * Reference categories. To add a new view:
+ * Drawer contents: the list of reference categories. To add a new view:
  *   1. Create a route under src/app (e.g. src/app/nightlords/page.tsx).
- *   2. Set `href` here and remove `soon`.
+ *   2. Add it here and remove `soon`.
  */
 const sections: { label: string; href: string; soon?: boolean }[] = [
   { label: "Town Map Seeds", href: "/town-map" },
@@ -15,58 +15,61 @@ const sections: { label: string; href: string; soon?: boolean }[] = [
   { label: "Shifting Earth", href: "/shifting-earth", soon: true },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="border-b border-night-600 md:w-64 md:shrink-0 md:border-b-0 md:border-r">
-      <div className="px-5 py-7 sm:px-8 md:px-7">
-        <Link href="/town-map" className="block">
-          <p className="eyebrow">Elden Ring</p>
-          <h1 className="mt-1 font-display text-2xl font-bold leading-tight text-parchment">
-            Night<span className="text-gold">reign</span>
-          </h1>
-          <p className="mt-1 font-display text-[0.7rem] uppercase tracking-[0.3em] text-parchment-faint">
-            Field Grimoire
-          </p>
-        </Link>
+    <div className="flex h-full flex-col px-5 py-6">
+      <div className="flex items-center justify-between">
+        <p className="eyebrow">References</p>
+        <button
+          type="button"
+          onClick={onNavigate}
+          aria-label="Close navigation"
+          className="grid h-7 w-7 place-items-center rounded text-parchment-faint transition-colors hover:text-gold"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
 
-        <nav className="mt-8">
-          <ul className="space-y-1">
-            {sections.map((s) => {
-              const active =
-                !s.soon &&
-                (pathname === s.href || pathname.startsWith(s.href + "/"));
+      <nav className="mt-5">
+        <ul className="space-y-1">
+          {sections.map((s) => {
+            const active =
+              !s.soon &&
+              (pathname === s.href || pathname.startsWith(s.href + "/"));
 
-              if (s.soon) {
-                return (
-                  <li key={s.label}>
-                    <span className="flex items-center justify-between rounded px-3 py-2 font-body text-parchment-faint">
-                      {s.label}
-                      <span className="eyebrow text-[0.55rem]">soon</span>
-                    </span>
-                  </li>
-                );
-              }
-
+            if (s.soon) {
               return (
                 <li key={s.label}>
-                  <Link
-                    href={s.href}
-                    className={`block rounded px-3 py-2 font-body transition-colors ${
-                      active
-                        ? "bg-night-800 text-gold-bright frame border-night-600"
-                        : "text-parchment-muted hover:bg-night-850 hover:text-parchment"
-                    }`}
-                  >
+                  <span className="flex items-center justify-between rounded px-3 py-2 font-body text-parchment-faint">
                     {s.label}
-                  </Link>
+                    <span className="eyebrow text-[0.55rem]">soon</span>
+                  </span>
                 </li>
               );
-            })}
-          </ul>
-        </nav>
-      </div>
-    </aside>
+            }
+
+            return (
+              <li key={s.label}>
+                <Link
+                  href={s.href}
+                  onClick={onNavigate}
+                  className={`block rounded px-3 py-2 font-body transition-colors ${
+                    active
+                      ? "frame border-night-600 bg-night-800 text-gold-bright"
+                      : "text-parchment-muted hover:bg-night-850 hover:text-parchment"
+                  }`}
+                >
+                  {s.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    </div>
   );
 }

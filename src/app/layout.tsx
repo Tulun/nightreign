@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Cinzel, EB_Garamond } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
+import { AppShell } from "@/components/AppShell";
 
 const display = Cinzel({
   subsets: ["latin"],
@@ -30,12 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body className="min-h-dvh">
-        <div className="mx-auto flex min-h-dvh w-full max-w-[1400px] flex-col md:flex-row">
-          <Sidebar />
-          <main className="flex-1 px-5 py-8 sm:px-8 md:px-12 md:py-12">
-            {children}
-          </main>
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

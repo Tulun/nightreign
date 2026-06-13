@@ -47,7 +47,7 @@ export default function SetDetailPage({
           </h2>
           {sig && (
             <p
-              className="mt-1 font-body text-lg text-parchment-muted"
+              className="mt-1 font-body text-lg uppercase tracking-[0.04em] text-parchment-muted"
               style={sigColor ? { color: sigColor } : undefined}
             >
               {sig.passive}

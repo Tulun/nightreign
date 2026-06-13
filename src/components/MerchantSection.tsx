@@ -37,17 +37,17 @@ function MerchantRow({ item }: { item: WeaponEntry }) {
 
   return (
     <li
-      className="frame flex items-baseline gap-4 rounded-md border-l-[3px] px-4 py-2.5"
+      className="frame flex flex-col gap-1 rounded-md border-l-[3px] px-4 py-3 sm:flex-row sm:items-center sm:gap-5"
       style={{ borderLeftColor: tier.bar, background: tier.bg }}
     >
       <span
-        className="font-display font-semibold text-parchment sm:basis-60 sm:shrink-0"
+        className="font-display text-base font-semibold leading-tight text-parchment sm:basis-64 sm:shrink-0"
         style={textColor ? { color: textColor } : undefined}
       >
         {item.name}
       </span>
       <span
-        className="font-body text-parchment-muted"
+        className="font-body text-lg font-medium uppercase leading-snug tracking-[0.04em] text-parchment"
         style={textColor ? { color: textColor } : undefined}
       >
         {item.passive}

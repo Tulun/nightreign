@@ -37,7 +37,7 @@ export function SetCard({ set }: { set: MerchantSet }) {
               {sig.name}
             </h3>
             <p
-              className="mt-0.5 truncate font-body text-parchment-muted"
+              className="mt-0.5 truncate font-body text-[0.95rem] uppercase tracking-[0.03em] text-parchment-muted"
               style={nameColor ? { color: nameColor } : undefined}
             >
               {sig.passive}

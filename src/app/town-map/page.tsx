@@ -10,8 +10,8 @@ export default function TownMapPage() {
           Town Map Seeds
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
-          Twenty sets, each shown by its signature weapon. Select a set to view
-          its Special Merchant stock and passives.
+          Twenty-one sets (0–20), each shown by its signature weapon. Select a
+          set to view its Special Merchant stock and passives.
         </p>
       </header>
 

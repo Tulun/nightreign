@@ -13,10 +13,10 @@ Then open http://localhost:3000 — it redirects to the Town Map Seeds view.
 
 ## Where things live
 
-- `src/data/seeds.ts` — **your data**. The 20 seeds, their weapon name +
+- `src/data/sets.ts` — **your data**. The 21 sets (0–20), their weapon name +
   passive, and each town merchant's items. Edit this constantly.
 - `public/icons/` — weapon images. Reference them via `weapon.icon`.
-- `src/components/` — UI pieces (`SeedCard`, `MerchantList`, `WeaponIcon`,
+- `src/components/` — UI pieces (`SetCard`, `MerchantSection`, `WeaponIcon`,
   `Sidebar`).
 - `src/app/town-map/` — the seed grid (`page.tsx`) and the per-seed merchant
   detail (`[seedId]/page.tsx`).
