@@ -375,11 +375,30 @@ export const sets: MerchantSet[] = [
     ],
   },
 
-  // ── Set 14 not yet provided — awaiting its sheet. ───
   {
     id: 14,
-    specialMerchant: [],
-    normalMerchant: [],
+    specialMerchant: [
+      { name: "Bloodstained Dagger", passive: "Improved critical hits", tier: "blue", highlighted: true },
+      { name: "Claymore", passive: "Improved attack power when two-handing", tier: "blue", highlighted: true },
+      { name: "Gargoyle's Great Axe", passive: "Improved charge attacks", tier: "blue", highlighted: true },
+      { name: "Pest's Glaive", passive: "Reduced skill FP cost", tier: "blue" },
+      { name: "Hand Ballista", passive: "Magma surge sprint", tier: "blue" },
+      { name: "Carian Glintstone Staff", passive: "Less likely to be targeted", tier: "blue" },
+      { name: "Giant's Seal", passive: "Continuous HP recovery", tier: "blue" },
+      { name: "Moonveil", passive: "HP restoration upon landing attacks", tier: "purple" },
+      { name: "Pulley Bow", passive: "Multiple periodical glintblades", tier: "purple", highlighted: true },
+      { name: "Erdtree Greatbow", passive: "Improved holy attack power", tier: "purple" },
+      { name: "Jellyfish Shield", passive: "Improved incantations", tier: "purple", highlighted: true },
+    ],
+    normalMerchant: [
+      { name: "Hookclaws", passive: "Improved chain attack finishers", tier: "common" },
+      { name: "Warhawk's Talon", passive: "Improved guard counters", tier: "blue" },
+      { name: "Warpick", passive: "Improved critical hits", tier: "blue", highlighted: true },
+      { name: "Cross-Naginata", passive: "Multiple periodical glintblades", tier: "blue" },
+      { name: "Gelmir Glintstone Staff", passive: "Improved poison resistance", tier: "blue" },
+      { name: "Distinguished Greatshield", passive: "Improved lightning attack power", tier: "blue" },
+      { name: "Frozen Needle", passive: "Improved magic damage negation", tier: "purple" },
+    ],
   },
   {
     id: 15,
@@ -507,11 +526,30 @@ export const sets: MerchantSet[] = [
     ],
   },
 
-  // ── Placeholder for Set 20. Fill in when you send the sheet. ───
   {
     id: 20,
-    specialMerchant: [],
-    normalMerchant: [],
+    specialMerchant: [
+      { name: "Meteoric Ore Blade", passive: "Improved magic attack power", tier: "blue", highlighted: true },
+      { name: "Rotten Battle Hammer", passive: "Defeating enemies restores HP", tier: "blue" },
+      { name: "Guardian's Swordspear", passive: "Improved fire attack power", tier: "blue" },
+      { name: "Harp Bow", passive: "Improved holy damage negation", tier: "blue" },
+      { name: "Full Moon Crossbow", passive: "Magma surge sprint", tier: "blue" },
+      { name: "Hand Ballista", passive: "Improved item discovery", tier: "blue" },
+      { name: "Albinauric Staff", passive: "Improved attack power at full HP", tier: "blue", highlighted: true },
+      { name: "Gravel Stone Seal", passive: "Improved spell casting speed", tier: "blue", highlighted: true },
+      { name: "Reduvia", passive: "Taking damage boosts damage negation", tier: "purple" },
+      { name: "Ordovis's Greatsword", passive: "Many periodical glintblades", tier: "purple", highlighted: true },
+      { name: "Erdtree Greatshield", passive: "Improved damage negation at full HP", tier: "purple" },
+    ],
+    normalMerchant: [
+      { name: "Club", passive: "Taking damage restores FP", tier: "common" },
+      { name: "Lordsworn's Straight Sword", passive: "Improved charge attacks", tier: "blue", highlighted: true },
+      { name: "Beastman's Curved Sword", passive: "Damage negation up upon landing charged attacks", tier: "blue" },
+      { name: "Monk's Flameblade", passive: "Lightning follows charge attacks that land", tier: "blue", highlighted: true },
+      { name: "Treespear", passive: "Improved item discovery", tier: "blue" },
+      { name: "Eclipse Crest Greatshield", passive: "Improved damage negation at full HP", tier: "blue" },
+      { name: "Cipher Pata", passive: "Reduced skill FP cost", tier: "purple" },
+    ],
   },
 ];
 
