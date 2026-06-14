@@ -28,9 +28,9 @@ export interface Greatshield {
 /** The affinities the reference groups by (physical is always 100, so omitted). */
 export const RANKED_AFFINITIES: { key: Affinity; label: string }[] = [
   { key: "holy", label: "Holy" },
-  { key: "lightning", label: "Lightning" },
-  { key: "fire", label: "Fire" },
   { key: "magic", label: "Magic" },
+  { key: "fire", label: "Fire" },
+  { key: "lightning", label: "Lightning" },
 ];
 
 /** Full stat-block order shown in the detail modal (matches the source image). */

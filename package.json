@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:pages": "GITHUB_PAGES=true next build",
+    "preview:pages": "npx --yes serve out",
     "start": "next start",
     "lint": "next lint"
   },
