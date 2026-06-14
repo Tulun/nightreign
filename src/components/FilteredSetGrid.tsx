@@ -5,34 +5,37 @@ import { sets } from "@/data/sets";
 import {
   buildFilterOptions,
   filterSets,
+  searchSets,
   type FilterOption,
   type WeaponSource,
 } from "@/lib/filters";
 import { SetCard } from "./SetCard";
 
-const STORAGE_KEY = "nr:townmap:filters";
+const FILTERS_KEY = "nr:townmap:filters";
+const SEARCH_KEY = "nr:townmap:search";
 
 type OpenMenu = "weapons" | "passives" | null;
 
 /**
- * The Town Map grid with two multiselect filter dropdowns on top — one for
- * specific staves/seals, one for passives — kept separate so the long passive
- * list doesn't crowd out the weapon picks. Sets matching ANY selected filter
- * are shown. The selection persists to localStorage across navigation/reloads.
+ * The Town Map grid with a search field plus two multiselect filter dropdowns —
+ * one for staves/seals, one for passives. The dropdowns combine with ANY (OR)
+ * semantics; the search then narrows that result by item name/passive. Both the
+ * selection and the query persist to localStorage across navigation/reloads.
  */
 export function FilteredSetGrid() {
   const { weapons, passives } = useMemo(() => buildFilterOptions(), []);
   const allOptions = useMemo(() => [...weapons, ...passives], [weapons, passives]);
 
   const [selected, setSelected] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
 
-  // Restore the saved selection on mount (effect, to avoid hydration mismatch).
+  // Restore the saved selection + query on mount (effect, to avoid mismatch).
   useEffect(() => {
     const validKeys = new Set(allOptions.map((o) => o.key));
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(FILTERS_KEY);
       const parsed = raw ? JSON.parse(raw) : null;
       if (Array.isArray(parsed)) {
         setSelected(parsed.filter((k) => typeof k === "string" && validKeys.has(k)));
@@ -40,23 +43,37 @@ export function FilteredSetGrid() {
     } catch {
       // ignore malformed/blocked storage
     }
+    try {
+      const q = localStorage.getItem(SEARCH_KEY);
+      if (typeof q === "string") setQuery(q);
+    } catch {
+      // ignore
+    }
     setHydrated(true);
   }, [allOptions]);
 
-  // Persist on change — only after hydration, so the initial empty state
-  // doesn't clobber a previously saved selection.
+  // Persist on change — only after hydration, so initial empty state doesn't
+  // clobber previously saved values.
   useEffect(() => {
     if (!hydrated) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+      localStorage.setItem(FILTERS_KEY, JSON.stringify(selected));
     } catch {
-      // ignore storage failures (private mode, quota, etc.)
+      // ignore
     }
   }, [selected, hydrated]);
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(SEARCH_KEY, query);
+    } catch {
+      // ignore
+    }
+  }, [query, hydrated]);
 
   const visible = useMemo(
-    () => filterSets(sets, selected, allOptions),
-    [selected, allOptions],
+    () => searchSets(filterSets(sets, selected, allOptions), query),
+    [selected, allOptions, query],
   );
   const selectedOptions = useMemo(
     () => allOptions.filter((o) => selected.includes(o.key)),
@@ -69,8 +86,40 @@ export function FilteredSetGrid() {
   const countIn = (opts: FilterOption[]) =>
     opts.reduce((n, o) => (selected.includes(o.key) ? n + 1 : n), 0);
 
+  const searching = query.trim().length > 0;
+  const active = searching || selected.length > 0;
+
   return (
     <div>
+      {/* Search */}
+      <div className="relative mb-3 max-w-md">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-parchment-faint"
+        >
+          <SearchIcon />
+        </span>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search weapons or passives…"
+          aria-label="Search items and passives"
+          autoComplete="off"
+          className="frame w-full rounded-md bg-night-800 py-2.5 pl-10 pr-10 font-body text-sm text-parchment placeholder:text-parchment-faint focus:outline-none focus:ring-1 focus:ring-gold"
+        />
+        {searching && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Clear search"
+            className="absolute right-2.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-parchment-faint transition-colors hover:text-gold"
+          >
+            <CloseIcon />
+          </button>
+        )}
+      </div>
+
       {/* Filter controls */}
       <div className="mb-6 flex flex-wrap items-center gap-2">
         <FilterMenu
@@ -121,7 +170,7 @@ export function FilteredSetGrid() {
       {/* Result count */}
       <p className="mb-3 font-body text-xs uppercase tracking-[0.08em] text-parchment-faint">
         {visible.length} {visible.length === 1 ? "set" : "sets"}
-        {selected.length > 0 ? " matched" : ""}
+        {active ? " matched" : ""}
       </p>
 
       {/* Grid */}
@@ -133,7 +182,7 @@ export function FilteredSetGrid() {
         </div>
       ) : (
         <p className="rounded-md border border-night-600 bg-night-800/50 px-4 py-10 text-center font-body text-parchment-muted">
-          No sets match the selected filters.
+          No sets match the current search and filters.
         </p>
       )}
     </div>
@@ -232,6 +281,15 @@ function SourceBadge({ source }: { source: WeaponSource }) {
     >
       {label}
     </span>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <path d="M21 21l-4.3-4.3" />
+    </svg>
   );
 }
 

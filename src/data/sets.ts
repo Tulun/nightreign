@@ -67,7 +67,7 @@ export const sets: MerchantSet[] = [
       { name: "Iron Ball", passive: "Improved damage negation at full HP", tier: "blue" },
       { name: "Staff of the Guilty", passive: "Improved holy damage negation", tier: "blue" },
       { name: "Iron Roundshield", passive: "Improved sorceries", tier: "blue", highlighted: true },
-      { name: "Siluria's Tree", passive: "Defeating enemies restore HP", tier: "purple" },
+      { name: "Siluria's Tree", passive: "Defeating enemies restores HP", tier: "purple" },
     ],
   },
   {
@@ -182,7 +182,7 @@ export const sets: MerchantSet[] = [
       { name: "Ripple Crescent Halberd", passive: "Improved skill attack power", tier: "blue" },
       { name: "Full Moon Crossbow", passive: "Improved attack power at full HP", tier: "blue", highlighted: true },
       { name: "Hand Ballista", passive: "Improved holy damage negation", tier: "blue" },
-      { name: "Godslayer's Seal", passive: "Defeating enemies restore HP", tier: "blue" },
+      { name: "Godslayer's Seal", passive: "Defeating enemies restores HP", tier: "blue" },
       { name: "Cuckoo Greatshield", passive: "Magma surge sprint", tier: "blue" },
       { name: "Moonveil", passive: "Improved magic damage negation", tier: "purple" },
       { name: "Black Bow", passive: "Taking damage boosts damage negation", tier: "purple" },

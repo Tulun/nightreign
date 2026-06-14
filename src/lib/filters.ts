@@ -2,7 +2,7 @@ import type { MerchantSet, WeaponEntry } from "@/lib/types";
 import { sets } from "@/data/sets";
 
 // ─────────────────────────────────────────────────────────────────────────
-//  Set filtering for the Town Map grid.
+//  Town Map filtering + search.
 //
 //  Two independent filter groups, each in its own dropdown:
 //    - "weapon"  → a specific staff/seal by name. Every set carries some staff
@@ -11,8 +11,9 @@ import { sets } from "@/data/sets";
 //                  and carries a `source` badge for where it shows up overall.
 //    - "passive" → a weapon passive. Matches across both merchants.
 //
-//  ANY (OR) semantics: a set shows if it satisfies at least one selected
-//  filter. With nothing selected, all show.
+//  Filters use ANY (OR) semantics: a set passes if it satisfies at least one
+//  selected filter. The free-text search (searchSets) then narrows that result
+//  to sets selling an item whose name/passive contains the query.
 // ─────────────────────────────────────────────────────────────────────────
 
 export type FilterKind = "weapon" | "passive";
@@ -146,4 +147,21 @@ export function filterSets(
   if (selectedKeys.length === 0) return setsList;
   const selected = options.filter((o) => selectedKeys.includes(o.key));
   return setsList.filter((set) => selected.some((o) => setMatches(set, o)));
+}
+
+/**
+ * Free-text search: a set matches if any item it sells (in EITHER merchant)
+ * has a name or passive containing the query (case-insensitive). Covers weapon
+ * names, a set's purple signature item, and passive effects. Empty → all.
+ */
+export function searchSets(setsList: MerchantSet[], query: string): MerchantSet[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return setsList;
+  return setsList.filter((set) =>
+    allEntries(set).some(
+      (e) =>
+        e.name.toLowerCase().includes(needle) ||
+        e.passive.toLowerCase().includes(needle),
+    ),
+  );
 }
