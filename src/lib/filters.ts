@@ -4,16 +4,21 @@ import { sets } from "@/data/sets";
 // ─────────────────────────────────────────────────────────────────────────
 //  Set filtering for the Town Map grid.
 //
-//  Two kinds of filter, all shown in one multiselect:
-//    - "name"    → matches sets that sell a weapon whose name contains a
-//                  keyword (Staff, Seal).
-//    - "passive" → matches sets that sell a weapon with that exact passive.
+//  Two independent filter groups, each in its own dropdown:
+//    - "weapon"  → a specific staff/seal by name. Every set carries some staff
+//                  and some seal, so the useful question is *which one*. An
+//                  option matches a set if the weapon is in EITHER merchant,
+//                  and carries a `source` badge for where it shows up overall.
+//    - "passive" → a weapon passive. Matches across both merchants.
 //
-//  A set matches the active selection with ANY (OR) semantics: it shows if it
-//  satisfies at least one selected filter. With nothing selected, all show.
+//  ANY (OR) semantics: a set shows if it satisfies at least one selected
+//  filter. With nothing selected, all show.
 // ─────────────────────────────────────────────────────────────────────────
 
-export type FilterKind = "name" | "passive";
+export type FilterKind = "weapon" | "passive";
+
+/** Where a staff/seal shows up across all sets. */
+export type WeaponSource = "special" | "normal" | "both";
 
 export interface FilterOption {
   /** Stable unique id used in selection state. */
@@ -21,19 +26,20 @@ export interface FilterOption {
   /** Display label. */
   label: string;
   kind: FilterKind;
-  /** For "name" filters: the lowercase substring to look for in weapon names. */
-  needle?: string;
-  /** True for the options pinned to the top of the list (custom order). */
-  pinned: boolean;
+  /** For weapon options: which merchant(s) carry it across all sets. */
+  source?: WeaponSource;
+  /** Render a group-separator divider above this option. */
+  dividerBefore?: boolean;
 }
 
-/** Weapon-name filters, pinned to the very top in this order. */
-const NAME_FILTERS: Omit<FilterOption, "pinned">[] = [
-  { key: "name:seal", label: "Seal", kind: "name", needle: "seal" },
-  { key: "name:staff", label: "Staff", kind: "name", needle: "staff" },
-];
+export interface FilterGroups {
+  /** Staves then seals, each alphabetical (one entry per unique name). */
+  weapons: FilterOption[];
+  /** Preferred passives first, then the rest alphabetical. */
+  passives: FilterOption[];
+}
 
-/** Passives pinned directly under the name filters, in this exact order. */
+/** Passives pinned to the top of the passive list, in this exact order. */
 const PREFERRED_PASSIVES = [
   "Taking damage boosts damage negation",
   "Less likely to be targeted",
@@ -41,50 +47,94 @@ const PREFERRED_PASSIVES = [
   "Damage negation up upon landing charged attacks",
 ];
 
+/**
+ * Weapons whose name contains "staff"/"seal" but which are NOT a glintstone
+ * staff or sacred seal. "Staff of the Avatar" is a colossal weapon.
+ */
+const NOT_A_STAFF = new Set(["Staff of the Avatar"]);
+
+function isStaff(name: string): boolean {
+  return name.toLowerCase().includes("staff") && !NOT_A_STAFF.has(name);
+}
+function isSeal(name: string): boolean {
+  return name.toLowerCase().includes("seal");
+}
+
 function allEntries(set: MerchantSet): WeaponEntry[] {
   return [...set.specialMerchant, ...set.normalMerchant];
 }
 
-/**
- * Build the ordered list of filter options from the data:
- *   Seal, Staff, the four preferred passives, then every other passive A→Z.
- */
-export function buildFilterOptions(): FilterOption[] {
+const byLabel = (a: string, b: string) => a.localeCompare(b);
+
+function sourceOf(name: string, special: Set<string>, normal: Set<string>): WeaponSource {
+  const s = special.has(name);
+  const n = normal.has(name);
+  return s && n ? "both" : s ? "special" : "normal";
+}
+
+/** Build the two ordered option groups from the data. */
+export function buildFilterOptions(): FilterGroups {
+  const staffSpecial = new Set<string>();
+  const staffNormal = new Set<string>();
+  const sealSpecial = new Set<string>();
+  const sealNormal = new Set<string>();
   const passives = new Set<string>();
+
   for (const set of sets) {
-    for (const entry of allEntries(set)) passives.add(entry.passive);
+    for (const e of set.specialMerchant) {
+      if (isStaff(e.name)) staffSpecial.add(e.name);
+      if (isSeal(e.name)) sealSpecial.add(e.name);
+    }
+    for (const e of set.normalMerchant) {
+      if (isStaff(e.name)) staffNormal.add(e.name);
+      if (isSeal(e.name)) sealNormal.add(e.name);
+    }
+    for (const e of allEntries(set)) passives.add(e.passive);
   }
+
+  const staffNames = Array.from(staffSpecial).concat(Array.from(staffNormal));
+  const sealNames = Array.from(sealSpecial).concat(Array.from(sealNormal));
+  const uniqSortedStaves = Array.from(new Set(staffNames)).sort(byLabel);
+  const uniqSortedSeals = Array.from(new Set(sealNames)).sort(byLabel);
+
+  const staffOptions: FilterOption[] = uniqSortedStaves.map((name) => ({
+    key: `weapon:${name}`,
+    label: name,
+    kind: "weapon",
+    source: sourceOf(name, staffSpecial, staffNormal),
+  }));
+  const sealOptions: FilterOption[] = uniqSortedSeals.map((name, i) => ({
+    key: `weapon:${name}`,
+    label: name,
+    kind: "weapon",
+    source: sourceOf(name, sealSpecial, sealNormal),
+    // Divider between the staff block and the seal block.
+    dividerBefore: i === 0,
+  }));
 
   const preferred = PREFERRED_PASSIVES.filter((p) => passives.has(p));
   const preferredSet = new Set(preferred);
-  const rest = Array.from(passives)
-    .filter((p) => !preferredSet.has(p))
-    .sort((a, b) => a.localeCompare(b));
+  const rest = Array.from(passives).filter((p) => !preferredSet.has(p)).sort(byLabel);
+  const passiveOptions: FilterOption[] = [
+    ...preferred.map((p) => ({ key: `passive:${p}`, label: p, kind: "passive" as const })),
+    ...rest.map((p, i) => ({
+      key: `passive:${p}`,
+      label: p,
+      kind: "passive" as const,
+      dividerBefore: i === 0,
+    })),
+  ];
 
-  const nameOptions: FilterOption[] = NAME_FILTERS.map((o) => ({ ...o, pinned: true }));
-  const preferredOptions: FilterOption[] = preferred.map((p) => ({
-    key: `passive:${p}`,
-    label: p,
-    kind: "passive",
-    pinned: true,
-  }));
-  const restOptions: FilterOption[] = rest.map((p) => ({
-    key: `passive:${p}`,
-    label: p,
-    kind: "passive",
-    pinned: false,
-  }));
-
-  return [...nameOptions, ...preferredOptions, ...restOptions];
+  return { weapons: [...staffOptions, ...sealOptions], passives: passiveOptions };
 }
 
 /** Does a set satisfy a single filter? */
 function setMatches(set: MerchantSet, opt: FilterOption): boolean {
-  const entries = allEntries(set);
-  if (opt.kind === "name") {
-    return entries.some((e) => e.name.toLowerCase().includes(opt.needle!));
+  // Specific staff/seal — match by exact name in either merchant.
+  if (opt.kind === "weapon") {
+    return allEntries(set).some((e) => e.name === opt.label);
   }
-  return entries.some((e) => e.passive === opt.label);
+  return allEntries(set).some((e) => e.passive === opt.label);
 }
 
 /** OR semantics: a set passes if it matches ANY selected filter. */

@@ -83,7 +83,7 @@ export const sets: MerchantSet[] = [
       { name: "Icon Shield", passive: "Improved holy damage negation", tier: "blue" },
       { name: "Scorpion's Stinger", passive: "FP restoration upon landing attacks", tier: "purple" },
       { name: "Prelate's Inferno Crozier", passive: "Improved skill attack power", tier: "purple" },
-      { name: "Lusat Glintstone Staff", passive: "Improved sorceries", tier: "purple", highlighted: true },
+      { name: "Lusat's Glintstone Staff", passive: "Improved sorceries", tier: "purple", highlighted: true },
     ],
     normalMerchant: [
       { name: "Lance", passive: "Improved attack power when two-handing", tier: "common", highlighted: true },
