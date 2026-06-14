@@ -15,12 +15,16 @@ import { ShieldIcon } from "./ShieldIcon";
 /** How many shields to show per affinity section. */
 const TOP_N = 6;
 
+/** The Guardian's namesake shield, featured at the top. */
+const GUARDIAN_ID = "guardians-greatshield";
+
 /**
  * Guardian greatshield reference: shields grouped by affinity and ranked by
  * that affinity's guarded negation. Clicking a shield opens its full stat block.
  */
 export function GreatshieldReference() {
   const [selected, setSelected] = useState<Greatshield | null>(null);
+  const guardian = greatshields.find((s) => s.id === GUARDIAN_ID);
 
   // Escape closes the modal.
   useEffect(() => {
@@ -41,6 +45,8 @@ export function GreatshieldReference() {
 
   return (
     <div className="space-y-9">
+      {guardian && <GuardianFeature shield={guardian} />}
+
       {RANKED_AFFINITIES.map(({ key, label }) => {
         const ranked = rankByAffinity(greatshields, key, TOP_N);
         return (
@@ -127,6 +133,28 @@ function ShieldModal({ shield, onClose }: { shield: Greatshield; onClose: () => 
         )}
       </div>
     </div>
+  );
+}
+
+function GuardianFeature({ shield }: { shield: Greatshield }) {
+  return (
+    <section className="frame rounded-lg bg-night-800 p-5">
+      <div className="flex items-center gap-4 border-b border-night-600 pb-4">
+        <ShieldIcon src={shield.icon} alt={shield.name} size={80} />
+        <div className="min-w-0">
+          <p className="eyebrow">Guardian · Base shield</p>
+          <h3 className="font-display text-2xl font-bold text-parchment">{shield.name}</h3>
+        </div>
+      </div>
+
+      <p className="eyebrow mb-2 mt-4">Guarded Damage Negation</p>
+      <dl className="grid grid-cols-2 gap-x-8 sm:grid-cols-3">
+        {STAT_ORDER.map(({ key, label }) => (
+          <StatRow key={key} label={label} value={shield.negation[key].toFixed(1)} />
+        ))}
+        <StatRow label="Guard Boost" value={String(shield.guardBoost)} />
+      </dl>
+    </section>
   );
 }
 
