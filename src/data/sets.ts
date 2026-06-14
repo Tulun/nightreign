@@ -42,7 +42,7 @@ export const sets: MerchantSet[] = [
       { name: "Partisan", passive: "Attack up when wielding two armaments", tier: "blue", highlighted: true },
       { name: "Carian Glintblade Staff", passive: "Taking damage restores FP", tier: "blue" },
       { name: "Rift Shield", passive: "Successful guarding ups poise", tier: "blue" },
-      { name: "Envoy's Horn", passive: "Multiple periodical glintblades", tier: "purple", highlighted: true },
+      { name: "Siluria's Tree", passive: "Multiple periodical glintblades", tier: "purple", highlighted: true },
     ],
   },
   {
