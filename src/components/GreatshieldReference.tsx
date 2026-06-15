@@ -43,7 +43,12 @@ export function GreatshieldReference() {
     );
   }
 
-  const ranked = rankByAffinity(greatshields, affinity);
+  // Only shields that meet or beat the Guardian's Greatshield for this element,
+  // excluding the Guardian's shield itself. Ranked best-first.
+  const threshold = guardian?.negation[affinity];
+  const ranked = rankByAffinity(greatshields, affinity).filter(
+    (s) => s.id !== GUARDIAN_ID && (threshold === undefined || s.negation[affinity] >= threshold),
+  );
   const activeLabel = RANKED_AFFINITIES.find((a) => a.key === affinity)?.label ?? "";
 
   return (
@@ -86,9 +91,18 @@ export function GreatshieldReference() {
 
       {/* Shields for the selected affinity */}
       <div>
-        <h3 className="eyebrow mb-3 text-gold-bright">
-          {activeLabel} negation · best first
+        <h3 className="eyebrow text-gold-bright">
+          {activeLabel} negation ≥ Guardian
+          {threshold !== undefined ? ` · ${threshold.toFixed(1)}` : ""}
         </h3>
+        <p className="mb-3 mt-1 font-body text-xs text-parchment-faint">
+          Greatshields at least as strong as the Guardian&rsquo;s Greatshield against {activeLabel}, best first.
+        </p>
+        {ranked.length === 0 ? (
+          <p className="rounded-md border border-night-600 bg-night-800/50 px-4 py-8 text-center font-body text-parchment-muted">
+            No other greatshield matches or beats the Guardian&rsquo;s Greatshield against {activeLabel}.
+          </p>
+        ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {ranked.map((s, i) => (
             <button
@@ -117,6 +131,7 @@ export function GreatshieldReference() {
             </button>
           ))}
         </div>
+        )}
       </div>
 
       {detail && <ShieldModal shield={detail} onClose={() => setDetail(null)} />}
