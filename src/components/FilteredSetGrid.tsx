@@ -121,50 +121,56 @@ export function FilteredSetGrid() {
       </div>
 
       {/* Filter controls */}
-      <div className="mb-6 flex flex-wrap items-center gap-2">
-        <FilterMenu
-          title="Staves & Seals"
-          options={weapons}
-          selected={selected}
-          onToggle={toggle}
-          badge={countIn(weapons)}
-          open={openMenu === "weapons"}
-          onOpen={() => setOpenMenu("weapons")}
-          onClose={() => setOpenMenu((m) => (m === "weapons" ? null : m))}
-        />
-        <FilterMenu
-          title="Passives"
-          options={passives}
-          selected={selected}
-          onToggle={toggle}
-          badge={countIn(passives)}
-          open={openMenu === "passives"}
-          onOpen={() => setOpenMenu("passives")}
-          onClose={() => setOpenMenu((m) => (m === "passives" ? null : m))}
-        />
+      <div className="mb-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <FilterMenu
+            title="Staves & Seals"
+            options={weapons}
+            selected={selected}
+            onToggle={toggle}
+            badge={countIn(weapons)}
+            open={openMenu === "weapons"}
+            onOpen={() => setOpenMenu("weapons")}
+            onClose={() => setOpenMenu((m) => (m === "weapons" ? null : m))}
+          />
+          <FilterMenu
+            title="Passives"
+            options={passives}
+            selected={selected}
+            onToggle={toggle}
+            badge={countIn(passives)}
+            open={openMenu === "passives"}
+            onOpen={() => setOpenMenu("passives")}
+            onClose={() => setOpenMenu((m) => (m === "passives" ? null : m))}
+          />
 
-        <button
-          type="button"
-          onClick={() => setSelected([])}
-          disabled={selected.length === 0}
-          className="frame inline-flex items-center gap-1.5 rounded-md bg-night-800 px-3 py-2 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700 hover:text-gold disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-night-800 disabled:hover:text-parchment-muted"
-        >
-          <CloseIcon />
-          Deselect all
-        </button>
-
-        {selectedOptions.map((o) => (
           <button
-            key={o.key}
             type="button"
-            onClick={() => toggle(o.key)}
-            aria-label={`Remove filter ${o.label}`}
-            className="inline-flex items-center gap-1.5 rounded-full border border-gold-faint bg-night-800 py-1 pl-3 pr-2 font-body text-xs uppercase tracking-[0.03em] text-parchment transition-colors hover:border-gold hover:text-gold"
+            onClick={() => setSelected([])}
+            disabled={selected.length === 0}
+            className="frame inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-night-800 px-3 py-2 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700 hover:text-gold disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-night-800 disabled:hover:text-parchment-muted sm:w-auto sm:justify-start"
           >
-            {o.label}
-            <span aria-hidden="true" className="text-base leading-none">×</span>
+            <CloseIcon />
+            Deselect all
           </button>
-        ))}
+        </div>
+
+        {selectedOptions.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {selectedOptions.map((o) => (
+              <button
+                key={o.key}
+                type="button"
+                onClick={() => toggle(o.key)}
+                aria-label={`Remove filter ${o.label}`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gold-faint bg-night-800 py-1 pl-3 pr-2 font-body text-xs uppercase tracking-[0.03em] text-parchment transition-colors hover:border-gold hover:text-gold"
+              >
+                {o.label}
+                <span aria-hidden="true" className="text-base leading-none">×</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Result count */}
@@ -210,39 +216,48 @@ function FilterMenu({ title, options, selected, onToggle, badge, open, onOpen, o
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) onClose();
     };
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("mousedown", onPointer);
+    window.addEventListener("pointerdown", onPointer);
     window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("mousedown", onPointer);
+      window.removeEventListener("pointerdown", onPointer);
       window.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className="relative w-full sm:w-auto">
       <button
         type="button"
         onClick={() => (open ? onClose() : onOpen())}
         aria-expanded={open}
         aria-haspopup="listbox"
-        className="frame inline-flex items-center gap-2 rounded-md bg-night-800 px-3 py-2 font-body text-sm text-parchment transition-colors hover:bg-night-700"
+        className="frame inline-flex w-full items-center justify-between gap-2 rounded-md bg-night-800 px-3 py-2 font-body text-sm text-parchment transition-colors hover:bg-night-700 sm:w-auto sm:justify-start"
       >
-        <FilterIcon />
-        {title}
-        {badge > 0 && (
-          <span className="grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-gold px-1.5 text-xs font-semibold text-night-950">
-            {badge}
-          </span>
-        )}
+        <span className="inline-flex items-center gap-2">
+          <FilterIcon />
+          {title}
+          {badge > 0 && (
+            <span className="grid h-5 min-w-[1.25rem] place-items-center rounded-full bg-gold px-1.5 text-xs font-semibold text-night-950">
+              {badge}
+            </span>
+          )}
+        </span>
         <Chevron open={open} />
       </button>
 
       {open && (
-        <div
-          role="listbox"
-          aria-multiselectable="true"
-          className="absolute left-0 top-full z-20 mt-2 max-h-[60vh] w-[min(24rem,90vw)] overflow-y-auto rounded-md border border-night-600 bg-night-900 p-1.5 shadow-2xl"
-        >
+        <>
+          {/* Mobile-only dimming backdrop behind the centered panel. */}
+          <div
+            aria-hidden="true"
+            onClick={onClose}
+            className="fixed inset-0 z-40 bg-black/50 sm:hidden"
+          />
+          <div
+            role="listbox"
+            aria-multiselectable="true"
+            className="fixed left-1/2 top-1/2 z-50 max-h-[75vh] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-md border border-night-600 bg-night-900 p-1.5 shadow-2xl sm:absolute sm:left-0 sm:top-full sm:z-20 sm:mt-2 sm:max-h-[60vh] sm:w-[24rem] sm:max-w-none sm:translate-x-0 sm:translate-y-0"
+          >
           {options.map((o, i) => {
             const checked = selected.includes(o.key);
             return (
@@ -261,7 +276,8 @@ function FilterMenu({ title, options, selected, onToggle, badge, open, onOpen, o
               </div>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
     </div>
   );
