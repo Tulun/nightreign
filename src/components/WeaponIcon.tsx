@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { Tier } from "@/lib/tiers";
 import { TIER_STYLES } from "@/lib/tiers";
+import { asset } from "@/lib/assets";
 
 interface WeaponIconProps {
   src?: string;
@@ -29,7 +30,7 @@ export function WeaponIcon({ src, alt, size = 64, tier }: WeaponIconProps) {
       }}
     >
       {src ? (
-        <Image src={src} alt={alt} fill sizes={`${size}px`} className="object-contain p-1.5" />
+        <Image src={asset(src)} alt={alt} fill sizes={`${size}px`} className="object-contain p-1.5" />
       ) : (
         <BladeGlyph />
       )}

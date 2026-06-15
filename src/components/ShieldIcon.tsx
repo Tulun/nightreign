@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { asset } from "@/lib/assets";
 
 interface ShieldIconProps {
   src?: string;
@@ -32,7 +33,7 @@ export function ShieldIcon({ src, alt, size = 56 }: ShieldIconProps) {
     >
       {showImage ? (
         <Image
-          src={src as string}
+          src={asset(src as string)}
           alt={alt}
           fill
           sizes={`${size}px`}

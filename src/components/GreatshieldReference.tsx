@@ -12,6 +12,7 @@ import {
   type Greatshield,
 } from "@/lib/greatshields";
 import { ShieldIcon } from "./ShieldIcon";
+import { asset } from "@/lib/assets";
 
 /** The Guardian's namesake shield, featured at the top. */
 const GUARDIAN_ID = "guardians-greatshield";
@@ -264,7 +265,7 @@ function AffinityIcon({ affinity, active }: { affinity: Affinity; active: boolea
   if (!src) return null;
   return (
     <Image
-      src={src}
+      src={asset(src)}
       alt={`${affinity} affinity`}
       width={32}
       height={32}
