@@ -13,6 +13,7 @@ const sections: { label: string; href: string; soon?: boolean }[] = [
   { label: "Greatshields", href: "/greatshields" },
   { label: "Great Hollow", href: "/great-hollow" },
   { label: "Recluse Cocktails", href: "/recluse-cocktails" },
+  { label: "Bagcraft", href: "/bagcraft" },
   { label: "Nightlords", href: "/nightlords", soon: true },
   { label: "Relics", href: "/relics", soon: true },
   { label: "Shifting Earth", href: "/shifting-earth", soon: true },
