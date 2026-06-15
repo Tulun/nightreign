@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { greatshields } from "@/data/greatshields";
 import {
   AFFINITY_COLOR,
@@ -74,10 +75,7 @@ export function GreatshieldReference() {
                 }`}
                 style={isActive ? { borderColor: AFFINITY_COLOR[key], boxShadow: `0 0 0 1px ${AFFINITY_COLOR[key]}66` } : undefined}
               >
-                <AffinityIcon
-                  affinity={key}
-                  color={isActive ? AFFINITY_COLOR[key] : undefined}
-                />
+                <AffinityIcon affinity={key} active={isActive} />
                 <span
                   className={`font-display text-sm font-semibold ${isActive ? "text-parchment" : ""}`}
                 >
@@ -215,44 +213,24 @@ function StatRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/**
- * Affinity glyphs evoking the in-game damage symbols (original artwork):
- * Holy = radiant sun, Magic = glintstone sparkle, Fire = flame, Lightning = bolt.
- */
-function AffinityIcon({ affinity, color }: { affinity: Affinity; color?: string }) {
-  const style = { color: color ?? "var(--parchment-faint, #6f6a5c)" };
-  const common = { viewBox: "0 0 24 24", className: "h-7 w-7", style, "aria-hidden": true } as const;
+/** Affinity icons added under public/icons/elements (keyed by affinity). */
+const AFFINITY_ICON: Partial<Record<Affinity, string>> = {
+  holy: "/icons/elements/holy-affinity.png",
+  magic: "/icons/elements/magic-affinity.png",
+  fire: "/icons/elements/fire-affinity.png",
+  lightning: "/icons/elements/lightning-affinity.png",
+};
 
-  switch (affinity) {
-    case "holy":
-      return (
-        <svg {...common} fill="currentColor">
-          <circle cx="12" cy="12" r="4" />
-          <g stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.1 5.1l2.1 2.1M16.8 16.8l2.1 2.1M18.9 5.1l-2.1 2.1M7.2 16.8l-2.1 2.1" />
-          </g>
-        </svg>
-      );
-    case "magic":
-      return (
-        <svg {...common} fill="currentColor">
-          <path d="M12 2c.5 4.4 1.6 5.5 6 6-4.4.5-5.5 1.6-6 6-.5-4.4-1.6-5.5-6-6 4.4-.5 5.5-1.6 6-6z" />
-          <path d="M18.5 13.5c.25 1.9.85 2.5 2.5 2.75-1.65.25-2.25.85-2.5 2.75-.25-1.9-.85-2.5-2.5-2.75 1.65-.25 2.25-.85 2.5-2.75z" />
-        </svg>
-      );
-    case "fire":
-      return (
-        <svg {...common} fill="currentColor">
-          <path d="M12 2c2.6 3.3 4.3 5.4 4.3 8.6A4.3 4.3 0 0 1 12 22a4.3 4.3 0 0 1-4.3-4.3c0-1.4.5-2.5 1.4-3.6.1 1.2.8 2 1.9 2.3-.7-2.9.2-5.6 3-8.4-.3 1.7.2 3 1.3 3.9.3-3.2-.7-5.6-3.6-7.5z" />
-        </svg>
-      );
-    case "lightning":
-      return (
-        <svg {...common} fill="currentColor">
-          <path d="M13.5 2L5 13h5l-1.5 9L19 10h-5.5L15 2z" />
-        </svg>
-      );
-    default:
-      return null;
-  }
+function AffinityIcon({ affinity, active }: { affinity: Affinity; active: boolean }) {
+  const src = AFFINITY_ICON[affinity];
+  if (!src) return null;
+  return (
+    <Image
+      src={src}
+      alt={`${affinity} affinity`}
+      width={32}
+      height={32}
+      className={`h-8 w-8 rounded object-contain transition-opacity ${active ? "opacity-100" : "opacity-60"}`}
+    />
+  );
 }
