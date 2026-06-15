@@ -9,8 +9,10 @@ import type { Greatshield } from "@/lib/greatshields";
  *  Physical is 100 for every greatshield. The /greatshields view ranks them
  *  per affinity automatically, so each shield is listed once with its block.
  *
- *  Icons: drop square PNGs in /public/icons/greatshields/ named by id (e.g.
- *  "erdtree-greatshield.png") and add `icon: "/icons/greatshields/<id>.png"`.
+ *  Icons: just drop a square PNG in /public/icons/greatshields/ named by id
+ *  (e.g. "erdtree-greatshield.png") — it loads automatically (the view derives
+ *  the path from the id). No data edit needed. Set `icon` only to override the
+ *  path for a non-standard filename.
  */
 export const greatshields: Greatshield[] = [
   { id: "ants-skull-plate", name: "Ant's Skull Plate",
@@ -32,6 +34,7 @@ export const greatshields: Greatshield[] = [
   { id: "eclipse-crest-greatshield", name: "Eclipse Crest Greatshield",
     negation: { physical: 100, magic: 73, fire: 57, lightning: 51, holy: 59 }, guardBoost: 71 },
   { id: "erdtree-greatshield", name: "Erdtree Greatshield",
+    icon: "/icons/greatshields/erdtree-greatshield.png",
     negation: { physical: 100, magic: 67, fire: 50, lightning: 46, holy: 77 }, guardBoost: 81 },
   { id: "fingerprint-stone-shield", name: "Fingerprint Stone Shield",
     negation: { physical: 100, magic: 59, fire: 62, lightning: 61, holy: 58 }, guardBoost: 82 },

@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 interface ShieldIconProps {
   src?: string;
@@ -8,18 +11,34 @@ interface ShieldIconProps {
 }
 
 /**
- * Renders a greatshield's icon if `src` is set, otherwise a framed placeholder
- * with a shield glyph. Drop square images in /public/icons/greatshields/ and
- * set an entry's `icon` in src/data/greatshields.ts to replace the placeholder.
+ * Renders a greatshield's icon if `src` is set and loads, otherwise a framed
+ * placeholder with a shield glyph. Callers derive `src` from the shield id
+ * (/icons/greatshields/<id>.png); a missing file fails to load and falls back
+ * to the glyph rather than showing a broken image.
  */
 export function ShieldIcon({ src, alt, size = 56 }: ShieldIconProps) {
+  const [errored, setErrored] = useState(false);
+
+  // Reset the error flag when the src changes (e.g. the modal reused for a
+  // different shield).
+  useEffect(() => setErrored(false), [src]);
+
+  const showImage = Boolean(src) && !errored;
+
   return (
     <div
       className="frame relative grid shrink-0 place-items-center overflow-hidden rounded bg-night-900"
       style={{ width: size, height: size }}
     >
-      {src ? (
-        <Image src={src} alt={alt} fill sizes={`${size}px`} className="object-contain p-1.5" />
+      {showImage ? (
+        <Image
+          src={src as string}
+          alt={alt}
+          fill
+          sizes={`${size}px`}
+          className="object-contain p-1.5"
+          onError={() => setErrored(true)}
+        />
       ) : (
         <ShieldGlyph />
       )}

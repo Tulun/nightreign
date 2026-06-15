@@ -17,6 +17,15 @@ import { ShieldIcon } from "./ShieldIcon";
 const GUARDIAN_ID = "guardians-greatshield";
 
 /**
+ * Icon path for a shield: an explicit `icon` override, else derived from the
+ * id. Drop `/public/icons/greatshields/<id>.png` and it loads automatically;
+ * until then ShieldIcon falls back to the placeholder glyph.
+ */
+function iconSrc(shield: Greatshield) {
+  return shield.icon ?? `/icons/greatshields/${shield.id}.png`;
+}
+
+/**
  * Guardian greatshield reference. Pick an affinity (Holy / Magic / Fire /
  * Lightning) and the shields ranked by that affinity's guarded negation are
  * shown — no scrolling through every affinity. Clicking a shield opens its
@@ -109,7 +118,7 @@ export function GreatshieldReference() {
               onClick={() => setDetail(s)}
               className="frame group flex items-center gap-3 rounded-lg bg-night-800 p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-night-700 hover:shadow-lift"
             >
-              <ShieldIcon src={s.icon} alt={s.name} size={56} />
+              <ShieldIcon src={iconSrc(s)} alt={s.name} size={56} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-display text-sm font-semibold text-parchment">
                   {s.name}
@@ -151,7 +160,7 @@ function ShieldModal({ shield, onClose }: { shield: Greatshield; onClose: () => 
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-4 border-b border-night-600 pb-4">
-          <ShieldIcon src={shield.icon} alt={shield.name} size={72} />
+          <ShieldIcon src={iconSrc(shield)} alt={shield.name} size={72} />
           <div className="min-w-0">
             <p className="eyebrow">Greatshield</p>
             <h3 className="font-display text-xl font-bold text-parchment">{shield.name}</h3>
@@ -186,7 +195,7 @@ function GuardianFeature({ shield }: { shield: Greatshield }) {
   return (
     <section className="frame rounded-lg bg-night-800 p-5">
       <div className="flex items-center gap-4 border-b border-night-600 pb-4">
-        <ShieldIcon src={shield.icon} alt={shield.name} size={80} />
+        <ShieldIcon src={iconSrc(shield)} alt={shield.name} size={80} />
         <div className="min-w-0">
           <p className="eyebrow">Guardian · Base shield</p>
           <h3 className="font-display text-2xl font-bold text-parchment">{shield.name}</h3>
