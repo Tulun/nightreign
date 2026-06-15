@@ -12,6 +12,7 @@ const sections: { label: string; href: string; soon?: boolean }[] = [
   { label: "Town Map Seeds", href: "/town-map" },
   { label: "Greatshields", href: "/greatshields" },
   { label: "Great Hollow", href: "/great-hollow" },
+  { label: "Recluse Cocktails", href: "/recluse-cocktails" },
   { label: "Nightlords", href: "/nightlords", soon: true },
   { label: "Relics", href: "/relics", soon: true },
   { label: "Shifting Earth", href: "/shifting-earth", soon: true },
