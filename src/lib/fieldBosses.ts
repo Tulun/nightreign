@@ -29,6 +29,13 @@ export interface LootSlot {
   outcomes: LootOutcome[];
 }
 
+/** A named bonus drop a specific boss can roll on top of the normal pool. */
+export interface ExtraDrop {
+  name: string;
+  /** Chance (%) of this specific drop. */
+  chance: number;
+}
+
 export interface FieldBossTier {
   key: string;
   label: string;
@@ -41,6 +48,8 @@ export interface FieldBossTier {
   slots: LootSlot[];
   /** Dormant Power tier(s) this pool's power slot draws from. */
   powerTierKeys: string[];
+  /** Optional boss-specific bonus drops (e.g. Madness Camp Boss named weapons). */
+  extraInfo?: { label: string; drops: ExtraDrop[] };
 }
 
 export interface PowerTier {

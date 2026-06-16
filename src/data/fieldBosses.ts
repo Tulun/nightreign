@@ -113,7 +113,7 @@ export const fieldBossTiers: FieldBossTier[] = [
     poolLabel: "High Pool",
     accent: "#d9433f",
     powerTierKeys: ["A-Tier"],
-    bosses: ["Death Rite Bird", "Black Kindred Blade"],
+    bosses: ["Death Rite Bird", "Black Kindred Blade", "Royal Carian Knight", "Draconic Tree Sentinel"],
     slots: [
       {
         name: "Slot 1",
@@ -183,6 +183,13 @@ export const poiTiers: FieldBossTier[] = [
       },
       { name: "Slot 3 · Dormant Power", outcomes: [{ chance: 100, label: "B-Tier Power", kind: "power" }] },
     ],
+    extraInfo: {
+      label: "Madness Camp Boss",
+      drops: [
+        { name: "Vyke's War Spear", chance: 1.67 },
+        { name: "Frenzied Flame Seal", chance: 1.67 },
+      ],
+    },
   },
 ];
 

@@ -85,6 +85,31 @@ function TierView({ tier }: { tier: FieldBossTier }) {
         ))}
       </div>
 
+      {tier.extraInfo && (
+        <div>
+          <h3 className="eyebrow mb-2" style={{ color: tier.accent }}>
+            {tier.extraInfo.label} · bonus drops
+          </h3>
+          <div className="space-y-1.5">
+            {tier.extraInfo.drops.map((d) => (
+              <div
+                key={d.name}
+                className="relative h-6 w-full overflow-hidden rounded border border-night-700 bg-night-900"
+              >
+                <div
+                  className="absolute inset-y-0 left-0"
+                  style={{ width: `${Math.max(d.chance, 2)}%`, backgroundColor: OUTCOME_COLOR.legendary, opacity: 0.5 }}
+                />
+                <span className="absolute inset-0 flex items-center px-2 font-body text-xs text-parchment">
+                  <span className="w-12 shrink-0 font-semibold tabular-nums">{d.chance}%</span>
+                  {d.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {pools.map((power) => (
         <div key={power.key}>
           <h3 className="eyebrow mb-2" style={{ color: tier.accent }}>
