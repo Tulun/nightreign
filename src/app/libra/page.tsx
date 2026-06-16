@@ -1,4 +1,5 @@
 import { LibraDeals } from "@/components/LibraDeals";
+import { LibraStatTable } from "@/components/LibraStatTable";
 
 export default function LibraPage() {
   return (
@@ -15,6 +16,16 @@ export default function LibraPage() {
       </header>
 
       <LibraDeals />
+
+      <section className="mt-12 border-t border-night-600 pt-8">
+        <h2 className="font-display text-2xl font-bold text-parchment">Stat-Swap Deals</h2>
+        <p className="mb-5 mt-1 max-w-prose font-body text-parchment-muted">
+          The &ldquo;great strength/dexterity/&hellip;&rdquo; deals overwrite your
+          statline with a fixed block. Compare each block against the
+          Nightfarers&rsquo; native level-15 attributes.
+        </p>
+        <LibraStatTable />
+      </section>
     </div>
   );
 }
