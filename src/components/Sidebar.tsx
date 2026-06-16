@@ -16,6 +16,7 @@ const sections: { label: string; href: string; soon?: boolean }[] = [
   { label: "Bagcraft", href: "/bagcraft" },
   { label: "Libra Deals", href: "/libra" },
   { label: "Stat Swaps", href: "/stat-swaps" },
+  { label: "Boss Loot", href: "/field-bosses" },
   { label: "Nightlords", href: "/nightlords", soon: true },
   { label: "Relics", href: "/relics", soon: true },
   { label: "Shifting Earth", href: "/shifting-earth", soon: true },
