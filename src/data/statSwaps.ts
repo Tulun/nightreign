@@ -11,7 +11,7 @@ import type { CharacterSwaps, SwapStats } from "@/lib/statSwaps";
 
 export const SWAP_CREDIT = "Stat tables from r/Nightreign";
 export const SWAP_NOTE =
-  "Default values are relic-free. Toggle “With relics” to add each swap relic's bonus stats. Brackets show the change from Default.";
+  "Default values are relic-free. Toggle “Signboard relics” to add each relic's bonus stats. “Both” combines both swaps. Brackets show the change from Default; ↓ marks what each lowers.";
 
 // stat order: hp, fp, stm, str, dex, int, fai, arc
 const s = (
