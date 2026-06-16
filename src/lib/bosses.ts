@@ -53,4 +53,15 @@ export const BOSS_CATEGORIES: { key: BossCategory; label: string }[] = [
   { key: "field", label: "Field Bosses" },
 ];
 
+export const DAMAGE_LABEL: Record<NegationKey, string> = {
+  standard: "Standard",
+  slash: "Slash",
+  strike: "Strike",
+  pierce: "Pierce",
+  magic: "Magic",
+  fire: "Fire",
+  lightning: "Lightning",
+  holy: "Holy",
+};
+
 export const BOSS_CREDIT = "Stats from eldenringnightreign.wiki.fextralife.com";

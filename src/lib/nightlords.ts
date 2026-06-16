@@ -70,8 +70,26 @@ export const WEAKNESS: Record<WeaknessElement, { label: string; color: string; i
   fire: { label: "Fire", color: "#e08a4a", icon: "/icons/elements/fire-affinity.png" },
   lightning: { label: "Lightning", color: "#e3c45a", icon: "/icons/elements/lightning-affinity.png" },
   magic: { label: "Magic", color: "#5aa0e0", icon: "/icons/elements/magic-affinity.png" },
-  poison: { label: "Poison", color: "#8fbf3f" },
-  madness: { label: "Madness", color: "#e0a838" },
-  sleep: { label: "Sleep", color: "#8fb8e0" },
+  poison: { label: "Poison", color: "#8fbf3f", icon: "/icons/status/poison.png" },
+  madness: { label: "Madness", color: "#e0a838", icon: "/icons/status/madness.png" },
+  sleep: { label: "Sleep", color: "#8fb8e0", icon: "/icons/status/sleep.png" },
   strike: { label: "Strike", color: "#cbb890" },
+};
+
+/** Affinity icons for elemental damage types (physical types have no icon). */
+export const ELEMENT_ICON: Partial<Record<NegationKey, string>> = {
+  magic: "/icons/elements/magic-affinity.png",
+  fire: "/icons/elements/fire-affinity.png",
+  lightning: "/icons/elements/lightning-affinity.png",
+  holy: "/icons/elements/holy-affinity.png",
+};
+
+/** Status-effect icons (drop the PNGs in public/icons/status/). */
+export const STATUS_ICON: Record<StatusKey, string> = {
+  poison: "/icons/status/poison.png",
+  rot: "/icons/status/rot.png",
+  bleed: "/icons/status/bleed.png",
+  frost: "/icons/status/frost.png",
+  sleep: "/icons/status/sleep.png",
+  madness: "/icons/status/madness.png",
 };

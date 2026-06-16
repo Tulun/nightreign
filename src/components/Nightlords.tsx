@@ -1,8 +1,10 @@
 import Image from "next/image";
 import { nightlords, NIGHTLORD_CREDIT } from "@/data/nightlords";
 import {
+  ELEMENT_ICON,
   NEGATION_COLUMNS,
   STATUS_COLUMNS,
+  STATUS_ICON,
   WEAKNESS,
   type NegationKey,
   type Nightlord,
@@ -12,6 +14,7 @@ import {
   type WeaknessElement,
 } from "@/lib/nightlords";
 import { asset } from "@/lib/assets";
+import { StatIcon } from "@/components/StatIcon";
 
 /** The Nightlords with weaknesses, damage negations, resistances, and HP. */
 export function Nightlords() {
@@ -39,7 +42,7 @@ export function Nightlords() {
 
       <p className="mt-6 font-body text-xs text-parchment-faint">
         Negation: <span className="text-red-300">negative</span> = weakness (takes more damage),{" "}
-        <span className="text-sky-300">&gt; 20</span> = strong resistance, positive = resists. HP is the
+        <span className="text-sky-300">20+</span> = strong resistance, positive = resists. HP is the
         solo value; it scales with team size. {NIGHTLORD_CREDIT}.
       </p>
     </div>
@@ -128,15 +131,19 @@ function NegationGrid({ negations }: { negations: Record<NegationKey, number> })
         const cls =
           v < 0
             ? "border-red-500/60 text-red-300"
-            : v > 20
+            : v >= 20
               ? "border-sky-500/60 bg-sky-500/10 text-sky-300"
               : v > 0
                 ? "border-night-600 text-parchment-faint"
                 : "border-night-700 text-parchment-muted";
+        const icon = ELEMENT_ICON[col.key];
         return (
           <div key={col.key} className={`rounded border ${cls} px-1.5 py-1 text-center`}>
-            <div className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">
-              {col.label}
+            <div className="flex items-center justify-center gap-1">
+              {icon && <StatIcon src={icon} alt={col.label} size={12} />}
+              <span className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">
+                {col.label}
+              </span>
             </div>
             <div className="font-display text-sm font-semibold tabular-nums">
               {v > 0 ? `+${v}` : v}
@@ -152,7 +159,7 @@ function StatusChips({ resistances }: { resistances: Record<StatusKey, Resist> }
   return (
     <div className="flex flex-wrap gap-1.5">
       {STATUS_COLUMNS.map((col) => (
-        <ResistChip key={col.key} label={col.label} value={resistances[col.key]} />
+        <ResistChip key={col.key} label={col.label} icon={STATUS_ICON[col.key]} value={resistances[col.key]} />
       ))}
     </div>
   );
@@ -173,15 +180,16 @@ function WeaknessChip({ w }: { w: WeaknessElement }) {
   );
 }
 
-function ResistChip({ label, value }: { label: string; value: Resist }) {
+function ResistChip({ label, icon, value }: { label: string; icon?: string; value: Resist }) {
   if (value === null) return null;
   const immune = value === "Immune";
   return (
     <span
-      className={`rounded border px-1.5 py-0.5 font-body text-[0.7rem] ${
+      className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-body text-[0.7rem] ${
         immune ? "border-gold-faint text-gold" : "border-night-700 text-parchment-muted"
       }`}
     >
+      {icon && <StatIcon src={icon} alt={label} size={14} />}
       {label} <span className="font-semibold">{immune ? "Imm" : value}</span>
     </span>
   );
