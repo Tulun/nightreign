@@ -4,13 +4,31 @@
 //  Everdark versions share negations/resistances with normal; only HP differs.
 // ─────────────────────────────────────────────────────────────────────────
 
-export type WeaknessElement = "holy" | "fire" | "lightning" | "magic" | "poison" | "madness";
+export type WeaknessElement =
+  | "holy"
+  | "fire"
+  | "lightning"
+  | "magic"
+  | "poison"
+  | "madness"
+  | "sleep"
+  | "strike";
 
 export type NegationKey = "standard" | "slash" | "strike" | "pierce" | "magic" | "fire" | "lightning" | "holy";
 export type StatusKey = "poison" | "rot" | "bleed" | "frost" | "sleep" | "madness";
 
 /** A status value: a number (buildup resistance), "Immune", or null (not listed). */
 export type Resist = number | "Immune" | null;
+
+/** A single phase of a multi-phase boss, with its own defenses. */
+export interface NightlordPhase {
+  label: string;
+  /** Solo (·) HP for this phase. */
+  hp: number | null;
+  negations: Record<NegationKey, number>;
+  resistances: Record<StatusKey, Resist>;
+  note?: string;
+}
 
 export interface Nightlord {
   id: string;
@@ -19,10 +37,12 @@ export interface Nightlord {
   weaknesses: WeaknessElement[];
   negations: Record<NegationKey, number>;
   resistances: Record<StatusKey, Resist>;
-  /** Base (solo ·) HP. */
-  hpNormal: number;
+  /** Base (solo ·) HP. null = not documented. */
+  hpNormal: number | null;
   hpEverdark: number | null;
   note: string;
+  /** Multi-phase final bosses: per-phase defenses, shown stacked. */
+  phases?: NightlordPhase[];
 }
 
 export const NEGATION_COLUMNS: { key: NegationKey; label: string }[] = [
@@ -52,4 +72,6 @@ export const WEAKNESS: Record<WeaknessElement, { label: string; color: string; i
   magic: { label: "Magic", color: "#5aa0e0", icon: "/icons/elements/magic-affinity.png" },
   poison: { label: "Poison", color: "#8fbf3f" },
   madness: { label: "Madness", color: "#e0a838" },
+  sleep: { label: "Sleep", color: "#8fb8e0" },
+  strike: { label: "Strike", color: "#cbb890" },
 };

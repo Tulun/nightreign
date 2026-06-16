@@ -4,24 +4,43 @@ import {
   NEGATION_COLUMNS,
   STATUS_COLUMNS,
   WEAKNESS,
+  type NegationKey,
   type Nightlord,
+  type NightlordPhase,
   type Resist,
+  type StatusKey,
   type WeaknessElement,
 } from "@/lib/nightlords";
 import { asset } from "@/lib/assets";
 
-/** The 8 Nightlords with weaknesses, damage negations, resistances, and HP. */
+/** The Nightlords with weaknesses, damage negations, resistances, and HP. */
 export function Nightlords() {
+  const standard = nightlords.filter((nl) => !nl.phases);
+  const finals = nightlords.filter((nl) => nl.phases);
+
   return (
     <div>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        {nightlords.map((nl) => (
+        {standard.map((nl) => (
           <NightlordCard key={nl.id} nl={nl} />
         ))}
       </div>
+
+      {finals.length > 0 && (
+        <div className="mt-8">
+          <h3 className="eyebrow mb-3 text-gold">Final Bosses · multi-phase</h3>
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            {finals.map((nl) => (
+              <NightlordCard key={nl.id} nl={nl} />
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="mt-6 font-body text-xs text-parchment-faint">
-        Negation: negative = weakness (takes more damage), positive = resists. HP is the solo value;
-        it scales with team size. {NIGHTLORD_CREDIT}.
+        Negation: <span className="text-red-300">negative</span> = weakness (takes more damage),{" "}
+        <span className="text-sky-300">&gt; 20</span> = strong resistance, positive = resists. HP is the
+        solo value; it scales with team size. {NIGHTLORD_CREDIT}.
       </p>
     </div>
   );
@@ -32,17 +51,20 @@ function NightlordCard({ nl }: { nl: Nightlord }) {
     <div className="frame rounded-lg bg-night-800 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="eyebrow">{nl.alias}</p>
+          {nl.alias !== nl.name && <p className="eyebrow">{nl.alias}</p>}
           <h3 className="mt-0.5 font-display text-xl font-bold text-parchment">{nl.name}</h3>
         </div>
-        <div className="shrink-0 text-right font-body text-xs text-parchment-muted">
-          <div>
-            <span className="text-parchment-faint">HP</span> {nl.hpNormal.toLocaleString()}
+        {!nl.phases && (
+          <div className="shrink-0 text-right font-body text-xs text-parchment-muted">
+            <div>
+              <span className="text-parchment-faint">HP</span>{" "}
+              {nl.hpNormal !== null ? nl.hpNormal.toLocaleString() : "—"}
+            </div>
+            {nl.hpEverdark && (
+              <div className="text-red-300">Everdark {nl.hpEverdark.toLocaleString()}</div>
+            )}
           </div>
-          {nl.hpEverdark && (
-            <div className="text-red-300">Everdark {nl.hpEverdark.toLocaleString()}</div>
-          )}
-        </div>
+        )}
       </div>
 
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -54,33 +76,84 @@ function NightlordCard({ nl }: { nl: Nightlord }) {
         ))}
       </div>
 
-      {/* Damage negations */}
-      <div className="mt-3 grid grid-cols-4 gap-1.5">
-        {NEGATION_COLUMNS.map((col) => {
-          const v = nl.negations[col.key];
-          const cls =
-            v < 0 ? "border-red-500/60 text-red-300" : v > 0 ? "border-night-600 text-parchment-faint" : "border-night-700 text-parchment-muted";
-          return (
-            <div key={col.key} className={`rounded border ${cls} px-1.5 py-1 text-center`}>
-              <div className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">
-                {col.label}
-              </div>
-              <div className="font-display text-sm font-semibold tabular-nums">
-                {v > 0 ? `+${v}` : v}
-              </div>
+      {nl.phases ? (
+        <div className="mt-3 space-y-3">
+          {nl.phases.map((phase) => (
+            <PhaseBlock key={phase.label} phase={phase} />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="mt-3">
+            <NegationGrid negations={nl.negations} />
+          </div>
+          <div className="mt-2">
+            <StatusChips resistances={nl.resistances} />
+          </div>
+        </>
+      )}
+
+      <p className="mt-3 font-body text-sm text-parchment-muted">{nl.note}</p>
+    </div>
+  );
+}
+
+function PhaseBlock({ phase }: { phase: NightlordPhase }) {
+  return (
+    <div className="rounded-md border border-night-700 bg-night-900/40 p-3">
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <p className="font-display text-sm font-semibold text-parchment">{phase.label}</p>
+        {phase.hp !== null && (
+          <span className="font-body text-xs text-parchment-muted">
+            <span className="text-parchment-faint">HP</span> {phase.hp.toLocaleString()}
+          </span>
+        )}
+      </div>
+      <NegationGrid negations={phase.negations} />
+      <div className="mt-2">
+        <StatusChips resistances={phase.resistances} />
+      </div>
+      {phase.note && (
+        <p className="mt-2 font-body text-xs text-parchment-faint">{phase.note}</p>
+      )}
+    </div>
+  );
+}
+
+function NegationGrid({ negations }: { negations: Record<NegationKey, number> }) {
+  return (
+    <div className="grid grid-cols-4 gap-1.5">
+      {NEGATION_COLUMNS.map((col) => {
+        const v = negations[col.key];
+        const cls =
+          v < 0
+            ? "border-red-500/60 text-red-300"
+            : v > 20
+              ? "border-sky-500/60 bg-sky-500/10 text-sky-300"
+              : v > 0
+                ? "border-night-600 text-parchment-faint"
+                : "border-night-700 text-parchment-muted";
+        return (
+          <div key={col.key} className={`rounded border ${cls} px-1.5 py-1 text-center`}>
+            <div className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">
+              {col.label}
             </div>
-          );
-        })}
-      </div>
+            <div className="font-display text-sm font-semibold tabular-nums">
+              {v > 0 ? `+${v}` : v}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-      {/* Status resistances */}
-      <div className="mt-2 flex flex-wrap gap-1.5">
-        {STATUS_COLUMNS.map((col) => (
-          <ResistChip key={col.key} label={col.label} value={nl.resistances[col.key]} />
-        ))}
-      </div>
-
-      <p className="mt-2 font-body text-sm text-parchment-muted">{nl.note}</p>
+function StatusChips({ resistances }: { resistances: Record<StatusKey, Resist> }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {STATUS_COLUMNS.map((col) => (
+        <ResistChip key={col.key} label={col.label} value={resistances[col.key]} />
+      ))}
     </div>
   );
 }

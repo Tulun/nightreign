@@ -9,7 +9,8 @@ export default function NightlordsPage() {
           Nightlords
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
-          The eight expedition end-bosses and the damage type each is weak to.
+          The expedition end-bosses and the damage type each is weak to — including the
+          Forsaken Hollows additions (Balancers & Dreglord).
         </p>
       </header>
 

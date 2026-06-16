@@ -75,6 +75,52 @@ export const nightlords: Nightlord[] = [
     negations: { standard: 0, slash: 10, strike: -10, pierce: -15, magic: 0, fire: 0, lightning: -20, holy: -20 },
     resistances: { poison: "Immune", rot: 252, bleed: "Immune", frost: "Immune", sleep: 542, madness: "Immune" },
     hpNormal: 11214, hpEverdark: null,
-    note: "Final Nightlord, two phases (Shape of Night → Heolstor). Stats shown are Phase 2; Phase 1 is −35 Holy.",
+    note: "Final Nightlord. Phase 1 (Shape of Night) is hardest hit by Holy; Phase 2 (Heolstor) shifts toward Strike/Lightning/Holy. Immune to Poison, Bleed, Frost & Madness throughout.",
+    phases: [
+      {
+        label: "Phase 1 · Shape of Night",
+        hp: 4984,
+        negations: { standard: 0, slash: -15, strike: 10, pierce: -10, magic: 0, fire: -20, lightning: 0, holy: -35 },
+        resistances: { poison: "Immune", rot: 252, bleed: "Immune", frost: "Immune", sleep: 542, madness: "Immune" },
+      },
+      {
+        label: "Phase 2 · Heolstor",
+        hp: 11214,
+        negations: { standard: 0, slash: 10, strike: -10, pierce: -15, magic: 0, fire: 0, lightning: -20, holy: -20 },
+        resistances: { poison: "Immune", rot: 252, bleed: "Immune", frost: "Immune", sleep: 542, madness: "Immune" },
+      },
+    ],
+  },
+  // ── Forsaken Hollows DLC ──────────────────────────────────────────────
+  {
+    id: "balancers", name: "Weapon Bequeathed Harmonia", alias: "Balancers",
+    weaknesses: ["strike", "sleep"],
+    negations: { standard: 0, slash: 8, strike: -10, pierce: 0, magic: 0, fire: 8, lightning: 10, holy: 30 },
+    resistances: { poison: 252, rot: 252, bleed: 252, frost: 252, sleep: 84, madness: "Immune" },
+    hpNormal: null, hpEverdark: null,
+    note: "Seven valkyries — extremely weak to Sleep (84 buildup) and Strike. Resists Holy heavily. Revive at ~70% for Phase 2 (Everdark adds a leviathan Phase 3). HP not documented.",
+  },
+  {
+    id: "dreglord", name: "Dreglord", alias: "Forsaken Hollows",
+    weaknesses: ["fire", "holy"],
+    negations: { standard: 0, slash: -10, strike: 0, pierce: -10, magic: 0, fire: -20, lightning: 10, holy: -25 },
+    resistances: { poison: 542, rot: 542, bleed: 252, frost: 252, sleep: 252, madness: "Immune" },
+    hpNormal: 11554, hpEverdark: null,
+    note: "Weak to Fire & Holy (and Slash/Pierce); resists Lightning. Revives to full HP for Phase 2, which adds Scarlet Rot attacks but keeps the same defenses.",
+    phases: [
+      {
+        label: "Phase 1 · Traitorous Straghess",
+        hp: 11554,
+        negations: { standard: 0, slash: -10, strike: 0, pierce: -10, magic: 0, fire: -20, lightning: 10, holy: -25 },
+        resistances: { poison: 542, rot: 542, bleed: 252, frost: 252, sleep: 252, madness: "Immune" },
+      },
+      {
+        label: "Phase 2 · Pure Impulse Straghess",
+        hp: 11554,
+        negations: { standard: 0, slash: -10, strike: 0, pierce: -10, magic: 0, fire: -20, lightning: 10, holy: -25 },
+        resistances: { poison: 542, rot: 542, bleed: 252, frost: 252, sleep: 252, madness: "Immune" },
+        note: "Revives to full HP — negations & resistances unchanged from Phase 1.",
+      },
+    ],
   },
 ];
