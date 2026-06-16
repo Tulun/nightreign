@@ -10,6 +10,7 @@ import { SWAP_STAT_COLUMNS } from "@/lib/statSwaps";
  */
 export function StatSwaps() {
   const [name, setName] = useState(characterSwaps[0].name);
+  const [withRelics, setWithRelics] = useState(false);
   const character = characterSwaps.find((c) => c.name === name) ?? characterSwaps[0];
 
   return (
@@ -35,6 +36,28 @@ export function StatSwaps() {
             </button>
           );
         })}
+      </div>
+
+      {/* Relic toggle */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setWithRelics((v) => !v)}
+          aria-pressed={withRelics}
+          className={`frame rounded-md px-3 py-1.5 font-body text-sm transition-colors ${
+            withRelics
+              ? "bg-night-700 text-gold-bright"
+              : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
+          }`}
+          style={withRelics ? { borderColor: "#c9a227" } : undefined}
+        >
+          With relics {withRelics ? "✓" : ""}
+        </button>
+        <span className="font-body text-xs text-parchment-faint">
+          {withRelics
+            ? "In-game values — swap relic bonuses included"
+            : "Relic-free default values"}
+        </span>
       </div>
 
       <div className="overflow-x-auto">
@@ -66,13 +89,10 @@ export function StatSwaps() {
             {character.swaps.map((swap) => (
               <tr key={swap.label} className="border-b border-night-800">
                 <td className="px-2 py-2 font-body text-parchment-muted">{swap.label}</td>
-                {SWAP_STAT_COLUMNS.map((col) => (
-                  <SwapCell
-                    key={col.key}
-                    value={swap.stats[col.key]}
-                    base={character.base[col.key]}
-                  />
-                ))}
+                {SWAP_STAT_COLUMNS.map((col) => {
+                  const value = swap.stats[col.key] - (withRelics ? 0 : swap.bonus[col.key] ?? 0);
+                  return <SwapCell key={col.key} value={value} base={character.base[col.key]} />;
+                })}
               </tr>
             ))}
           </tbody>

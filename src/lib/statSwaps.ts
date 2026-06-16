@@ -18,10 +18,22 @@ export const SWAP_STAT_COLUMNS: { key: SwapStatKey; label: string }[] = [
   { key: "arc", label: "ARC" },
 ];
 
+export interface SwapOption {
+  label: string;
+  /** Stats WITH the swap relic equipped (as seen in-game). */
+  stats: SwapStats;
+  /**
+   * The relic's flat bonus, in chart units (vigor→HP ×20, mind→FP ×5,
+   * endurance→STM ×2; STR/DEX/INT/FTH/ARC direct). Subtracted to get the
+   * relic-free default values.
+   */
+  bonus: Partial<SwapStats>;
+}
+
 export interface CharacterSwaps {
   name: string;
-  /** The "Default" statline. */
+  /** The "Default" statline (relic-free). */
   base: SwapStats;
   /** Available swap options for this character. */
-  swaps: { label: string; stats: SwapStats }[];
+  swaps: SwapOption[];
 }
