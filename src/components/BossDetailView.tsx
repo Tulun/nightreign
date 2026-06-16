@@ -1,4 +1,4 @@
-import { BOSS_CREDIT, DAMAGE_LABEL, type Boss, type NegationKey, type Resist } from "@/lib/bosses";
+import { BOSS_CREDIT, DAMAGE_LABEL, type Boss, type NegationKey, type Resist, type TeamStat } from "@/lib/bosses";
 import { ELEMENT_ICON, NEGATION_COLUMNS, STATUS_COLUMNS, STATUS_ICON } from "@/lib/nightlords";
 import { StatIcon } from "@/components/StatIcon";
 
@@ -114,29 +114,49 @@ export function BossDetailView({ boss }: { boss: Boss }) {
         </div>
       </div>
 
-      {/* Drops */}
-      {boss.drops && boss.drops.length > 0 && (
+      {/* Encounter variants */}
+      {boss.variants && boss.variants.length > 0 && (
         <div>
-          <p className="eyebrow mb-2">Rune Drops</p>
+          <p className="eyebrow mb-2">Where you fight it · HP &amp; runes</p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {boss.drops.map((d) => (
-              <div key={d.source} className="rounded-md border border-night-700 bg-night-800/60 px-3 py-2 font-body text-sm text-parchment-muted">
-                <span className="font-semibold text-parchment">{d.source}</span>
-                {d.reward && <span className="text-gold-dim"> · {d.reward}</span>}
-                <div className="mt-1 flex flex-wrap gap-x-4 text-parchment-faint">
-                  {typeof d.solo === "number" && <span>Solo {d.solo.toLocaleString()}</span>}
-                  {typeof d.duo === "number" && <span>Duo {d.duo.toLocaleString()}</span>}
-                  {typeof d.trio === "number" && <span>Trio {d.trio.toLocaleString()}</span>}
+            {boss.variants.map((v) => (
+              <div key={v.label} className="rounded-md border border-night-700 bg-night-800/60 p-3">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="font-display text-sm font-semibold text-parchment">{v.label}</p>
+                  {v.reward && <span className="font-body text-[0.7rem] text-gold-dim">{v.reward}</span>}
                 </div>
+                {v.hp && <StatRow label="HP" stat={v.hp} />}
+                {v.runes && <StatRow label="Runes" stat={v.runes} />}
+                {v.note && <p className="mt-1.5 font-body text-xs text-parchment-faint">{v.note}</p>}
               </div>
             ))}
           </div>
+          <p className="mt-2 font-body text-xs text-parchment-faint">
+            Negations &amp; resistances above are shared across all variants; only HP, runes, and attack power differ.
+          </p>
         </div>
       )}
 
       {boss.note && <p className="max-w-prose font-body text-sm text-parchment-muted">{boss.note}</p>}
 
       <p className="font-body text-xs text-parchment-faint">{BOSS_CREDIT}.</p>
+    </div>
+  );
+}
+
+function StatRow({ label, stat }: { label: string; stat: TeamStat }) {
+  const parts = [
+    typeof stat.solo === "number" ? `Solo ${stat.solo.toLocaleString()}` : null,
+    typeof stat.duo === "number" ? `Duo ${stat.duo.toLocaleString()}` : null,
+    typeof stat.trio === "number" ? `Trio ${stat.trio.toLocaleString()}` : null,
+  ].filter((p): p is string => p !== null);
+  if (parts.length === 0) return null;
+  return (
+    <div className="mt-1 flex flex-wrap items-baseline gap-x-3 font-body text-xs text-parchment-muted">
+      <span className="w-9 shrink-0 text-parchment-faint">{label}</span>
+      {parts.map((p) => (
+        <span key={p} className="tabular-nums">{p}</span>
+      ))}
     </div>
   );
 }

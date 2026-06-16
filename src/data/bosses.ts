@@ -1,4 +1,4 @@
-import type { Boss } from "@/lib/bosses";
+import type { Boss, BossVariant } from "@/lib/bosses";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -11,7 +11,7 @@ import type { Boss } from "@/lib/bosses";
  *  carries multiple `categories`. weakTo / strongerVs only list damage types.
  */
 
-export const bosses: Boss[] = [
+const baseBosses: Boss[] = [
   // ── Night 1 ───────────────────────────────────────────────────────────
   {
     id: "demi-human-queen-swordmaster",
@@ -39,6 +39,36 @@ export const bosses: Boss[] = [
     weakTo: ["pierce"],
     strongerVs: ["standard", "slash", "strike", "magic", "fire", "holy"],
     quote: "Elemer murdered numerous instructors and merchants, and was known as the Bell Bearing Hunter.",
+    variants: [
+      {
+        label: "Night Boss",
+        hp: { solo: 3456, duo: 6912, trio: 10368 },
+        runes: { solo: 36000, duo: 31200, trio: 24000 },
+        reward: "Night 1 Boss Reward",
+        note: "After day 1 of Tricephalos & Night Aspect. ~43% less attack power than the field boss.",
+      },
+      {
+        label: "Field Boss",
+        hp: { solo: 5708, duo: 9932, trio: 14156 },
+        runes: { solo: 45000, duo: 39000, trio: 30000 },
+        reward: "Strong Field Boss Reward",
+        note: "Formidable Great Enemy — marked on the map at the start of day 2.",
+      },
+      {
+        label: "Castle Basement",
+        hp: { solo: 6870, duo: 11954, trio: 17038 },
+        runes: { solo: 90000, duo: 78000, trio: 60000 },
+        reward: "Strong Field Boss Reward",
+        note: "~20% more attack power than the field boss. Never appears when Noklateo is active.",
+      },
+      {
+        label: "Castle Rooftop",
+        hp: { solo: 6870, duo: 11954, trio: 17038 },
+        runes: { solo: 90000, duo: 78000, trio: 60000 },
+        reward: "Strong Field Boss Reward",
+        note: "Never appears when Noklateo is active.",
+      },
+    ],
   },
   {
     id: "gaping-dragon",
@@ -79,9 +109,9 @@ export const bosses: Boss[] = [
     resistances: { poison: "Immune", rot: "Immune", bleed: "Immune", frost: "Immune", sleep: "Immune", madness: "Immune" },
     weakTo: ["strike"],
     strongerVs: ["slash", "pierce", "fire", "lightning", "holy"],
-    drops: [
-      { source: "Night Boss", solo: 38400, trio: 25600, reward: "Night 1 Boss Reward" },
-      { source: "The Crater", solo: 67500, trio: 45000, reward: "Strong Crater Reward" },
+    variants: [
+      { label: "Night Boss", runes: { solo: 38400, trio: 25600 }, reward: "Night 1 Boss Reward" },
+      { label: "The Crater", runes: { solo: 67500, trio: 45000 }, reward: "Strong Crater Reward" },
     ],
     note: "Immune to every status. Hit it with Strike; it resists everything else.",
   },
@@ -499,10 +529,10 @@ export const bosses: Boss[] = [
     resistances: { poison: "Immune", rot: "Immune", bleed: "Immune", frost: 154, sleep: "Immune", madness: "Immune" },
     weakTo: ["standard", "slash", "strike"],
     strongerVs: ["pierce", "holy"],
-    drops: [
-      { source: "Field Boss", solo: 22500, duo: 19500, trio: 15000, reward: "Weak Field Boss Reward" },
-      { source: "Castle Basement", solo: 37500, duo: 32500, trio: 25000, reward: "Strong Field Boss Reward" },
-      { source: "Noklateo", solo: 22500, duo: 19500, trio: 15000 },
+    variants: [
+      { label: "Field Boss", runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward" },
+      { label: "Castle Basement", runes: { solo: 37500, duo: 32500, trio: 25000 }, reward: "Strong Field Boss Reward" },
+      { label: "Noklateo", runes: { solo: 22500, duo: 19500, trio: 15000 } },
     ],
     note: "Parryable and open to backstabs. Resists Pierce & Holy.",
   },
@@ -691,3 +721,192 @@ export const bosses: Boss[] = [
     note: "Copies your party's build, so its defenses mirror your own — the wiki lists no fixed stats.",
   },
 ];
+
+/**
+ * Per-boss encounter variants (HP + rune drops by team size) scraped from the
+ * wiki's "Locations & Drops" sections. Merged onto bosses that don't already
+ * carry inline variants. Many entries list only solo/trio (duo omitted on the
+ * source); attack-power differences are summarized in each variant's note.
+ */
+const BOSS_VARIANTS: Record<string, BossVariant[]> = {
+  "demi-human-queen-swordmaster": [
+    { label: "Night Boss", hp: { solo: 2904, duo: 5808, trio: 8712 }, runes: { solo: 36600, duo: 31720, trio: 24400 }, reward: "Night 1 Boss Reward", note: "Combined Queen & Swordmaster; after day 1 of Tricephalos & Night Aspect." },
+  ],
+  "gaping-dragon": [
+    { label: "Night Boss", hp: { solo: 5398, duo: 10796, trio: 16194 }, runes: { solo: 38400, duo: 33280, trio: 25600 }, reward: "Night 1 Boss Reward", note: "After day 1 of Gaping Jaw, Augur, Darkdrift Knight & Night Aspect." },
+  ],
+  wormface: [
+    { label: "Night Boss", hp: { solo: 2613, trio: 7839 }, runes: { solo: 38400, trio: 25600 }, reward: "Night 1 Boss Reward", note: "Deals ~17% more damage than the Ruins version." },
+    { label: "Ruins", hp: { solo: 2507, trio: 3008 }, runes: { solo: 16200, trio: 10800 }, reward: "Strong Standard Reward", note: "Death Blight ruins boss; any expedition." },
+  ],
+  "the-dukes-dear-freja": [
+    { label: "Night Boss", hp: { solo: 2459, trio: 7377 }, runes: { solo: 38400, trio: 25600 }, reward: "Night 1 Boss Reward", note: "After day 1 of Gaping Jaw, Equilibrious Beast, Fissure in the Fog & Night Aspect." },
+  ],
+  "smelter-demon": [
+    { label: "Night Boss", hp: { solo: 6827, trio: 20481 }, runes: { solo: 38400, trio: 25600 }, reward: "Night 1 Boss Reward", note: "Sentient Pest/Augur/Fissure in the Fog/Night Aspect; possible 2nd boss in Gaping Jaw when Rotted Woods is active." },
+  ],
+  "battlefield-commander": [
+    { label: "Night Boss", hp: { solo: 3162, trio: 9486 }, runes: { solo: 36000, trio: 24000 }, reward: "Night 1 Boss Reward", note: "After day 1 of Sentient Pest, Equilibrious Beast & Night Aspect." },
+  ],
+  "centipede-demon": [
+    { label: "Night Boss", hp: { solo: 4099, trio: 12297 }, runes: { solo: 38400, trio: 25600 }, reward: "Night 1 Boss Reward", note: "Sentient Pest/Equilibrious Beast/Darkdrift Knight/Night Aspect." },
+  ],
+  "tibia-mariner": [
+    { label: "Night Boss", hp: { solo: 3193, trio: 9579 }, runes: { solo: 42000, trio: 28000 }, reward: "Night 1 Boss Reward", note: "Sentient Pest/Equilibrious Beast/Fissure in the Fog/Night Aspect." },
+  ],
+  "ulcerated-tree-spirit": [
+    { label: "Night Boss", hp: { solo: 5222, trio: 15666 }, runes: { solo: 30000, trio: 20000 }, reward: "Night 1 Boss Reward", note: "~43% less damage than the field boss." },
+    { label: "Field Boss", hp: { solo: 6906, trio: 17127 }, runes: { solo: 45000, trio: 30000 }, reward: "Strong Field Boss Reward", note: "Formidable Great Enemy, marked day 2." },
+    { label: "Castle Rooftop", hp: { solo: 8288, trio: 20554 }, runes: { solo: 90000, trio: 60000 }, reward: "Strong Field Boss Reward", note: "~20% more damage; never when Noklateo active." },
+  ],
+  "grafted-monarch": [
+    { label: "Night Boss", hp: { solo: 4684, trio: 14052 }, runes: { solo: 36000, trio: 24000 }, reward: "Night 1 Boss Reward", note: "After day 1 of Augur / Fissure in the Fog / Night Aspect." },
+  ],
+  "royal-revenant": [
+    { label: "Night Boss", hp: { solo: 4170, duo: 8340, trio: 12510 }, runes: { solo: 36000, duo: 31200, trio: 24000 }, reward: "Night 1 Boss Reward", note: "~8% less attack power than the field boss." },
+    { label: "Field Boss", hp: { solo: 4284, duo: 5569, trio: 6854 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward", note: "Any expedition." },
+    { label: "Castle Basement", hp: { solo: 6212, duo: 8076, trio: 9939 }, runes: { solo: 37500, duo: 32500, trio: 25000 }, reward: "Strong Field Boss Reward", note: "+50% attack power; not when Noklateo active." },
+    { label: "Noklateo", hp: { solo: 1276, duo: 1659, trio: 2042 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Noklateo Reward", note: "+20% attack power; Noklateo only." },
+  ],
+  "death-knight": [
+    { label: "Night Boss", runes: { trio: 25600 }, reward: "Night 1 Boss Reward", note: "Dreglord expedition; wave 2 adds two Longhaft-Axe knights." },
+  ],
+  "demon-in-pain-and-demon-from-below": [
+    { label: "Night Boss", hp: { duo: 10796, trio: 16194 }, runes: { trio: 26400 }, reward: "Night 1 Boss Reward", note: "Balancers expedition." },
+  ],
+  "divine-beast-warrior-and-curseblade": [
+    { label: "Night Boss", runes: { solo: 40200, duo: 36058, trio: 26800 }, reward: "Night 1 Boss Reward", note: "Balancers expedition." },
+  ],
+  "great-red-bear": [
+    { label: "Night Boss", runes: { trio: 27720 }, reward: "Night 1 Boss Reward", note: "Dreglord expedition; preceded by two Lesser Runebears." },
+  ],
+  "nights-cavalry": [
+    { label: "Night Boss", hp: { solo: 1537, duo: 3074, trio: 4611 }, runes: { solo: 32400, duo: 28080, trio: 21600 }, reward: "Night 1 Boss Reward", note: "~8% less attack power than the field boss." },
+    { label: "Field Boss", hp: { solo: 1891, duo: 2458, trio: 3026 }, runes: { solo: 21900, duo: 18980, trio: 14600 }, reward: "Weak Field Boss Reward", note: "Any expedition." },
+    { label: "The Crater", runes: { solo: 60000 }, reward: "Strong Field Boss Reward", note: "Great Hollow variant; only when Great Hollow active." },
+  ],
+  "fell-omen": [
+    { label: "Night Boss", hp: { solo: 6048, trio: 18144 }, runes: { solo: 72000, trio: 48000 }, reward: "Night 2 Boss Reward", note: "Day 2; preceded by two Omens; adds Fire." },
+    { label: "Invasion", hp: { solo: 4099, trio: 6558 }, runes: { solo: 45000, trio: 30000 }, reward: "Traces of Grace-Given Lord", note: "~37% less damage than the night boss." },
+    { label: "Tutorial", hp: { solo: 9920 }, reward: "Fell Omen Fetish", note: "Intro encounter; ~31% less damage." },
+  ],
+  "tree-sentinel": [
+    { label: "Night Boss", hp: { solo: 4401, trio: 13203 }, runes: { solo: 57000, trio: 38000 }, reward: "Night 2 Boss Reward", note: "~8% less damage than the field boss." },
+    { label: "Field Boss", hp: { solo: 4919, trio: 12199 }, runes: { solo: 45000, trio: 30000 }, reward: "Strong Field Boss Reward", note: "Formidable Great Enemy." },
+    { label: "Castle Rooftop", hp: { solo: 5903, trio: 14639 }, runes: { solo: 90000, trio: 60000 }, reward: "Strong Field Boss Reward", note: "+20% damage; never when Noklateo active." },
+  ],
+  "ancient-dragon": [
+    { label: "Night Boss", hp: { solo: 6952, trio: 20856 }, runes: { solo: 66000, trio: 44000 }, reward: "Night 2 Boss Reward", note: "~7% less damage than the evergaol version." },
+    { label: "The Crater", hp: { solo: 3703, trio: 9183 }, runes: { solo: 60000, trio: 40000 }, reward: "Strong Evergaol Reward", note: "Evergaol boss; scales with the day it's opened." },
+  ],
+  "crucible-knight-golden-hippopotamus": [
+    { label: "Night Boss", hp: { solo: 4320, trio: 12960 }, runes: { solo: 60000, trio: 40000 }, reward: "Night 2 Boss Reward", note: "Hippo HP shown; Crucible Knight 2,932 solo. Combined drops." },
+  ],
+  "outland-commander": [
+    { label: "Night Boss", hp: { solo: 5599, trio: 16797 }, runes: { solo: 66000, trio: 44000 }, reward: "Night 2 Boss Reward", note: "Parryable; adds Frostbite & lightning in Phase 2." },
+  ],
+  "great-wyrm": [
+    { label: "Night Boss", hp: { solo: 8837, trio: 26511 }, runes: { solo: 63000, trio: 42000 }, reward: "Night 2 Boss Reward", note: "~8% less damage than the field boss (Patch 1.02.3)." },
+  ],
+  "nox-dragonkin-soldier": [
+    { label: "Night Boss", hp: { solo: 7446, trio: 22338 }, runes: { solo: 63000, trio: 42000 }, reward: "Night 2 Boss Reward", note: "5% chance as 2nd night boss in Gaping Jaw." },
+  ],
+  "draconic-tree-sentinel": [
+    { label: "Night Boss", hp: { solo: 4409, trio: 13227 }, runes: { solo: 57000, trio: 38000 }, reward: "Night 2 Boss Reward", note: "~24% less damage than the field boss." },
+    { label: "Field Boss", hp: { solo: 5624, trio: 13948 }, runes: { solo: 67500, trio: 45000 }, reward: "Strong Field Boss Reward", note: "Formidable Great Enemy." },
+    { label: "Castle Rooftop", hp: { solo: 6748, trio: 16735 }, runes: { solo: 135000, trio: 90000 }, reward: "Strong Field Boss Reward", note: "+20% damage; never when Noklateo active." },
+  ],
+  "full-grown-fallingstar-beast": [
+    { label: "Night Boss", hp: { solo: 6269, trio: 18807 }, runes: { solo: 66000, trio: 44000 }, reward: "Night 2 Boss Reward", note: "Crater variant deals ~8% more damage." },
+  ],
+  "godskin-duo": [
+    { label: "Night Boss", hp: { solo: 5548, trio: 16644 }, runes: { solo: 66000, trio: 44000 }, reward: "Night 2 Boss Reward", note: "Noble HP shown; Apostle 3,933 solo. Combined fight." },
+    { label: "Evergaol", hp: { solo: 5392, trio: 13372 }, runes: { solo: 60000, trio: 40000 }, reward: "Strong Evergaol Reward", note: "Scales with the day it's opened." },
+  ],
+  "death-rite-bird": [
+    { label: "Night Boss", hp: { solo: 5661, trio: 16983 }, runes: { solo: 66000, trio: 44000 }, reward: "Night 2 Boss Reward" },
+    { label: "Field Boss", hp: { solo: 5478, trio: 13585 }, runes: { solo: 67500, trio: 45000 }, reward: "Strong Field Boss Reward" },
+    { label: "Evergaol", hp: { solo: 6912, trio: 17142 }, runes: { solo: 60000, trio: 40000 }, reward: "Strong Evergaol Reward" },
+    { label: "Castle Rooftop", hp: { solo: 6574, trio: 16304 }, runes: { solo: 135000, trio: 90000 }, reward: "Strong Field Boss Reward", note: "+20% damage; never when Noklateo active." },
+  ],
+  "nameless-king": [
+    { label: "Night Boss", hp: { solo: 4779, trio: 14337 }, runes: { solo: 69000, trio: 46000 }, reward: "Night 2 Boss Reward", note: "HP is Phase 2 (Phase 1: 2,211 solo). Darkdrift Knight & Night Aspect." },
+  ],
+  "dancer-of-the-boreal-valley": [
+    { label: "Night Boss", hp: { solo: 4838, trio: 14514 }, runes: { solo: 63000, trio: 42000 }, reward: "Night 2 Boss Reward", note: "Fissure in the Fog & Night Aspect." },
+  ],
+  "knight-artorias": [
+    { label: "Night Boss", runes: { solo: 72000 }, reward: "Night 2 Boss Reward", note: "Dreglord expedition." },
+  ],
+  "divine-beast-dancing-lion": [
+    { label: "Night Boss", runes: { trio: 42000 }, reward: "Night 2 Boss Reward", note: "Dreglord expedition." },
+  ],
+  "lord-of-blood": [
+    { label: "Night Boss", runes: { solo: 69000, trio: 47610 }, reward: "Night 2 Boss Reward", note: "Balancers & Dreglord expeditions." },
+  ],
+  "demon-prince": [
+    { label: "Night Boss", runes: { trio: 48000 }, reward: "Night 2 Boss Reward", note: "Balancers expedition." },
+  ],
+  "grafted-scion": [
+    { label: "Field Boss", hp: { solo: 3404, duo: 4425, trio: 5446 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward", note: "Any expedition." },
+    { label: "Castle Basement", hp: { solo: 4936, duo: 6417, trio: 7898 }, runes: { solo: 37500, duo: 32500, trio: 25000 }, reward: "Strong Field Boss Reward", note: "+50% attack power; not when Noklateo active." },
+  ],
+  "red-wolf-of-the-king-consort": [
+    { label: "Field Boss", hp: { solo: 2190, duo: 2847, trio: 3504 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward", note: "Guaranteed spawn west of The Crater when active." },
+    { label: "Castle Basement", hp: { solo: 3175, duo: 4128, trio: 5080 }, runes: { solo: 37500, duo: 32500, trio: 25000 }, reward: "Strong Field Boss Reward", note: "+50% attack power; not when Noklateo active." },
+  ],
+  "ancient-hero-of-zamor": [
+    { label: "Cold Ruins", hp: { solo: 1128, duo: 1241, trio: 1354 }, runes: { solo: 21600, duo: 18720, trio: 14400 }, reward: "Strong Cold Reward", note: "Defeat three enemies." },
+    { label: "Field Boss", hp: { solo: 2665, duo: 3464, trio: 4264 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward", note: "+27% attack vs the Ruins version." },
+    { label: "Castle Basement", hp: { solo: 3865, duo: 5024, trio: 6184 }, runes: { solo: 37500, duo: 32500, trio: 25000 }, reward: "Strong Field Boss Reward", note: "+90% attack vs Ruins; not when Noklateo active." },
+  ],
+  "leonine-misbegotten": [
+    { label: "Encampment", hp: { solo: 1049, duo: 1154, trio: 1259 }, runes: { solo: 9600, duo: 8320, trio: 6400 }, reward: "Strong Standard Boss Reward" },
+    { label: "Field Boss", hp: { solo: 2331, duo: 3030, trio: 3730 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward" },
+    { label: "Castle Basement", hp: { solo: 3380, duo: 4394, trio: 5408 }, runes: { solo: 37500, duo: 32500, trio: 25000 }, reward: "Strong Field Boss Reward" },
+  ],
+  "elder-lion": [
+    { label: "Encampment", hp: { solo: 2022, duo: 2224, trio: 2426 }, runes: { solo: 12000, duo: 10400, trio: 8000 }, reward: "Strong Standard Reward" },
+    { label: "Field Boss", hp: { solo: 2165, duo: 2814, trio: 3464 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward" },
+    { label: "Castle Courtyard", hp: { solo: 2022, duo: 2224, trio: 2426 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Castle Miniboss Reward" },
+  ],
+  "golden-hippopotamus": [
+    { label: "Field Boss", hp: { solo: 3368, duo: 4378, trio: 5389 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward", note: "Guaranteed spawn in Noklateo's central chasm." },
+  ],
+  "miranda-blossom": [
+    { label: "Poison Ruins", hp: { solo: 3063, duo: 3369, trio: 3676 }, runes: { solo: 4800, duo: 4160, trio: 3200 }, note: "Regular enemy — no boss bar, no Dormant Power." },
+    { label: "Field Boss", hp: { solo: 3284, duo: 4269, trio: 5254 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward", note: "Joined by ten Miranda Sprouts." },
+  ],
+  "flying-dragon": [
+    { label: "Entourage", hp: { solo: 1610, duo: 3220, trio: 4830 }, runes: { solo: 10800, duo: 9360, trio: 7200 }, note: "Any expedition." },
+    { label: "The Crater", hp: { solo: 1915, duo: 2490, trio: 3064 }, runes: { solo: 22500, duo: 19500, trio: 15000 }, reward: "Weak Field Boss Reward", note: "Crater only." },
+    { label: "Mountaintop", hp: { solo: 1915, duo: 2490, trio: 3064 }, runes: { solo: 27000, duo: 23400, trio: 18000 }, reward: "Mountaintops Reward", note: "Mountaintop only." },
+  ],
+  "erdtree-avatar": [
+    { label: "Field Boss", hp: { solo: 5616, trio: 13928 }, runes: { solo: 45000, trio: 30000 }, reward: "Strong Field Boss Reward" },
+    { label: "Castle Rooftop", hp: { solo: 6740, trio: 16715 }, runes: { solo: 90000, trio: 60000 }, reward: "Strong Field Boss Reward", note: "+20% damage; never when Noklateo active." },
+  ],
+  "ancestor-spirit": [
+    { label: "Field Boss", hp: { solo: 4554, trio: 11294 }, runes: { solo: 45000, trio: 30000 }, reward: "Strong Field Boss Reward" },
+    { label: "Castle Rooftop", hp: { solo: 5465, trio: 13553 }, runes: { solo: 90000, trio: 60000 }, reward: "Strong Field Boss Reward", note: "+20% damage; never when Noklateo active." },
+  ],
+  "magma-wyrm": [
+    { label: "Field Boss", hp: { solo: 6485, trio: 16083 }, runes: { solo: 45000, trio: 30000 }, reward: "Strong Field Boss Reward" },
+    { label: "Castle Rooftop", hp: { solo: 7782, trio: 19299 }, runes: { solo: 90000, trio: 60000 }, reward: "Strong Field Boss Reward", note: "+20% damage." },
+    { label: "The Crater", hp: { solo: 6485, trio: 16083 }, runes: { solo: 67500, trio: 45000 }, reward: "Dormant Power + armament strengthening", note: "Crater only." },
+  ],
+  "royal-carian-knight": [
+    { label: "Field Boss", hp: { solo: 5198, trio: 12891 }, runes: { solo: 67500, trio: 45000 }, reward: "Strong Field Boss Reward", note: "Any expedition." },
+    { label: "Castle Rooftop", hp: { solo: 6237, trio: 15468 }, runes: { solo: 135000, trio: 90000 }, reward: "Strong Field Boss Reward", note: "+20% damage; never when Noklateo active." },
+  ],
+  "black-blade-kindred": [
+    { label: "Field Boss", hp: { solo: 4222, trio: 10471 }, runes: { solo: 67500, trio: 45000 }, reward: "Strong Field Boss Reward" },
+    { label: "Castle Rooftop", hp: { solo: 5067, trio: 12566 }, runes: { solo: 135000, trio: 90000 }, reward: "Strong Field Boss Reward", note: "+20% damage; never when Noklateo active." },
+  ],
+};
+
+/** Bosses with their variants merged in (inline variants win where present). */
+export const bosses: Boss[] = baseBosses.map((b) => {
+  const variants = b.variants ?? BOSS_VARIANTS[b.id];
+  return variants ? { ...b, variants } : b;
+});

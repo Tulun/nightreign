@@ -11,15 +11,29 @@ export type { NegationKey, Resist, StatusKey };
 
 export type BossCategory = "night1" | "night2" | "field";
 
-export interface BossDrop {
-  /** Where this drop applies (e.g. "Night Boss", "The Crater", "Castle Basement"). */
-  source: string;
-  /** Rune values keyed by team size. */
+/** A stat that scales with team size (solo · / duo ·· / trio ∴). */
+export interface TeamStat {
   solo?: number;
   duo?: number;
   trio?: number;
-  /** Reward quality note (e.g. "Strong Crater Reward"). */
+}
+
+/**
+ * A location/encounter variant of a boss. The same creature can appear as a
+ * Night Boss, Field Boss, Castle Basement, Castle Rooftop, etc., sharing
+ * negations/resistances but differing in HP, rune drops, and attack power.
+ */
+export interface BossVariant {
+  /** e.g. "Night Boss", "Field Boss", "Castle Basement", "The Crater". */
+  label: string;
+  /** HP per team size. */
+  hp?: TeamStat;
+  /** Rune reward per team size. */
+  runes?: TeamStat;
+  /** Reward quality note (e.g. "Strong Field Boss Reward"). */
   reward?: string;
+  /** Per-variant note (expeditions, attack-power difference, conditions). */
+  note?: string;
 }
 
 export interface Boss {
@@ -43,7 +57,8 @@ export interface Boss {
   weakTo: NegationKey[];
   /** Damage types it resists. */
   strongerVs: NegationKey[];
-  drops?: BossDrop[];
+  /** Per-location/encounter variants with their own HP & rune drops. */
+  variants?: BossVariant[];
   note?: string;
 }
 
