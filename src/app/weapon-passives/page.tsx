@@ -9,8 +9,9 @@ export default function WeaponPassivesPage() {
           Weapon Passives
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
-          Every weapon passive effect, whether it stacks with itself, and notes. “Power of …” effects
-          are grouped under Unique. Some effects only stack across different tiers.
+          Every weapon passive effect, whether it stacks with itself, and notes. Switch between the
+          Normal and Deep pools — Deep weapons add their own effects plus Curse drawbacks. “Power of …”
+          effects are grouped under Unique; some effects only stack across different tiers.
         </p>
       </header>
 

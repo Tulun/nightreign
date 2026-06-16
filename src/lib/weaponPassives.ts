@@ -5,7 +5,7 @@
 //  (e.g. a +1 and a +3 stack, two +2s don't) → the "tiers" stack kind.
 // ─────────────────────────────────────────────────────────────────────────
 
-export type PassiveCategory = "stat" | "offensive" | "defensive" | "regen" | "exploration" | "unique";
+export type PassiveCategory = "stat" | "offensive" | "defensive" | "regen" | "exploration" | "unique" | "curse";
 
 export type StackKind = "yes" | "no" | "tiers" | "maybe" | "unknown";
 
@@ -26,7 +26,10 @@ export const PASSIVE_CATEGORIES: { key: PassiveCategory; label: string }[] = [
   { key: "regen", label: "Regen" },
   { key: "exploration", label: "Exploration" },
   { key: "unique", label: "Unique" },
+  { key: "curse", label: "Curse" },
 ];
+
+export type PassivePool = "normal" | "deep";
 
 export const STACK_META: Record<StackKind, { label: string; cls: string; legend: string }> = {
   yes: { label: "Stacks", cls: "border-emerald-500/50 text-emerald-300", legend: "stacks with itself" },

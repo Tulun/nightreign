@@ -2,21 +2,34 @@
 
 import { useMemo, useState } from "react";
 import { weaponPassives } from "@/data/weaponPassives";
+import { deepWeaponPassives } from "@/data/deepWeaponPassives";
 import {
   PASSIVE_CATEGORIES,
   STACK_META,
   WEAPON_PASSIVE_CREDIT,
   type PassiveCategory,
+  type PassivePool,
   type WeaponPassive,
 } from "@/lib/weaponPassives";
 
+const POOLS: { key: PassivePool; label: string }[] = [
+  { key: "normal", label: "Normal" },
+  { key: "deep", label: "Deep" },
+];
+
 export function WeaponPassives() {
+  const [pool, setPool] = useState<PassivePool>("normal");
   const [cat, setCat] = useState<PassiveCategory | "all">("all");
   const [query, setQuery] = useState("");
 
+  const dataset = pool === "normal" ? weaponPassives : deepWeaponPassives;
+
+  // Only the categories that actually appear in the active pool.
+  const categories = PASSIVE_CATEGORIES.filter((c) => dataset.some((p) => p.category === c.key));
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return weaponPassives.filter((p) => {
+    return dataset.filter((p) => {
       if (cat !== "all" && p.category !== cat) return false;
       if (!q) return true;
       return (
@@ -25,16 +38,46 @@ export function WeaponPassives() {
         (p.note?.toLowerCase().includes(q) ?? false)
       );
     });
-  }, [cat, query]);
+  }, [dataset, cat, query]);
 
-  // Group the filtered list by category, in the canonical category order.
-  const groups = PASSIVE_CATEGORIES.map((c) => ({
-    ...c,
-    items: filtered.filter((p) => p.category === c.key),
-  })).filter((g) => g.items.length > 0);
+  const groups = categories
+    .map((c) => ({ ...c, items: filtered.filter((p) => p.category === c.key) }))
+    .filter((g) => g.items.length > 0);
+
+  function switchPool(next: PassivePool) {
+    setPool(next);
+    setCat("all");
+  }
 
   return (
     <div>
+      {/* Pool tabs */}
+      <div className="mb-5 grid grid-cols-2 gap-2 sm:gap-3">
+        {POOLS.map((p) => {
+          const active = p.key === pool;
+          return (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => switchPool(p.key)}
+              aria-pressed={active}
+              className={`frame rounded-lg px-2 py-3 font-display text-sm font-semibold transition-all ${
+                active ? "bg-night-700 text-gold-bright shadow-lift" : "bg-night-800 text-parchment-muted hover:bg-night-700"
+              }`}
+            >
+              {p.label} Weapons
+            </button>
+          );
+        })}
+      </div>
+
+      {pool === "deep" && (
+        <p className="mb-4 rounded-lg border border-night-600 bg-night-800/60 px-4 py-2.5 font-body text-sm text-parchment-muted">
+          Deep weapons roll from a separate, stronger pool and can also carry{" "}
+          <span className="font-semibold text-red-300">Curse</span> effects — drawbacks that come bundled with the upside.
+        </p>
+      )}
+
       {/* Controls */}
       <div className="mb-5 space-y-3">
         <input
@@ -46,7 +89,7 @@ export function WeaponPassives() {
         />
         <div className="flex flex-wrap gap-1.5">
           <FilterChip active={cat === "all"} onClick={() => setCat("all")} label="All" />
-          {PASSIVE_CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <FilterChip key={c.key} active={cat === c.key} onClick={() => setCat(c.key)} label={c.label} />
           ))}
         </div>

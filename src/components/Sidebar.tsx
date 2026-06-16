@@ -20,7 +20,7 @@ const sections: { label: string; href: string; soon?: boolean }[] = [
   { label: "Boss Codex", href: "/bosses" },
   { label: "Weapon Passives", href: "/weapon-passives" },
   { label: "Nightlords", href: "/nightlords" },
-  { label: "Relics", href: "/relics", soon: true },
+  { label: "Relics", href: "/relics" },
   { label: "Shifting Earth", href: "/shifting-earth", soon: true },
 ];
 
