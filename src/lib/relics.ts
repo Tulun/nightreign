@@ -9,7 +9,9 @@ export type RelicCategory =
   | "attack"
   | "affinity"
   | "skill-swap"
+  | "spell-swap"
   | "spell-school"
+  | "discover"
   | "character"
   | "vigor"
   | "mind"
@@ -39,6 +41,19 @@ export type RelicGroup =
 export interface RelicEffect {
   name: string;
   category: RelicCategory;
+  note?: string;
+}
+
+/** Canonical Nightfarer order, used to cluster character-specific effects. */
+export const CHARACTER_ORDER = [
+  "Wylder", "Guardian", "Ironeye", "Duchess", "Raider",
+  "Revenant", "Recluse", "Executor", "Scholar", "Undertaker",
+];
+
+/** Index of the Nightfarer a "Wylder: …" / "[Wylder] …" effect belongs to (999 if none). */
+export function characterIndex(name: string): number {
+  const i = CHARACTER_ORDER.findIndex((c) => name.startsWith(`${c}:`) || name.startsWith(`[${c}]`));
+  return i === -1 ? 999 : i;
 }
 
 export interface RelicCategoryMeta {
@@ -49,11 +64,17 @@ export interface RelicCategoryMeta {
   note?: string;
 }
 
+/** Shared note for the start-of-expedition armament swaps. */
+const SWAP_NOTE =
+  "Modifies a starting armament. The skill and spell swaps are mutually exclusive — a Nightfarer with both a weapon and a catalyst (e.g. Revenant) can only swap one of them.";
+
 export const RELIC_CATEGORIES: RelicCategoryMeta[] = [
   { key: "attack", label: "Attack Power", group: "attack" },
   { key: "affinity", label: "Starting Armament Affinity", group: "skills" },
-  { key: "skill-swap", label: "Starting Skill Swap", group: "skills" },
+  { key: "skill-swap", label: "Starting Skill Swap", group: "skills", note: SWAP_NOTE },
+  { key: "spell-swap", label: "Starting Spell Swap", group: "skills", note: SWAP_NOTE },
   { key: "spell-school", label: "Spell School Boost", group: "skills" },
+  { key: "discover", label: "Dormant Power Discovery", group: "skills" },
   { key: "character", label: "Character Art & Skill", group: "character" },
   { key: "vigor", label: "Vigor", group: "attributes" },
   { key: "mind", label: "Mind", group: "attributes" },
@@ -83,3 +104,37 @@ export const RELIC_GROUPS: { key: RelicGroup; label: string }[] = [
 ];
 
 export const RELIC_CREDIT = "Data from the community Nightreign relics sheet";
+
+// ── Deep relics ─────────────────────────────────────────────────────────────
+// Deep relics roll from a richer pool with full effect text, plus Character
+// stat-swaps and Curse drawbacks. Stack uses the same kinds as weapon passives.
+import type { StackKind } from "@/lib/weaponPassives";
+
+export type DeepRelicCategory =
+  | "stat"
+  | "start"
+  | "exploration"
+  | "offensive"
+  | "defensive"
+  | "regen"
+  | "character"
+  | "curse";
+
+export interface DeepRelic {
+  name: string;
+  effect: string;
+  category: DeepRelicCategory;
+  stack: StackKind;
+  note?: string;
+}
+
+export const DEEP_RELIC_CATEGORIES: { key: DeepRelicCategory; label: string }[] = [
+  { key: "stat", label: "Stat" },
+  { key: "start", label: "Start of Game" },
+  { key: "exploration", label: "Exploration" },
+  { key: "offensive", label: "Offensive" },
+  { key: "defensive", label: "Defensive" },
+  { key: "regen", label: "Regen" },
+  { key: "character", label: "Character" },
+  { key: "curse", label: "Curse" },
+];

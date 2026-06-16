@@ -1,4 +1,4 @@
-import { RelicEffects } from "@/components/RelicEffects";
+import { RelicsBrowser } from "@/components/RelicsBrowser";
 
 export default function RelicsPage() {
   return (
@@ -9,12 +9,13 @@ export default function RelicsPage() {
           Relic Effects
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
-          Every effect a relic can roll, grouped by category. No relic can carry two effects from the
-          same category.
+          Every effect a relic can roll, grouped by category — no relic can carry two effects from the
+          same category. Switch to Deep relics for the richer pool with Character stat-swaps and Curse
+          drawbacks.
         </p>
       </header>
 
-      <RelicEffects />
+      <RelicsBrowser />
     </div>
   );
 }
