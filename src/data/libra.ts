@@ -14,7 +14,7 @@ export const libraDeals: LibraDeal[] = [
   // ── Resource ──────────────────────────────────────────────────────────
   { id: "more-runes", prompt: "I want more runes", category: "Resource",
     effect: "Grants the Symbol of Avarice — more runes & item discovery",
-    cost: "Drains HP" },
+    cost: "Costs 10,000 runes" },
   { id: "desire-flask", prompt: "I desire a flask", category: "Resource",
     effect: "Adds a flask charge",
     cost: "Lose 10% max HP" },
