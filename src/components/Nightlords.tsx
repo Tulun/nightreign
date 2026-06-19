@@ -1,5 +1,8 @@
 import Image from "next/image";
+import Link from "next/link";
 import { nightlords, NIGHTLORD_CREDIT } from "@/data/nightlords";
+import { bosses } from "@/data/bosses";
+import type { BossCategory } from "@/lib/bosses";
 import {
   ELEMENT_ICON,
   NEGATION_COLUMNS,
@@ -44,6 +47,10 @@ export function Nightlords() {
         Negation: <span className="text-red-300">negative</span> = weakness (takes more damage),{" "}
         <span className="text-sky-300">20+</span> = strong resistance, positive = resists. HP is the
         solo value; it scales with team size. {NIGHTLORD_CREDIT}.
+      </p>
+      <p className="mt-2 font-body text-xs text-parchment-faint">
+        Events listed are expedition-specific (useful for spotting a hidden run). Blizzard, Night Invaders,
+        Scale-Bearing Merchant, Fort Disturbance &amp; Cataclysm can appear on any run. “(?)” = community-reported.
       </p>
     </div>
   );
@@ -96,7 +103,52 @@ function NightlordCard({ nl }: { nl: Nightlord }) {
         </>
       )}
 
-      <p className="mt-3 font-body text-sm text-parchment-muted">{nl.note}</p>
+      {/* Which bosses & events show up on this expedition — for identifying a hidden run */}
+      <div className="mt-3 space-y-1.5 border-t border-night-700 pt-3">
+        <BossLine label="Night 1" items={bossesFor(nl.expedition, "night1")} />
+        <BossLine label="Night 2" items={bossesFor(nl.expedition, "night2")} />
+        {nl.events && nl.events.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-0.5 w-14 shrink-0 font-body text-[0.6rem] font-semibold uppercase tracking-wide text-parchment-faint">
+              Events
+            </span>
+            {nl.events.map((e) => (
+              <span key={e} className="rounded border border-gold-faint/50 bg-night-900 px-1.5 py-0.5 font-body text-[0.7rem] text-gold-dim">
+                {e}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Bosses of a given category that can appear on an expedition (matches spawnsIn). */
+function bossesFor(expedition: string, category: BossCategory) {
+  return bosses.filter(
+    (b) =>
+      b.categories.includes(category) &&
+      (b.spawnsIn ?? []).some((s) => s.replace(/\s*\(.*\)$/, "") === expedition),
+  );
+}
+
+function BossLine({ label, items }: { label: string; items: { id: string; name: string }[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="mr-0.5 w-14 shrink-0 font-body text-[0.6rem] font-semibold uppercase tracking-wide text-parchment-faint">
+        {label}
+      </span>
+      {items.map((b) => (
+        <Link
+          key={b.id}
+          href={`/bosses/${b.id}`}
+          className="rounded border border-night-600 bg-night-900 px-1.5 py-0.5 font-body text-[0.7rem] text-parchment-muted transition-colors hover:border-gold-faint hover:text-gold"
+        >
+          {b.name}
+        </Link>
+      ))}
     </div>
   );
 }
@@ -190,7 +242,7 @@ function ResistChip({ label, icon, value }: { label: string; icon?: string; valu
       }`}
     >
       {icon && <StatIcon src={icon} alt={label} size={14} />}
-      {label} <span className="font-semibold">{immune ? "Imm" : value}</span>
+      {label} <span className="font-semibold">{immune ? "—" : value}</span>
     </span>
   );
 }

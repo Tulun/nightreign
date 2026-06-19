@@ -34,6 +34,10 @@ export interface Nightlord {
   id: string;
   name: string;
   alias: string;
+  /** Expedition identifier used to match bosses' `spawnsIn` (often = alias). */
+  expedition: string;
+  /** Map events that can appear on this expedition (roaming bosses, meteors, etc.). */
+  events?: string[];
   weaknesses: WeaknessElement[];
   negations: Record<NegationKey, number>;
   resistances: Record<StatusKey, Resist>;
