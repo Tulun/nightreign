@@ -74,7 +74,7 @@ export function RelicEffects() {
                 <span className="font-body text-xs text-parchment-faint">{c.items.length}</span>
               </div>
               {c.note && <p className="mb-2.5 font-body text-xs italic text-parchment-faint">{c.note}</p>}
-              {c.key === "skill-swap" || c.key === "spell-swap" ? (
+              {c.key === "skill-swap" || c.key === "spell-swap" || c.key === "starting-items" ? (
                 <div>
                   <p className="mb-2.5 font-body text-sm text-parchment-muted">
                     {c.key === "skill-swap" ? (
@@ -82,10 +82,15 @@ export function RelicEffects() {
                         Changes compatible armament&rsquo;s skill to{" "}
                         <span className="font-semibold text-gold-dim">[Weapon Art]</span> at start of expedition:
                       </>
-                    ) : (
+                    ) : c.key === "spell-swap" ? (
                       <>
                         Changes compatible armament&rsquo;s sorcery / incantation to{" "}
                         <span className="font-semibold text-gold-dim">[Spell]</span> at start of expedition:
+                      </>
+                    ) : (
+                      <>
+                        Start the expedition holding{" "}
+                        <span className="font-semibold text-gold-dim">[Item]</span>:
                       </>
                     )}
                   </p>

@@ -12,6 +12,7 @@ export type RelicCategory =
   | "spell-swap"
   | "spell-school"
   | "discover"
+  | "starting-items"
   | "character"
   | "vigor"
   | "mind"
@@ -99,8 +100,9 @@ export const RELIC_CATEGORIES: RelicCategoryMeta[] = [
   { key: "affinity", label: "Starting Armament Affinity", group: "skills" },
   { key: "skill-swap", label: "Starting Skill Swap", group: "skills", note: SWAP_NOTE },
   { key: "spell-swap", label: "Starting Spell Swap", group: "skills", note: SWAP_NOTE },
-  { key: "spell-school", label: "Spell School Boost", group: "skills" },
+  { key: "spell-school", label: "Spell School Boost", group: "skills", note: "Each increases its school's sorcery/incantation damage by +12%." },
   { key: "discover", label: "Dormant Power Discovery", group: "skills" },
+  { key: "starting-items", label: "Starting Items", group: "skills", note: "Begin the expedition already holding the item." },
   { key: "character", label: "Character Art & Skill", group: "character" },
   { key: "vigor", label: "Vigor", group: "attributes" },
   { key: "mind", label: "Mind", group: "attributes" },
@@ -183,6 +185,38 @@ export const RELIC_VALUES: Record<string, string> = {
   "Increased Maximum HP": "+100 Max HP",
   "Increased Maximum FP": "+25 Max FP",
   "Increased Maximum Stamina": "+10 Max Stamina",
+  // Unique / Unrollable — misc
+  "Improved Throwing Pot Damage": "+15% pot damage",
+  "Improved Throwing Knife Damage": "+15% knife damage",
+  "Improved Throwing Stone Damage": "+15% stone damage",
+  "Improved Perfuming Arts": "+15% perfume damage",
+  "Max FP permanently increased after releasing Sorcerer's Rise mechanism": "+18% Max FP per Sorcerer's Rise unlocked",
+  "Max FP Up with 3+ Staves Equipped": "+50 Max FP",
+  "Max FP Up with 3+ Sacred Seals Equipped": "+50 Max FP",
+  "Max HP Up with 3+ Small Shields Equipped": "+200 Max HP",
+  "Max HP Up with 3+ Medium Shields Equipped": "+200 Max HP",
+  "Max HP Up with 3+ Greatshields Equipped": "+200 Max HP",
+  "Critical Hits Earn Runes": "+600 runes on critical hits",
+  "Increased rune acquisition for self and allies": "+3.5% rune gain for you & allies",
+  "Rune discount for shop purchases while on expedition": "10% shop discount",
+  "Huge rune discount for shop purchases while on expedition": "20% shop discount",
+  "Treasure marked upon map": "Reveals hidden chest locations",
+  "Flask Also Heals Allies": "Heals allies 50% of flask HP (radius) — currently buggy",
+  "Improved Poise & Damage Negation When Knocked Back by Damage": "+20% negation & −20% poise damage for 20s",
+  "Switching Weapons Boosts Attack Power": "+10% physical for 10s",
+  "Switching Weapons Adds an Affinity Attack": "+12 random-element AP for 10s",
+  "Boosts Attack Power of Added Affinity Attacks": "+10% to added elemental AP",
+  "Poison & Rot in Vicinity Increases Attack Power": "+12% for 20s when poison/rot procs nearby",
+  "Partial HP Restoration upon Post-Damage Attacks": "Strong heal-on-hit briefly after taking damage",
+  "Slowly restore HP for self and nearby allies when HP is low": "+0.5% max HP + 1 HP/s for 50s below 20% HP",
+  "HP restored when using cured meats, medicinal boluses, etc.": "+50 HP on consumption",
+  "Art gauge charged from successful guarding": "+1 Ultimate gauge on block",
+  "Art gauge fills moderately upon critical hit": "+5 Ultimate gauge on crit",
+  "Defeating enemies fills more of the Art gauge": "+5 Ultimate gauge per kill",
+  "Critical Hit Boosts Stamina Recovery Speed": "+10 stamina/s for 15s",
+  "HP Recovery From Successful Guarding": "+8 HP on block",
+  "FP Restoration upon Successive Attacks": "+5% Max FP on continuous attacks",
+  "HP Restoration upon Thrusting Counterattack": "+2.5% Max HP on counterhits",
   // Character — Wylder
   "Wylder: Art gauge greatly filled when ability is activated": "+18 skill gauge",
   "Wylder: Art activation spreads fire in area": "Ultimate leaves a fire DoT area",
