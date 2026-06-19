@@ -1,12 +1,15 @@
 // ─────────────────────────────────────────────────────────────────────────
 //  Relic effects — the pool of effects a relic can roll, grouped by category.
 //  Core rule: a relic can hold several effects, but NEVER two from the same
-//  category. "unique" relics are the stackable exception; "unrollable" effects
-//  only appear on fixed (found) relics and can't be rolled.
+//  category — except effects flagged `stackable`, which can roll alongside any
+//  others. "unrollable" effects only appear on fixed (found) relics.
 // ─────────────────────────────────────────────────────────────────────────
 
 export type RelicCategory =
   | "attack"
+  | "defensive"
+  | "regen"
+  | "exploration"
   | "affinity"
   | "skill-swap"
   | "spell-swap"
@@ -25,23 +28,27 @@ export type RelicCategory =
   | "cooldown"
   | "ult-gauge"
   | "poise"
+  | "loadout"
   | "hp-weapon"
   | "fp-weapon"
-  | "unique"
   | "unrollable";
 
 export type RelicGroup =
   | "attack"
+  | "defensive"
+  | "regen"
+  | "exploration"
   | "skills"
   | "character"
   | "attributes"
   | "restoration"
-  | "unique"
   | "unrollable";
 
 export interface RelicEffect {
   name: string;
   category: RelicCategory;
+  /** Exempt from the one-per-category rule — can stack with others in its category. */
+  stackable?: boolean;
   note?: string;
 }
 
@@ -96,7 +103,10 @@ const SWAP_NOTE =
   "Modifies a starting armament. The skill and spell swaps are mutually exclusive — a Nightfarer with both a weapon and a catalyst (e.g. Revenant) can only swap one of them.";
 
 export const RELIC_CATEGORIES: RelicCategoryMeta[] = [
-  { key: "attack", label: "Attack Power", group: "attack" },
+  { key: "attack", label: "Offensive", group: "attack" },
+  { key: "defensive", label: "Defensive", group: "defensive" },
+  { key: "regen", label: "Regen", group: "regen" },
+  { key: "exploration", label: "Exploration", group: "exploration" },
   { key: "affinity", label: "Starting Armament Affinity", group: "skills" },
   { key: "skill-swap", label: "Starting Skill Swap", group: "skills", note: SWAP_NOTE },
   { key: "spell-swap", label: "Starting Spell Swap", group: "skills", note: SWAP_NOTE },
@@ -115,19 +125,21 @@ export const RELIC_CATEGORIES: RelicCategoryMeta[] = [
   { key: "cooldown", label: "Character Skill Cooldown", group: "attributes" },
   { key: "ult-gauge", label: "Ultimate Art Gauge", group: "attributes" },
   { key: "poise", label: "Poise", group: "attributes" },
+  { key: "loadout", label: "Loadout Bonuses", group: "attributes", note: "Conditional Max HP/FP from equipping 3+ of a catalyst or shield type." },
   { key: "hp-weapon", label: "HP Restoration by Weapon Type", group: "restoration", note: "Restores ~15 HP per hit with continuous attacks — same amount for every weapon type." },
   { key: "fp-weapon", label: "FP Restoration by Weapon Type", group: "restoration", note: "Restores ~2 FP per hit with continuous attacks — same amount for every weapon type." },
-  { key: "unique", label: "Unique / Stackable", group: "unique", note: "Exempt from the rule — these can roll alongside any category, including each other." },
   { key: "unrollable", label: "Unrollable", group: "unrollable", note: "Only found on fixed relics — these can't be rolled onto a relic." },
 ];
 
 export const RELIC_GROUPS: { key: RelicGroup; label: string }[] = [
-  { key: "attack", label: "Attack" },
+  { key: "attack", label: "Offensive" },
+  { key: "defensive", label: "Defensive" },
+  { key: "regen", label: "Regen" },
+  { key: "exploration", label: "Exploration" },
   { key: "skills", label: "Affinity & Skills" },
   { key: "character", label: "Character" },
   { key: "attributes", label: "Attributes" },
   { key: "restoration", label: "Restoration" },
-  { key: "unique", label: "Unique" },
   { key: "unrollable", label: "Unrollable" },
 ];
 
