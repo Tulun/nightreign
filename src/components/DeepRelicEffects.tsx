@@ -5,6 +5,7 @@ import { deepRelics } from "@/data/deepRelics";
 import {
   characterIndex,
   DEEP_RELIC_CATEGORIES,
+  groupByCharacter,
   RELIC_CREDIT,
   type DeepRelic,
   type DeepRelicCategory,
@@ -84,11 +85,28 @@ export function DeepRelicEffects() {
               <h3 className="eyebrow mb-2">
                 {g.label} <span className="text-parchment-faint">· {g.items.length}</span>
               </h3>
-              <div className="space-y-1.5">
-                {g.items.map((r) => (
-                  <RelicRow key={r.name} relic={r} />
-                ))}
-              </div>
+              {g.key === "character" ? (
+                <div className="space-y-4">
+                  {groupByCharacter(g.items).map((cg) => (
+                    <div key={cg.character}>
+                      <h4 className="mb-1.5 font-display text-xs font-semibold uppercase tracking-wider text-sky-300/80">
+                        {cg.character}
+                      </h4>
+                      <div className="space-y-1.5">
+                        {cg.items.map(({ item, rest }) => (
+                          <RelicRow key={item.name} relic={item} display={rest} />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {g.items.map((r) => (
+                    <RelicRow key={r.name} relic={r} />
+                  ))}
+                </div>
+              )}
             </section>
           ))}
         </div>
@@ -99,12 +117,12 @@ export function DeepRelicEffects() {
   );
 }
 
-function RelicRow({ relic }: { relic: DeepRelic }) {
+function RelicRow({ relic, display }: { relic: DeepRelic; display?: string }) {
   const stack = STACK_META[relic.stack];
   return (
     <div className="frame rounded-lg bg-night-800 px-3 py-2.5">
       <div className="flex items-start justify-between gap-3">
-        <h4 className="font-display text-sm font-semibold text-parchment">{relic.name}</h4>
+        <h4 className="font-display text-sm font-semibold text-parchment">{display ?? relic.name}</h4>
         <span
           className={`shrink-0 rounded border px-1.5 py-0.5 font-body text-[0.65rem] font-semibold ${stack.cls}`}
           title={stack.legend}
