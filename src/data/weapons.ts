@@ -1,4 +1,4 @@
-import type { Weapon } from "@/lib/weapons";
+import type { Weapon, WeaponRarity } from "@/lib/weapons";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
@@ -8,7 +8,7 @@ import type { Weapon } from "@/lib/weapons";
  *  attribute grades (S/A/B/C/D/E); status = innate buildup; skill = weapon
  *  skill; effect = unique passive. null = not applicable / no value.
  */
-export const weapons: Weapon[] = [
+const baseWeapons: Weapon[] = [
   // ── Daggers ───────────────────────────────────────────────────────────
   { name: "Black Knife", type: "Dagger", ap: { physical: 46, magic: null, fire: null, lightning: null, holy: 46, crit: 110 }, scaling: { str: "E", dex: "A", int: null, fai: "D", arc: null }, status: null, skill: "Blade of Death", effect: null },
   { name: "Blade of Calling", type: "Dagger", ap: { physical: 57, magic: null, fire: null, lightning: null, holy: 35, crit: 110 }, scaling: { str: "E", dex: "A", int: null, fai: "D", arc: null }, status: null, skill: "Blade of Gold", effect: null },
@@ -322,6 +322,12 @@ export const weapons: Weapon[] = [
   { name: "Longbow", type: "Bow", ap: { physical: 48, magic: null, fire: null, lightning: null, holy: null, crit: 100 }, scaling: { str: "E", dex: "S", int: null, fai: null, arc: null }, status: null, skill: "Mighty Shot", effect: null },
   { name: "Pulley Bow", type: "Bow", ap: { physical: 72, magic: null, fire: null, lightning: null, holy: null, crit: 100 }, scaling: { str: "E", dex: "S", int: null, fai: null, arc: null }, status: null, skill: "Mighty Shot", effect: null },
   { name: "Serpent Bow", type: "Bow", ap: { physical: 59, magic: null, fire: null, lightning: null, holy: null, crit: 100 }, scaling: { str: "E", dex: "A", int: null, fai: null, arc: "C" }, status: null, skill: "Mighty Shot", effect: null },
+  // Standard bows the wiki table omitted — stats TBD.
+  { name: "Shortbow", type: "Bow", skill: "Mighty Shot" },
+  { name: "Composite Bow", type: "Bow", skill: "Mighty Shot" },
+  { name: "Harp Bow", type: "Bow", skill: "Mighty Shot" },
+  { name: "Misbegotten Shortbow", type: "Bow", skill: "Mighty Shot" },
+  { name: "Red Branch Shortbow", type: "Bow", skill: "Mighty Shot" },
 
   // ── Greatbows ───────────────────────────────────────────────────────────────
   { name: "Erdtree Greatbow", type: "Greatbow", ap: { physical: 95, magic: null, fire: null, lightning: null, holy: 84, crit: 100 }, scaling: { str: "C", dex: "C", int: null, fai: "C", arc: null }, status: null, skill: "Through and Through", effect: null },
@@ -382,3 +388,126 @@ export const weapons: Weapon[] = [
   { name: "Ghostflame Torch", type: "Torch", ap: { physical: 26, magic: 48, fire: null, lightning: null, holy: null, crit: 100 }, scaling: { str: "C", dex: "C", int: "D", fai: null, arc: null }, status: null, skill: "Torch Attack", effect: null },
   { name: "St. Trina's Torch", type: "Torch", ap: { physical: 24, magic: null, fire: 44, lightning: null, holy: null, crit: 100 }, scaling: { str: "C", dex: "C", int: null, fai: "D", arc: null }, status: "Sleep", skill: "Fires of Slumber", effect: null },
 ];
+
+/**
+ * Rarity (name colour) per weapon, from the in-game selection screens.
+ * normal = white, blue, purple, gold = legendary. Filled in type-by-type.
+ */
+const WEAPON_RARITY: Record<string, WeaponRarity> = {
+  // Daggers
+  "Black Knife": "purple", "Blade of Calling": "purple", "Bloodstained Dagger": "blue", "Celebrant's Sickle": "blue",
+  Cinquedea: "purple", "Crystal Knife": "blue", Dagger: "normal", "Duchess' Dagger": "normal", "Erdsteel Dagger": "blue",
+  "Glintstone Kris": "purple", "Great Knife": "normal", "Ivory Sickle": "blue", Misericorde: "blue", Reduvia: "purple",
+  "Parrying Dagger": "normal", "Scorpion's Stinger": "purple", Wakizashi: "blue",
+  // Straight Swords
+  Broadsword: "normal", "Cane Sword": "blue", "Carian Knight's Sword": "blue", "Coded Sword": "purple", "Crystal Sword": "blue",
+  "Golden Epitaph": "purple", "Lazuli Glintstone Sword": "blue", Longsword: "normal", "Lordsworn's Straight Sword": "blue",
+  "Miquellan Knight's Sword": "purple", "Noble's Slender Sword": "normal", "Ornamental Straight Sword": "purple",
+  "Regalia of Eochaid": "purple", "Rotten Crystal Sword": "blue", "Short Sword": "normal", "Sword of Night and Flame": "gold",
+  "Sword of St Trina": "purple", "Warhawk's Talon": "blue", "Weathered Straight Sword": "normal",
+  // Greatswords
+  "Alabaster Lord's Sword": "purple", "Banished Knight's Greatsword": "blue", "Bastard Sword": "normal", "Blasphemous Blade": "gold",
+  Claymore: "blue", "Dark Moon Greatsword": "gold", "Death's Poker": "purple", Flamberge: "blue", "Forked Greatsword": "blue",
+  "Gargoyle's Blackblade": "purple", "Gargoyle's Greatsword": "blue", "Golden Order Greatsword": "gold", "Helphen's Steeple": "purple",
+  "Inseparable Sword": "blue", "Iron Greatsword": "normal", "Knight's Greatsword": "blue", "Lordsworn's Greatsword": "normal",
+  "Marais Executioner's Sword": "gold", "Ordovis's Greatsword": "purple", "Sacred Relic Sword": "gold", "Sword of Milos": "purple",
+  "Wylder's Greatsword": "normal",
+  // Colossal Swords
+  "Godslayer's Greatsword": "purple", "Grafted Blade Greatsword": "gold", Greatsword: "normal", "Maliketh's Black Blade": "gold",
+  "Royal Greatsword": "purple", "Ruins Greatsword": "gold", "Starscourge Greatsword": "gold", "Troll's Golden Sword": "blue",
+  "Troll Knight's Sword": "blue", "Watchdog's Greatsword": "blue", Zweihander: "normal",
+  // Thrusting Swords
+  "Antspur Rapier": "purple", "Cleanrot Knight's Sword": "blue", Estoc: "normal", "Frozen Needle": "purple", "Noble's Estoc": "normal",
+  Rapier: "normal", "Rogier's Rapier": "blue", "Scholar's Thrusting Sword": "normal",
+  // Heavy Thrusting Swords
+  "Bloody Helice": "purple", "Dragon King's Cragblade": "gold", "Godskin Stitcher": "blue", "Great Epee": "normal",
+  // Curved Swords
+  "Bandit's Curved Sword": "normal", "Beastman's Curved Sword": "blue", "Eclipse Shotel": "gold", Falchion: "normal",
+  "Flowing Curved Sword": "purple", Grossmesser: "blue", "Magma Blade": "purple", "Mantis Blade": "blue", "Nox Flowing Sword": "purple",
+  "Scavenger's Curved Sword": "blue", Scimitar: "normal", "Serpent-God's Curved Sword": "blue", Shamshir: "blue", Shotel: "normal",
+  "Wing of Astel": "purple",
+  // Curved Greatswords
+  "Beastman's Cleaver": "blue", "Bloodhound's Fang": "blue", Dismounter: "normal", "Magma Wyrm's Scalesword": "purple",
+  "Monk's Flameblade": "blue", "Morgott's Cursed Sword": "gold", "Omen Cleaver": "blue", "Onyx Lord's Greatsword": "purple",
+  "Zamor Curved Sword": "purple",
+  // Katanas
+  "Dragonscale Blade": "purple", "Executor's Blade": "normal", "Hand of Malenia": "gold", "Meteoric Ore Blade": "blue",
+  Moonveil: "purple", Nagakiba: "blue", "Rivers of Blood": "purple", "Serpentbone Blade": "blue", Uchigatana: "normal",
+  // Twinblades
+  "Eleonora's Poleblade": "purple", "Gargoyle's Black Blades": "blue", "Gargoyle's Twinblade": "blue", "Godskin Peeler": "blue",
+  Twinblade: "normal", "Twinned Knight Swords": "blue",
+  // Axes
+  "Battle Axe": "normal", "Celebrant's Cleaver": "blue", "Forked Hatchet": "normal", "Hand Axe": "normal", "Highland Axe": "blue",
+  "Icerind Hatchet": "purple", "Iron Cleaver": "blue", "Jawbone Axe": "normal", "Ripple Blade": "blue", "Rosus' Axe": "purple",
+  "Sacrificial Axe": "purple", "Stormhawk Axe": "purple", "Warped Axe": "blue",
+  // Greataxes
+  "Axe of Godrick": "gold", "Butchering Knife": "purple", "Crescent Moon Axe": "normal", "Executioner's Greataxe": "blue",
+  "Gargoyle's Black Axe": "purple", "Gargoyle's Great Axe": "blue", Greataxe: "normal", "Great Omenkiller Cleaver": "blue",
+  "Longhaft Axe": "normal", "Rusted Anchor": "blue", "Winged Greathorn": "gold",
+  // Hammers
+  Club: "normal", "Curved Club": "normal", "Envoy's Horn": "purple", Hammer: "blue", Mace: "normal", "Marika's Hammer": "gold",
+  "Monk's Flamemace": "blue", "Morning Star": "blue", "Nox Flowing Hammer": "purple", "Ringed Finger": "purple",
+  "Scepter of the All-Knowing": "purple", "Spiked Club": "blue", "Stone Club": "normal", "Varre's Bouquet": "purple",
+  Warpick: "blue", "Undertaker's Hammer": "purple",
+  // Flails
+  "Bastard's Stars": "gold", "Chainlink Flail": "blue", "Family Heads": "purple", Flail: "normal", "Nightrider Flail": "blue",
+  // Great Hammers
+  "Battle Hammer": "blue", "Beastclaw Greathammer": "purple", "Brick Hammer": "blue", "Celebrant's Skull": "blue",
+  "Cranial Vessel Candlestand": "purple", "Curved Great Club": "normal", "Devourer's Scepter": "gold", "Envoy's Long Horn": "purple",
+  "Great Mace": "normal", "Great Stars": "blue", "Greathorn Hammer": "blue", "Large Club": "normal", Pickaxe: "normal",
+  "Rotten Battle Hammer": "blue",
+  // Colossal Weapons
+  "Axe of Godfrey": "gold", "Dragon Greatclaw": "purple", "Duelist Greataxe": "normal", "Envoy's Greathorn": "purple",
+  "Fallingstar Beast Jaw": "purple", "Ghiza's Wheel": "purple", "Giant-Crusher": "blue", "Great Club": "blue", "Golem's Halberd": "blue",
+  "Prelate's Inferno Crozier": "purple", "Raider's Greataxe": "normal", "Rotten Greataxe": "blue", "Rotten Staff": "purple",
+  "Staff of the Avatar": "purple", "Troll's Hammer": "blue", "Watchdog's Staff": "purple",
+  // Spears
+  "Bolt of Gransax": "gold", "Celebrant's Rib-Rake": "blue", "Clayman's Harpoon": "blue", "Cleanrot Spear": "blue",
+  "Cross-Naginata": "blue", "Crystal Spear": "blue", "Death Ritual Spear": "purple", "Inquisitor's Girandole": "purple",
+  "Iron Spear": "normal", Partisan: "blue", Pike: "blue", "Rotten Crystal Spear": "blue", "Short Spear": "normal", Spear: "normal",
+  "Spiked Spear": "blue", Torchpole: "blue",
+  // Great Spears
+  Lance: "normal", "Mohgwyn's Sacred Spear": "gold", "Serpent-Hunter": "blue", "Siluria's Tree": "purple", Treespear: "blue",
+  "Vyke's War Spear": "purple",
+  // Halberds
+  "Banished Knight's Halberd": "normal", "Commander's Standard": "purple", "Dragon Halberd": "blue", "Gargoyle's Black Halberd": "purple",
+  "Gargoyle's Halberd": "blue", Glaive: "normal", "Golden Halberd": "purple", "Guardian's Swordspear": "blue", "Guardian's Halberd": "normal",
+  Halberd: "normal", "Loretta's War Sickle": "purple", Lucerne: "normal", "Nightrider Glaive": "blue", "Pest's Glaive": "blue",
+  "Ripple Crescent Halberd": "blue", "Vulgar Militia Saw": "normal", "Vulgar Militia Shotel": "normal",
+  // Reapers
+  "Grave Scythe": "blue", "Halo Scythe": "purple", Scythe: "normal", "Winged Scythe": "purple",
+  // Whips
+  "Giant's Red Braid": "gold", "Hoslow's Petal Whip": "purple", "Magma Whip Candlestick": "purple", "Thorned Whip": "blue",
+  Urumi: "blue", Whip: "normal",
+  // Fists
+  Caestus: "normal", "Cipher Pata": "purple", "Clinging Bone": "purple", "Grafted Dragon": "gold", "Iron Ball": "blue", Katar: "normal",
+  "Revenant's Cursed Claws": "normal", "Spiked Caestus": "blue", "Star Fist": "blue", "Veteran's Prosthesis": "purple",
+  // Claws
+  "Bloodhound Claws": "blue", Hookclaws: "normal", "Raptor Talons": "purple", "Venomous Fang": "blue",
+  // Bows
+  "Composite Bow": "blue", "Harp Bow": "blue", "Misbegotten Shortbow": "normal", "Red Branch Shortbow": "blue", Shortbow: "normal",
+  "Albinauric Bow": "blue", "Black Bow": "purple", "Erdtree Bow": "purple", "Horn Bow": "blue", Longbow: "normal", "Pulley Bow": "purple",
+  "Serpent Bow": "purple", "Ironeye's Bow": "normal",
+  // Greatbows
+  "Erdtree Greatbow": "purple", "Golem Greatbow": "blue", Greatbow: "normal", "Lion Greatbow": "gold",
+  // Crossbows
+  Arbalest: "normal", "Crepus's Black-Key Crossbow": "blue", "Heavy Crossbow": "normal", "Light Crossbow": "normal",
+  "Soldier's Crossbow": "normal", "Pulley Crossbow": "purple", "Full Moon Crossbow": "blue",
+  // Glintstone Staves
+  "Academy Glintstone Staff": "normal", "Albinauric Staff": "blue", "Astrologer's Staff": "normal", "Azur's Glintstone Staff": "purple",
+  "Carian Glintblade Staff": "blue", "Carian Glintstone Staff": "blue", "Carian Regal Scepter": "gold", "Crystal Staff": "blue",
+  "Demi-Human Queen's Staff": "normal", "Digger's Staff": "normal", "Gelmir Glintstone Staff": "blue", "Glintstone Staff": "normal",
+  "Lusat's Glintstone Staff": "purple", "Meteorite Staff": "purple", "Prince of Death's Staff": "purple", "Recluse's Staff": "normal",
+  "Rotten Crystal Staff": "blue", "Staff of Loss": "blue", "Staff of the Guilty": "blue",
+  // Sacred Seals
+  "Clawmark Seal": "blue", "Dragon Communion Seal": "purple", "Erdtree Seal": "blue", "Finger Seal": "normal",
+  "Frenzied Flame Seal": "purple", "Giant's Seal": "blue", "Godslayer's Seal": "blue", "Golden Order Seal": "purple",
+  "Gravel Stone Seal": "blue",
+  // Torches
+  Torch: "normal", "Beast-Repellent Torch": "normal", "Steel-Wire Torch": "blue", "Sentry's Torch": "blue",
+  "Ghostflame Torch": "purple", "St. Trina's Torch": "purple",
+};
+
+export const weapons: Weapon[] = baseWeapons.map((w) =>
+  WEAPON_RARITY[w.name] ? { ...w, rarity: WEAPON_RARITY[w.name] } : w,
+);

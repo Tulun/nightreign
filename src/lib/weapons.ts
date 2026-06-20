@@ -56,10 +56,10 @@ export const AP_COLUMNS: { key: keyof WeaponAP; label: string }[] = [
 ];
 
 export const RARITY_META: Record<WeaponRarity, { label: string; color: string }> = {
-  normal: { label: "Normal", color: "#cbb890" },
-  blue: { label: "Blue", color: "#3ea6e0" },
-  purple: { label: "Purple", color: "#a571e6" },
-  gold: { label: "Gold", color: "#e3a93c" },
+  normal: { label: "Common", color: "#e8e2d2" },
+  blue: { label: "Rare", color: "#5aa8e6" },
+  purple: { label: "Epic", color: "#b07ce8" },
+  gold: { label: "Legendary", color: "#e3b23c" },
 };
 
 export const WEAPON_CREDIT = "Stats from eldenringnightreign.wiki.fextralife.com";

@@ -10,11 +10,17 @@ import {
   type Weapon,
 } from "@/lib/weapons";
 
+/** Weapon-class order = first-seen order in the data. */
+const TYPE_ORDER = Array.from(new Set(weapons.map((w) => w.type)));
+/** Rarity sort rank — Common first, unranked last. */
+const RARITY_RANK: Record<string, number> = { normal: 0, blue: 1, purple: 2, gold: 3 };
+
 export function WeaponsReference() {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
   const [scaling, setScaling] = useState("all");
+  const [rarity, setRarity] = useState("all");
 
   const types = useMemo(() => Array.from(new Set(weapons.map((w) => w.type))).sort(), []);
   const statuses = useMemo(
@@ -23,13 +29,22 @@ export function WeaponsReference() {
   );
 
   const q = query.trim().toLowerCase();
-  const list = weapons.filter((w) => {
-    if (type !== "all" && w.type !== type) return false;
-    if (status !== "all" && w.status !== status) return false;
-    if (scaling !== "all" && !w.scaling?.[scaling as keyof typeof w.scaling]) return false;
-    if (q && !w.name.toLowerCase().includes(q) && !(w.skill?.toLowerCase().includes(q) ?? false)) return false;
-    return true;
-  });
+  const list = weapons
+    .filter((w) => {
+      if (type !== "all" && w.type !== type) return false;
+      if (status !== "all" && w.status !== status) return false;
+      if (rarity !== "all" && w.rarity !== rarity) return false;
+      if (scaling !== "all" && !w.scaling?.[scaling as keyof typeof w.scaling]) return false;
+      if (q && !w.name.toLowerCase().includes(q) && !(w.skill?.toLowerCase().includes(q) ?? false)) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const t = TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
+      if (t !== 0) return t;
+      const r = (a.rarity ? RARITY_RANK[a.rarity] : 4) - (b.rarity ? RARITY_RANK[b.rarity] : 4);
+      if (r !== 0) return r;
+      return a.name.localeCompare(b.name);
+    });
 
   return (
     <div>
@@ -42,10 +57,11 @@ export function WeaponsReference() {
           placeholder="Search weapons by name or skill…"
           className="w-full rounded-lg border border-night-600 bg-night-900 px-3 py-2 font-body text-sm text-parchment placeholder:text-parchment-faint focus:border-gold-faint focus:outline-none"
         />
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Select label="Type" value={type} onChange={setType} options={types} />
           <Select label="Status" value={status} onChange={setStatus} options={statuses} />
           <Select label="Scales with" value={scaling} onChange={setScaling} options={SCALING_STATS.map((s) => s.key)} labels={Object.fromEntries(SCALING_STATS.map((s) => [s.key, s.label]))} />
+          <Select label="Rarity" value={rarity} onChange={setRarity} options={["normal", "blue", "purple", "gold"]} labels={{ normal: "Common", blue: "Rare", purple: "Epic", gold: "Legendary" }} />
         </div>
       </div>
 
@@ -93,15 +109,12 @@ export function WeaponsReference() {
 function Row({ w }: { w: Weapon }) {
   return (
     <tr className="border-b border-night-800/70 hover:bg-night-800/60">
-      <td className="sticky left-0 z-10 bg-night-900 px-3 py-1.5 font-display font-semibold text-parchment">
-        <span className="flex items-center gap-1.5">
-          {w.rarity && (
-            <span
-              className="inline-block h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: RARITY_META[w.rarity].color }}
-              title={RARITY_META[w.rarity].label}
-            />
-          )}
+      <td className="sticky left-0 z-10 bg-night-900 px-3 py-1.5 font-display font-semibold">
+        <span
+          className={w.rarity ? "" : "text-parchment"}
+          style={w.rarity ? { color: RARITY_META[w.rarity].color } : undefined}
+          title={w.rarity ? RARITY_META[w.rarity].label : undefined}
+        >
           {w.name}
         </span>
       </td>
