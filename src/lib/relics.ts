@@ -294,7 +294,8 @@ export type DeepRelicCategory =
   | "defensive"
   | "regen"
   | "character"
-  | "curse";
+  | "curse"
+  | "crossover";
 
 export interface DeepRelic {
   name: string;
@@ -313,4 +314,5 @@ export const DEEP_RELIC_CATEGORIES: { key: DeepRelicCategory; label: string }[] 
   { key: "regen", label: "Regen" },
   { key: "character", label: "Character" },
   { key: "curse", label: "Curse" },
+  { key: "crossover", label: "Normal Pool (also rolls on Deep)" },
 ];

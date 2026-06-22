@@ -102,4 +102,24 @@ export const deepRelics: DeepRelic[] = [
   { name: "Poison Buildup When Below Max HP", effect: "+2 poison buildup every 0.22s when HP is below 85%", category: "curse", stack: "yes", note: "Won't trigger Executor's Tenacity until cured." },
   { name: "Rot Buildup When Below Max HP", effect: "+2 rot buildup every 0.24s when HP is below 85%", category: "curse", stack: "yes", note: "Won't trigger Executor's Tenacity until cured." },
   { name: "Near Death Reduces Max HP", effect: "−0.75x maximum HP for 60s after being downed", category: "curse", stack: "yes" },
+
+  // ── Normal Pool (also rolls on Deep relics) ─────────────────────────────────
+  // The normal-pool version of each tiered Deep effect that also exists in the
+  // normal pool. Attack boosts are the exception: only the +2 tier crosses over.
+  { name: "Items confer effect to all nearby allies", effect: "Items you use also confer their effect to nearby allies", category: "crossover", stack: "no" },
+  { name: "Physical Attack Up +2", effect: "+6% physical damage", category: "crossover", stack: "yes", note: "Only the +2 normal tier rolls on Deep — not +0 or +1." },
+  { name: "Magic/Fire/Lightning/Holy Attack Up +2", effect: "+6.5% of the respective element's damage", category: "crossover", stack: "yes", note: "Only the +2 normal tier rolls on Deep — not +0 or +1." },
+  { name: "Attack Power Up After Using Grease +0", effect: "+10% physical damage for 30s after using a grease item", category: "crossover", stack: "tiers" },
+  { name: "Attack Power Up vs Frost/Poison/Rot-Afflicted Enemy +0", effect: "+10% damage against enemies suffering the specified status", category: "crossover", stack: "tiers" },
+  { name: "Improved Guard Counters +0", effect: "+17% guard counter damage", category: "crossover", stack: "tiers" },
+  { name: "Improved [Consumable] Damage +0", effect: "+15% pot/knife/stone/perfume damage", category: "crossover", stack: "tiers" },
+  { name: "Art Gauge Charged from Successful Guarding +0", effect: "+1 Ultimate gauge on blocking an attack", category: "crossover", stack: "tiers" },
+  { name: "Art Gauge Fills Moderately upon Critical Hit +0", effect: "+5 Ultimate gauge on a critical hit", category: "crossover", stack: "tiers" },
+  { name: "Defeating Enemies Fills More Art Gauge +0", effect: "+5 Ultimate gauge per enemy kill", category: "crossover", stack: "tiers" },
+  { name: "Improved Physical Damage Negation +0", effect: "+10% physical damage negation", category: "crossover", stack: "tiers" },
+  { name: "Improved [Element] Damage Negation +0", effect: "+10% of the respective element's damage negation", category: "crossover", stack: "tiers" },
+  { name: "Improved [Status] Resistance +0", effect: "+75 of the specified status resistance", category: "crossover", stack: "tiers" },
+  { name: "Partial HP Restoration upon Post-Damage Attacks +0", effect: "Replenishes HP on hit for a short time after taking damage", category: "crossover", stack: "no", note: "Does not stack with the Deep +1/+2 versions." },
+  { name: "HP Restoration upon Thrusting Counterattack +0", effect: "Restores ~2.5% of max HP on counterhits", category: "crossover", stack: "tiers" },
+  { name: "HP Restored When Using Medicinal Boluses, etc. +0", effect: "Replenishes 50 HP from certain consumables", category: "crossover", stack: "tiers" },
 ];
