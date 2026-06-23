@@ -18,8 +18,15 @@ export const NEG_LABELS: Record<NegType, string> = {
 export const ELEMENTS: NegType[] = ["magic", "fire", "lightning", "holy"];
 export const PHYSICAL_TYPES: NegType[] = ["physical", "slash", "strike", "thrust"];
 
-/** Affinity symbols for the elemental damage types. */
-export const ELEMENT_ICONS: Partial<Record<NegType, string>> = {
+/**
+ * Symbols for every damage type. Physical-type paths are stubs — StatIcon hides
+ * missing images, so they render automatically once the official PNGs are added.
+ */
+export const NEG_ICONS: Record<NegType, string> = {
+  physical: "/icons/elements/standard.png",
+  slash: "/icons/elements/slash.png",
+  strike: "/icons/elements/strike.png",
+  thrust: "/icons/elements/pierce.png",
   magic: "/icons/elements/magic-affinity.png",
   fire: "/icons/elements/fire-affinity.png",
   lightning: "/icons/elements/lightning-affinity.png",

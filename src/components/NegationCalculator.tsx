@@ -6,7 +6,7 @@ import { Dropdown } from "@/components/Dropdown";
 import { StatIcon } from "@/components/StatIcon";
 import {
   computeNegations,
-  ELEMENT_ICONS,
+  NEG_ICONS,
   ELEMENTS,
   NEG_EFFECTS,
   NEG_EFFECT_MAP,
@@ -156,8 +156,11 @@ export function NegationCalculator() {
           <p className="mb-2 font-body text-sm text-parchment-muted">Base negation at Lv15 — all damage types:</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {NEG_TYPES.map((t) => (
-              <div key={t} className="flex items-center justify-between rounded-md border border-night-700 bg-night-900/60 px-3 py-2">
-                <span className="font-body text-sm text-parchment-muted">{NEG_LABELS[t]}</span>
+              <div key={t} className="flex items-center justify-between gap-2 rounded-md border border-night-700 bg-night-900/60 px-3 py-2">
+                <span className="flex min-w-0 items-center gap-1.5 font-body text-sm text-parchment-muted">
+                  {NEG_ICONS[t] && <StatIcon src={NEG_ICONS[t]!} alt="" size={14} />}
+                  {NEG_LABELS[t]}
+                </span>
                 <span className="font-display text-sm font-bold tabular-nums text-sky-300">{character.negations[t]}%</span>
               </div>
             ))}
@@ -266,7 +269,7 @@ export function NegationCalculator() {
                 {alwaysOn.map(({ eff, element, count }, i) => (
                   <li key={i} className="flex items-center justify-between gap-3 rounded-md border border-night-700 bg-night-900/40 px-3 py-2">
                     <span className="min-w-0">
-                      <span className="inline-flex items-center gap-1 text-parchment">{element && ELEMENT_ICONS[element] && <StatIcon src={ELEMENT_ICONS[element]!} alt="" size={13} />}{effLabel(eff, element)}</span>
+                      <span className="inline-flex items-center gap-1 text-parchment">{element && NEG_ICONS[element] && <StatIcon src={NEG_ICONS[element]!} alt="" size={13} />}{effLabel(eff, element)}</span>
                       {count > 1 && <span className="ml-1.5 rounded bg-night-700 px-1 text-[0.65rem] font-semibold text-gold-bright">×{count}</span>}
                       <span className="block text-[0.7rem] text-parchment-faint">{scopeLabel(eff.scope, element)}{stackNote(eff.stack) && ` · ${stackNote(eff.stack)}`}</span>
                     </span>
@@ -299,7 +302,7 @@ export function NegationCalculator() {
                               <span className={`h-3 w-3 rounded-full bg-night-950 transition-transform ${on ? "translate-x-3" : ""}`} />
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className="inline-flex items-center gap-1 text-parchment">{element && ELEMENT_ICONS[element] && <StatIcon src={ELEMENT_ICONS[element]!} alt="" size={13} />}{effLabel(eff, element)}</span>
+                              <span className="inline-flex items-center gap-1 text-parchment">{element && NEG_ICONS[element] && <StatIcon src={NEG_ICONS[element]!} alt="" size={13} />}{effLabel(eff, element)}</span>
                               {count > 1 && <span className="ml-1.5 rounded bg-night-700 px-1 text-[0.65rem] font-semibold text-gold-bright">×{count}</span>}
                               <span className="block text-[0.7rem] text-parchment-faint">{eff.condition} · {scopeLabel(eff.scope, element)}{stackNote(eff.stack) && ` · ${stackNote(eff.stack)}`}</span>
                             </span>
@@ -340,7 +343,9 @@ export function NegationCalculator() {
                     const gained = f - character.negations[t];
                     return (
                       <tr key={t} className="border-b border-night-800/70">
-                        <td className="py-2 pr-3 font-display font-semibold text-parchment">{NEG_LABELS[t]}</td>
+                        <td className="py-2 pr-3 font-display font-semibold text-parchment">
+                          <span className="flex items-center gap-1.5">{NEG_ICONS[t] && <StatIcon src={NEG_ICONS[t]!} alt="" size={14} />}{NEG_LABELS[t]}</span>
+                        </td>
                         <td className="px-2 py-2 text-right tabular-nums text-parchment-faint">{character.negations[t]}%</td>
                         <td className="px-2 py-2 text-right font-semibold tabular-nums text-sky-300">
                           {f.toFixed(1)}%{gained > 0.05 && <span className="ml-1 text-[0.7rem] text-emerald-400">+{gained.toFixed(1)}</span>}
@@ -385,7 +390,7 @@ function effectOptions(source: EffectSource) {
       return {
         value: o.id,
         group: o.group,
-        icon: o.element ? ELEMENT_ICONS[o.element] : undefined,
+        icon: o.element ? NEG_ICONS[o.element] : undefined,
         label: `${o.label} (${o.value > 0 ? `+${o.value}` : o.value}%${o.element ? ` ${NEG_LABELS[o.element]}` : ""})${note ? ` · ${note}` : ""}`,
       };
     });
@@ -403,7 +408,7 @@ function EffectRow({ source, inst, onChange, onRemove, curse }: {
         onChange={(v) => onChange({ effectId: v, element: inst.element })} />
       {eff?.needsElement && (
         <Dropdown value={inst.element ?? "magic"} clearable={false} className="w-32 shrink-0"
-          options={ELEMENTS.map((el) => ({ value: el, label: NEG_LABELS[el], icon: ELEMENT_ICONS[el] }))}
+          options={ELEMENTS.map((el) => ({ value: el, label: NEG_LABELS[el], icon: NEG_ICONS[el] }))}
           onChange={(v) => onChange({ ...inst, element: v as NegType })} />
       )}
       <button type="button" onClick={onRemove} aria-label="Remove" className="grid h-9 w-9 shrink-0 place-items-center rounded border border-night-600 text-parchment-faint hover:text-gold">×</button>
