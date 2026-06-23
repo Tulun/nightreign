@@ -44,7 +44,7 @@ export function scopeLabel(scope: Scope, element?: NegType): string {
   }
 }
 
-export type EffectSource = "relic" | "weapon" | "curse" | "talisman";
+export type EffectSource = "relic" | "weapon" | "curse" | "talisman" | "shield";
 
 /** How an effect stacks with more copies of ITSELF:
  *  - "yes":   every copy stacks (e.g. physical/elemental/low-HP negation)
