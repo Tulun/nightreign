@@ -1,10 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { nightfarers } from "@/data/characters";
 import { Dropdown } from "@/components/Dropdown";
+import { StatIcon } from "@/components/StatIcon";
 import {
   computeNegations,
+  ELEMENT_ICONS,
   ELEMENTS,
   NEG_EFFECTS,
   NEG_EFFECT_MAP,
@@ -21,8 +23,20 @@ import {
 type Step = "character" | "buffs" | "results";
 interface Inst { effectId: string; element?: NegType }
 interface Relic { enabled: boolean; effects: Inst[]; curses: Inst[] }
+interface Loadout { relics: Relic[]; weapons: Inst[]; talismanSlots: string[]; condOn: Record<string, boolean> }
 
 const NEW_RELICS = (): Relic[] => Array.from({ length: 6 }, () => ({ enabled: false, effects: [], curses: [] }));
+
+/** Group display/sort order in the pickers and summary. */
+const GROUP_ORDER = ["Physical", "Conditional", "Affinity", "Elemental", "Penalty", "Curse"];
+
+const STORAGE_KEY = "nr-negation-loadouts";
+function readStore(): Record<string, Loadout> {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+}
+function writeStore(s: Record<string, Loadout>) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
+}
 
 export function NegationCalculator() {
   const [step, setStep] = useState<Step>("character");
@@ -33,7 +47,44 @@ export function NegationCalculator() {
   const [condOn, setCondOn] = useState<Record<string, boolean>>({});
   const [hit, setHit] = useState(1000);
 
+  const [loaded, setLoaded] = useState(false);
   const character = nightfarers.find((c) => c.name === charName) ?? nightfarers[0];
+
+  function applyLoadout(l?: Loadout) {
+    setRelics(l?.relics ?? NEW_RELICS());
+    setWeapons(l?.weapons ?? []);
+    setTalismanSlots(l?.talismanSlots ?? ["", ""]);
+    setCondOn(l?.condOn ?? {});
+  }
+
+  // Restore the last-used character and its loadout on mount.
+  useEffect(() => {
+    let last: string | null = null;
+    try { last = localStorage.getItem("nr-negation-char"); } catch { /* ignore */ }
+    const initial = last && nightfarers.some((c) => c.name === last) ? last : charName;
+    if (initial !== charName) setCharName(initial);
+    applyLoadout(readStore()[initial]);
+    setLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist the current character's loadout whenever it changes.
+  useEffect(() => {
+    if (!loaded) return;
+    const s = readStore();
+    s[charName] = { relics, weapons, talismanSlots, condOn };
+    writeStore(s);
+  }, [loaded, charName, relics, weapons, talismanSlots, condOn]);
+
+  function selectChar(name: string) {
+    try { localStorage.setItem("nr-negation-char", name); } catch { /* ignore */ }
+    applyLoadout(readStore()[name]);
+    setCharName(name);
+  }
+
+  function clearAll() {
+    applyLoadout(undefined);
+  }
 
   function patchRelic(i: number, fn: (r: Relic) => Relic) {
     setRelics((prev) => prev.map((r, idx) => (idx === i ? fn(r) : r)));
@@ -74,7 +125,9 @@ export function NegationCalculator() {
     return Array.from(m.values());
   }, [activeEffects]);
 
-  const alwaysOn = grouped.filter(({ eff }) => !eff.condition);
+  const alwaysOn = grouped
+    .filter(({ eff }) => !eff.condition)
+    .sort((a, b) => GROUP_ORDER.indexOf(a.eff.group) - GROUP_ORDER.indexOf(b.eff.group));
   const conditional = grouped.filter(({ eff }) => eff.condition);
   const condKeys = conditional.map(({ eff, element }) => effKey(eff, element));
   const allCondOn = condKeys.length > 0 && condKeys.every((k) => condOn[k]);
@@ -98,7 +151,7 @@ export function NegationCalculator() {
             <span className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">Nightfarer</span>
             <Dropdown value={charName} clearable={false}
               options={nightfarers.map((c) => ({ value: c.name, label: c.name }))}
-              onChange={setCharName} />
+              onChange={selectChar} />
           </label>
           <p className="mb-2 font-body text-sm text-parchment-muted">Base negation at Lv15 — all damage types:</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -115,6 +168,11 @@ export function NegationCalculator() {
 
       {step === "buffs" && (
         <div className="space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <button type="button" onClick={() => setStep("character")} className="rounded-lg border border-night-600 bg-night-800 px-4 py-2 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700">← Back</button>
+            <button type="button" onClick={clearAll} className="rounded-lg border border-red-500/40 bg-night-800 px-4 py-2 font-body text-sm text-red-300 transition-colors hover:bg-night-700">Clear all</button>
+          </div>
+
           <Section title="Negation Relics">
             <p className="mb-3 rounded-lg border border-night-600 bg-night-800/60 px-4 py-2 font-body text-sm text-parchment-muted">
               Up to 6 relics, each holding negation effects. Most stack with every copy; some only stack across
@@ -187,6 +245,11 @@ export function NegationCalculator() {
 
       {step === "results" && (
         <div className="space-y-6">
+          <div className="flex items-center justify-between gap-3">
+            <button type="button" onClick={() => setStep("buffs")} className="rounded-lg border border-night-600 bg-night-800 px-4 py-2 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700">← Edit Buffs</button>
+            <button type="button" onClick={clearAll} className="rounded-lg border border-red-500/40 bg-night-800 px-4 py-2 font-body text-sm text-red-300 transition-colors hover:bg-night-700">Clear all</button>
+          </div>
+
           <div className="frame rounded-lg bg-night-850 p-4 text-center">
             <p className="eyebrow text-sky-300">Negation Breakdown</p>
             <p className="mt-1 font-display text-2xl font-bold text-parchment">{character.name}</p>
@@ -203,7 +266,7 @@ export function NegationCalculator() {
                 {alwaysOn.map(({ eff, element, count }, i) => (
                   <li key={i} className="flex items-center justify-between gap-3 rounded-md border border-night-700 bg-night-900/40 px-3 py-2">
                     <span className="min-w-0">
-                      <span className="text-parchment">{effLabel(eff, element)}</span>
+                      <span className="inline-flex items-center gap-1 text-parchment">{element && ELEMENT_ICONS[element] && <StatIcon src={ELEMENT_ICONS[element]!} alt="" size={13} />}{effLabel(eff, element)}</span>
                       {count > 1 && <span className="ml-1.5 rounded bg-night-700 px-1 text-[0.65rem] font-semibold text-gold-bright">×{count}</span>}
                       <span className="block text-[0.7rem] text-parchment-faint">{scopeLabel(eff.scope, element)}{stackNote(eff.stack) && ` · ${stackNote(eff.stack)}`}</span>
                     </span>
@@ -236,7 +299,7 @@ export function NegationCalculator() {
                               <span className={`h-3 w-3 rounded-full bg-night-950 transition-transform ${on ? "translate-x-3" : ""}`} />
                             </span>
                             <span className="min-w-0 flex-1">
-                              <span className="text-parchment">{effLabel(eff, element)}</span>
+                              <span className="inline-flex items-center gap-1 text-parchment">{element && ELEMENT_ICONS[element] && <StatIcon src={ELEMENT_ICONS[element]!} alt="" size={13} />}{effLabel(eff, element)}</span>
                               {count > 1 && <span className="ml-1.5 rounded bg-night-700 px-1 text-[0.65rem] font-semibold text-gold-bright">×{count}</span>}
                               <span className="block text-[0.7rem] text-parchment-faint">{eff.condition} · {scopeLabel(eff.scope, element)}{stackNote(eff.stack) && ` · ${stackNote(eff.stack)}`}</span>
                             </span>
@@ -314,14 +377,18 @@ function effLabel(eff: NegEffect, element?: NegType) {
 }
 
 function effectOptions(source: EffectSource) {
-  return NEG_EFFECTS.filter((e) => e.source === source).map((o) => {
-    const note = stackNote(o.stack);
-    return {
-      value: o.id,
-      group: o.group,
-      label: `${o.label} (${o.value > 0 ? `+${o.value}` : o.value}%${o.element ? ` ${NEG_LABELS[o.element]}` : ""})${note ? ` · ${note}` : ""}`,
-    };
-  });
+  return NEG_EFFECTS.filter((e) => e.source === source)
+    .slice()
+    .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group))
+    .map((o) => {
+      const note = stackNote(o.stack);
+      return {
+        value: o.id,
+        group: o.group,
+        icon: o.element ? ELEMENT_ICONS[o.element] : undefined,
+        label: `${o.label} (${o.value > 0 ? `+${o.value}` : o.value}%${o.element ? ` ${NEG_LABELS[o.element]}` : ""})${note ? ` · ${note}` : ""}`,
+      };
+    });
 }
 
 function EffectRow({ source, inst, onChange, onRemove, curse }: {
@@ -335,8 +402,8 @@ function EffectRow({ source, inst, onChange, onRemove, curse }: {
         options={effectOptions(source)}
         onChange={(v) => onChange({ effectId: v, element: inst.element })} />
       {eff?.needsElement && (
-        <Dropdown value={inst.element ?? "magic"} clearable={false} className="w-28 shrink-0"
-          options={ELEMENTS.map((el) => ({ value: el, label: NEG_LABELS[el] }))}
+        <Dropdown value={inst.element ?? "magic"} clearable={false} className="w-32 shrink-0"
+          options={ELEMENTS.map((el) => ({ value: el, label: NEG_LABELS[el], icon: ELEMENT_ICONS[el] }))}
           onChange={(v) => onChange({ ...inst, element: v as NegType })} />
       )}
       <button type="button" onClick={onRemove} aria-label="Remove" className="grid h-9 w-9 shrink-0 place-items-center rounded border border-night-600 text-parchment-faint hover:text-gold">×</button>

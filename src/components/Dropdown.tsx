@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { StatIcon } from "@/components/StatIcon";
 
 export interface DropdownOption {
   value: string;
   label: string;
   group?: string;
+  /** Optional leading icon (e.g. element affinity symbol). */
+  icon?: string;
 }
 
 /**
@@ -70,7 +73,10 @@ export function Dropdown({
         aria-expanded={open}
         className={`flex w-full items-center justify-between gap-2 rounded-lg border ${border} bg-night-900 px-3 py-2 text-left font-body text-sm transition-colors hover:border-night-500 focus:border-gold-faint focus:outline-none ${selected ? "text-parchment" : "text-parchment-faint"}`}
       >
-        <span className="truncate">{selected?.label ?? placeholder}</span>
+        <span className="flex min-w-0 items-center gap-1.5 truncate">
+          {selected?.icon && <StatIcon src={selected.icon} alt="" size={14} />}
+          {selected?.label ?? placeholder}
+        </span>
         <svg viewBox="0 0 24 24" className={`h-3.5 w-3.5 shrink-0 text-parchment-faint transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M6 9l6 6 6-6" />
         </svg>
@@ -95,10 +101,11 @@ export function Dropdown({
                   role="option"
                   aria-selected={o.value === value}
                   onClick={() => pick(o.value)}
-                  className={`block w-full rounded px-2 py-1.5 text-left font-body text-sm transition-colors ${
+                  className={`flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left font-body text-sm transition-colors ${
                     o.value === value ? "bg-night-700 text-gold-bright" : "text-parchment-muted hover:bg-night-700 hover:text-parchment"
                   }`}
                 >
+                  {o.icon && <StatIcon src={o.icon} alt="" size={14} />}
                   {o.label}
                 </button>
               ))}

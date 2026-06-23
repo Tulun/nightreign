@@ -18,6 +18,14 @@ export const NEG_LABELS: Record<NegType, string> = {
 export const ELEMENTS: NegType[] = ["magic", "fire", "lightning", "holy"];
 export const PHYSICAL_TYPES: NegType[] = ["physical", "slash", "strike", "thrust"];
 
+/** Affinity symbols for the elemental damage types. */
+export const ELEMENT_ICONS: Partial<Record<NegType, string>> = {
+  magic: "/icons/elements/magic-affinity.png",
+  fire: "/icons/elements/fire-affinity.png",
+  lightning: "/icons/elements/lightning-affinity.png",
+  holy: "/icons/elements/holy-affinity.png",
+};
+
 export type Scope = "all" | "physical" | "affinity" | "element";
 
 export function scopeLabel(scope: Scope, element?: NegType): string {
