@@ -103,23 +103,53 @@ export const deepRelics: DeepRelic[] = [
   { name: "Rot Buildup When Below Max HP", effect: "+2 rot buildup every 0.24s when HP is below 85%", category: "curse", stack: "yes", note: "Won't trigger Executor's Tenacity until cured." },
   { name: "Near Death Reduces Max HP", effect: "−0.75x maximum HP for 60s after being downed", category: "curse", stack: "yes" },
 
-  // ── Normal Pool (also rolls on Deep relics) ─────────────────────────────────
-  // The normal-pool version of each tiered Deep effect that also exists in the
-  // normal pool. Attack boosts are the exception: only the +2 tier crosses over.
-  { name: "Items confer effect to all nearby allies", effect: "Items you use also confer their effect to nearby allies", category: "crossover", stack: "no" },
-  { name: "Physical Attack Up +2", effect: "+6% physical damage", category: "crossover", stack: "yes", note: "Only the +2 normal tier rolls on Deep — not +0 or +1." },
-  { name: "Magic/Fire/Lightning/Holy Attack Up +2", effect: "+6.5% of the respective element's damage", category: "crossover", stack: "yes", note: "Only the +2 normal tier rolls on Deep — not +0 or +1." },
-  { name: "Attack Power Up After Using Grease +0", effect: "+10% physical damage for 30s after using a grease item", category: "crossover", stack: "tiers" },
-  { name: "Attack Power Up vs Frost/Poison/Rot-Afflicted Enemy +0", effect: "+10% damage against enemies suffering the specified status", category: "crossover", stack: "tiers" },
-  { name: "Improved Guard Counters +0", effect: "+17% guard counter damage", category: "crossover", stack: "tiers" },
-  { name: "Improved [Consumable] Damage +0", effect: "+15% pot/knife/stone/perfume damage", category: "crossover", stack: "tiers" },
-  { name: "Art Gauge Charged from Successful Guarding +0", effect: "+1 Ultimate gauge on blocking an attack", category: "crossover", stack: "tiers" },
-  { name: "Art Gauge Fills Moderately upon Critical Hit +0", effect: "+5 Ultimate gauge on a critical hit", category: "crossover", stack: "tiers" },
-  { name: "Defeating Enemies Fills More Art Gauge +0", effect: "+5 Ultimate gauge per enemy kill", category: "crossover", stack: "tiers" },
-  { name: "Improved Physical Damage Negation +0", effect: "+10% physical damage negation", category: "crossover", stack: "tiers" },
-  { name: "Improved [Element] Damage Negation +0", effect: "+10% of the respective element's damage negation", category: "crossover", stack: "tiers" },
-  { name: "Improved [Status] Resistance +0", effect: "+75 of the specified status resistance", category: "crossover", stack: "tiers" },
-  { name: "Partial HP Restoration upon Post-Damage Attacks +0", effect: "Replenishes HP on hit for a short time after taking damage", category: "crossover", stack: "no", note: "Does not stack with the Deep +1/+2 versions." },
-  { name: "HP Restoration upon Thrusting Counterattack +0", effect: "Restores ~2.5% of max HP on counterhits", category: "crossover", stack: "tiers" },
-  { name: "HP Restored When Using Medicinal Boluses, etc. +0", effect: "Replenishes 50 HP from certain consumables", category: "crossover", stack: "tiers" },
+  // ── Normal-pool effects that also roll on Deep relics (crossover: true) ──────
+  // Filed into their natural categories; the "Normal + Deep" badge marks them.
+  // Offensive
+  { name: "Physical Attack Up +2", effect: "+6% physical damage", category: "offensive", stack: "yes", crossover: true, note: "Only the +2 normal tier rolls on Deep — not +0 or +1." },
+  { name: "Magic/Fire/Lightning/Holy Attack Up +2", effect: "+6.5% of the respective element's damage", category: "offensive", stack: "yes", crossover: true, note: "Only the +2 normal tier rolls on Deep — not +0 or +1." },
+  { name: "Attack Power Up After Using Grease +0", effect: "+10% physical damage for 30s after using a grease item", category: "offensive", stack: "tiers", crossover: true },
+  { name: "Attack Power Up vs Frost/Poison/Rot-Afflicted Enemy +0", effect: "+10% damage against enemies suffering the specified status", category: "offensive", stack: "tiers", crossover: true },
+  { name: "Improved Guard Counters +0", effect: "+17% guard counter damage", category: "offensive", stack: "tiers", crossover: true },
+  { name: "Improved [Consumable] Damage +0", effect: "+15% pot/knife/stone/perfume damage", category: "offensive", stack: "tiers", crossover: true },
+  { name: "Improved [Spell School] Sorcery/Incantation", effect: "+12% damage of the specified school (e.g. Giants' Flame Incantations, Carian Sword Sorcery)", category: "offensive", stack: "no", crossover: true },
+  { name: "Improved [Weapon] Attack Power", effect: "+9% (+6% for bows) damage with that weapon type", category: "offensive", stack: "yes", crossover: true },
+  { name: "Improved Attack Power with 3+ [Weapon] Equipped", effect: "+20% (+10% for bows) when 3+ of that weapon type are equipped", category: "offensive", stack: "no", crossover: true },
+  { name: "Improved Critical Hits", effect: "+18% critical hit damage", category: "offensive", stack: "yes", crossover: true },
+  { name: "Improved Initial Standard Attack", effect: "+15% on the first light attack of a chain", category: "offensive", stack: "yes", crossover: true },
+  { name: "Guard Counter Boosted by Current HP", effect: "Adds a flat hit (≈ current HP ÷ 20) to each guard counter", category: "offensive", stack: "no", crossover: true },
+  { name: "Art Gauge Charged from Successful Guarding +0", effect: "+1 Ultimate gauge on blocking an attack", category: "offensive", stack: "tiers", crossover: true },
+  { name: "Art Gauge Fills Moderately upon Critical Hit +0", effect: "+5 Ultimate gauge on a critical hit", category: "offensive", stack: "tiers", crossover: true },
+  { name: "Defeating Enemies Fills More Art Gauge +0", effect: "+5 Ultimate gauge per enemy kill", category: "offensive", stack: "tiers", crossover: true },
+  // Defensive
+  { name: "Improved Physical Damage Negation +0", effect: "+10% physical damage negation", category: "defensive", stack: "tiers", crossover: true },
+  { name: "Improved [Element] Damage Negation +0", effect: "+10% of the respective element's damage negation", category: "defensive", stack: "tiers", crossover: true },
+  { name: "Improved [Status] Resistance +0", effect: "+75 of the specified status resistance", category: "defensive", stack: "tiers", crossover: true },
+  { name: "Improved Damage Negation at Low HP", effect: "+16% damage negation when HP is below 40%", category: "defensive", stack: "yes", crossover: true },
+  { name: "Improved Poise & Damage Negation When Knocked Back by Damage", effect: "+20% negation & −20% poise damage for 20s after being knocked back", category: "defensive", stack: "no", crossover: true },
+  { name: "Draw Enemy Attention While Guarding", effect: "Increases enemy aggro while holding block", category: "defensive", stack: "no", crossover: true },
+  // Stat
+  { name: "Poise +3", effect: "−15% poise damage taken", category: "stat", stack: "yes", crossover: true },
+  { name: "Max FP Up with 3+ Staves/Seals Equipped", effect: "+50 Max FP", category: "stat", stack: "no", crossover: true },
+  { name: "Max HP Up with 3+ Shields Equipped", effect: "+200 Max HP", category: "stat", stack: "no", crossover: true },
+  // Regen
+  { name: "Partial HP Restoration upon Post-Damage Attacks +0", effect: "Replenishes HP on hit for a short time after taking damage", category: "regen", stack: "no", crossover: true, note: "Does not stack with the Deep +1/+2 versions." },
+  { name: "HP Restoration upon Thrusting Counterattack +0", effect: "Restores ~2.5% of max HP on counterhits", category: "regen", stack: "tiers", crossover: true },
+  { name: "HP Restored When Using Medicinal Boluses, etc. +0", effect: "Replenishes 50 HP from certain consumables", category: "regen", stack: "tiers", crossover: true },
+  { name: "Critical Hit Boosts Stamina Recovery Speed +0", effect: "+10 stamina/s for 15s after a critical hit", category: "regen", stack: "tiers", crossover: true },
+  { name: "Slowly Restore HP for Self & Nearby Allies When HP Is Low", effect: "+0.5% max HP + 1 HP/s for 50s while below 20% HP", category: "regen", stack: "no", crossover: true },
+  { name: "Raised Stamina Recovery for Nearby Allies, but Not for Self", effect: "+4 stamina/s for nearby allies", category: "regen", stack: "no", crossover: true },
+  { name: "Defeating Enemies Restores HP for Allies but Not for Self", effect: "Allies recover 20 HP per enemy kill", category: "regen", stack: "no", crossover: true },
+  { name: "HP Restoration upon [Weapon] Attacks", effect: "Restores ~15 HP per hit (same for every weapon type)", category: "regen", stack: "no", crossover: true },
+  { name: "FP Restoration upon [Weapon] Attacks", effect: "Restores ~2 FP per hit (same for every weapon type)", category: "regen", stack: "no", crossover: true },
+  { name: "Stamina Recovery upon Landing Attacks", effect: "Restores 2 / 3 stamina with continuous attacks", category: "regen", stack: "tiers", crossover: true },
+  // Exploration
+  { name: "Items Confer Effect to All Nearby Allies", effect: "Items you use also confer their effect to nearby allies", category: "exploration", stack: "no", crossover: true },
+  { name: "Increased Rune Acquisition for Self and Allies", effect: "+3.5% rune gain for you and nearby allies", category: "exploration", stack: "yes", crossover: true },
+  { name: "Rune Discount for Shop Purchases While on Expedition", effect: "10% discount at merchants", category: "exploration", stack: "no", crossover: true },
+  { name: "Treasure Marked upon Map", effect: "Reveals hidden chest locations", category: "exploration", stack: "no", crossover: true },
+  { name: "Flask Also Heals Allies", effect: "Heals nearby allies for 50% of the flask's HP", category: "exploration", stack: "no", crossover: true },
+  // Start of Game
+  { name: "Stonesword Key in possession at start of expedition", effect: "Begin the expedition holding a Stonesword Key", category: "start", stack: "no", crossover: true },
+  { name: "Small Pouch in possession at start of expedition", effect: "Begin the expedition holding a Small Pouch", category: "start", stack: "yes", crossover: true },
 ];

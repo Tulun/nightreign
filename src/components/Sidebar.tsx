@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation";
  */
 const sections: { label: string; href: string; soon?: boolean }[] = [
   { label: "Town Map Seeds", href: "/town-map" },
+  { label: "Nightfarers", href: "/nightfarers" },
   { label: "Greatshields", href: "/greatshields" },
   { label: "Great Hollow", href: "/great-hollow" },
   { label: "Recluse Cocktails", href: "/recluse-cocktails" },

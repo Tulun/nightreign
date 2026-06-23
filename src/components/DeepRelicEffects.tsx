@@ -123,11 +123,21 @@ function RelicRow({ relic, display }: { relic: DeepRelic; display?: string }) {
     <div className="frame rounded-lg bg-night-800 px-3 py-2.5">
       <div className="flex items-start justify-between gap-3">
         <h4 className="font-display text-sm font-semibold text-parchment">{display ?? relic.name}</h4>
-        <span
-          className={`shrink-0 rounded border px-1.5 py-0.5 font-body text-[0.65rem] font-semibold ${stack.cls}`}
-          title={stack.legend}
-        >
-          {stack.label}
+        <span className="flex shrink-0 items-center gap-1">
+          {relic.crossover && (
+            <span
+              className="rounded border border-gold-faint/50 px-1.5 py-0.5 font-body text-[0.6rem] font-semibold text-gold-dim"
+              title="Also rolls on normal relics"
+            >
+              Normal + Deep
+            </span>
+          )}
+          <span
+            className={`rounded border px-1.5 py-0.5 font-body text-[0.65rem] font-semibold ${stack.cls}`}
+            title={stack.legend}
+          >
+            {stack.label}
+          </span>
         </span>
       </div>
       <p className="mt-1 font-body text-sm text-parchment-muted">{relic.effect}</p>

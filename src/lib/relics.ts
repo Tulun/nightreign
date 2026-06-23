@@ -294,14 +294,15 @@ export type DeepRelicCategory =
   | "defensive"
   | "regen"
   | "character"
-  | "curse"
-  | "crossover";
+  | "curse";
 
 export interface DeepRelic {
   name: string;
   effect: string;
   category: DeepRelicCategory;
   stack: StackKind;
+  /** Also rolls on normal relics (a Normal-pool effect that crosses over to Deep). */
+  crossover?: boolean;
   note?: string;
 }
 
@@ -314,5 +315,4 @@ export const DEEP_RELIC_CATEGORIES: { key: DeepRelicCategory; label: string }[] 
   { key: "regen", label: "Regen" },
   { key: "character", label: "Character" },
   { key: "curse", label: "Curse" },
-  { key: "crossover", label: "Normal Pool (also rolls on Deep)" },
 ];
