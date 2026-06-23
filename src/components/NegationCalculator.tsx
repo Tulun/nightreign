@@ -11,6 +11,7 @@ import {
   NEG_LABELS,
   NEG_TYPES,
   scopeLabel,
+  stackNote,
   type AppliedNeg,
   type EffectSource,
   type NegEffect,
@@ -38,7 +39,7 @@ export function NegationCalculator() {
     setRelics((prev) => prev.map((r, idx) => (idx === i ? fn(r) : r)));
   }
 
-  // Deduped active effects (one copy per rarity tier / element).
+  // Every applied instance. "yes" effects count each copy; "tiers"/"no" dedupe by tier.
   const activeEffects = useMemo(() => {
     const seen = new Set<string>();
     const out: { eff: NegEffect; element?: NegType }[] = [];
@@ -46,9 +47,11 @@ export function NegationCalculator() {
       const eff = inst.effectId ? NEG_EFFECT_MAP[inst.effectId] : undefined;
       if (!eff) return;
       const element = eff.needsElement ? inst.element ?? "magic" : eff.element;
-      const key = `${eff.id}:${element ?? ""}`;
-      if (seen.has(key)) return;
-      seen.add(key);
+      if (eff.stack !== "yes") {
+        const key = `${eff.id}:${element ?? ""}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+      }
       out.push({ eff, element });
     };
     relics.forEach((r) => { if (r.enabled) { r.effects.forEach(add); r.curses.forEach(add); } });
@@ -58,8 +61,21 @@ export function NegationCalculator() {
   }, [relics, weapons, talismanSlots]);
 
   const effKey = (eff: NegEffect, element?: NegType) => `${eff.id}:${element ?? ""}`;
-  const alwaysOn = activeEffects.filter(({ eff }) => !eff.condition);
-  const conditional = activeEffects.filter(({ eff }) => eff.condition);
+
+  // Group identical instances for display (shows a ×N multiplier when stacked).
+  const grouped = useMemo(() => {
+    const m = new Map<string, { eff: NegEffect; element?: NegType; count: number }>();
+    for (const { eff, element } of activeEffects) {
+      const k = effKey(eff, element);
+      const g = m.get(k);
+      if (g) g.count++;
+      else m.set(k, { eff, element, count: 1 });
+    }
+    return Array.from(m.values());
+  }, [activeEffects]);
+
+  const alwaysOn = grouped.filter(({ eff }) => !eff.condition);
+  const conditional = grouped.filter(({ eff }) => eff.condition);
   const condKeys = conditional.map(({ eff, element }) => effKey(eff, element));
   const allCondOn = condKeys.length > 0 && condKeys.every((k) => condOn[k]);
 
@@ -101,8 +117,8 @@ export function NegationCalculator() {
         <div className="space-y-6">
           <Section title="Negation Relics">
             <p className="mb-3 rounded-lg border border-night-600 bg-night-800/60 px-4 py-2 font-body text-sm text-parchment-muted">
-              Up to 6 relics, each holding stacking negation effects (one copy per rarity tier counts). Add a Curse
-              penalty if your relic carries one.
+              Up to 6 relics, each holding negation effects. Most stack with every copy; some only stack across
+              different tiers, and a few don&rsquo;t stack at all (noted on each). Add a Curse penalty if your relic carries one.
             </p>
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               {relics.map((relic, i) => (
@@ -184,11 +200,12 @@ export function NegationCalculator() {
                   <span className="text-parchment-muted">Base negation <span className="text-parchment-faint">(Lv15 · {character.name})</span></span>
                   <span className="font-semibold tabular-nums text-parchment-faint">base</span>
                 </li>
-                {alwaysOn.map(({ eff, element }, i) => (
+                {alwaysOn.map(({ eff, element, count }, i) => (
                   <li key={i} className="flex items-center justify-between gap-3 rounded-md border border-night-700 bg-night-900/40 px-3 py-2">
                     <span className="min-w-0">
                       <span className="text-parchment">{effLabel(eff, element)}</span>
-                      <span className="ml-1.5 text-[0.7rem] text-parchment-faint">{scopeLabel(eff.scope, element)}</span>
+                      {count > 1 && <span className="ml-1.5 rounded bg-night-700 px-1 text-[0.65rem] font-semibold text-gold-bright">×{count}</span>}
+                      <span className="block text-[0.7rem] text-parchment-faint">{scopeLabel(eff.scope, element)}{stackNote(eff.stack) && ` · ${stackNote(eff.stack)}`}</span>
                     </span>
                     <span className={`shrink-0 font-semibold tabular-nums ${eff.value < 0 ? "text-red-300" : "text-sky-300"}`}>{eff.value > 0 ? `+${eff.value}` : eff.value}%</span>
                   </li>
@@ -208,7 +225,7 @@ export function NegationCalculator() {
                     {allCondOn ? "Disable all conditions" : "Assume all conditions met"}
                   </button>
                   <ul className="space-y-1.5">
-                    {conditional.map(({ eff, element }, i) => {
+                    {conditional.map(({ eff, element, count }, i) => {
                       const k = effKey(eff, element);
                       const on = !!condOn[k];
                       return (
@@ -220,7 +237,8 @@ export function NegationCalculator() {
                             </span>
                             <span className="min-w-0 flex-1">
                               <span className="text-parchment">{effLabel(eff, element)}</span>
-                              <span className="block text-[0.7rem] text-parchment-faint">{eff.condition} · {scopeLabel(eff.scope, element)}</span>
+                              {count > 1 && <span className="ml-1.5 rounded bg-night-700 px-1 text-[0.65rem] font-semibold text-gold-bright">×{count}</span>}
+                              <span className="block text-[0.7rem] text-parchment-faint">{eff.condition} · {scopeLabel(eff.scope, element)}{stackNote(eff.stack) && ` · ${stackNote(eff.stack)}`}</span>
                             </span>
                             <span className={`shrink-0 font-semibold tabular-nums ${eff.value < 0 ? "text-red-300" : "text-sky-300"}`}>{eff.value > 0 ? `+${eff.value}` : eff.value}%</span>
                           </button>
@@ -281,8 +299,9 @@ export function NegationCalculator() {
           </div>
 
           <p className="font-body text-xs text-parchment-faint">
-            Negation stacks multiplicatively. Base values are at Lv15. Conditional buffs only apply under their stated
-            condition. Tier-stacking buffs count one copy per rarity tier.
+            Negation stacks multiplicatively — you can never reach 100%. Base values are at Lv15. Most effects stack with
+            every copy; &ldquo;tiers only&rdquo; effects count one copy per rarity tier; &ldquo;does not stack&rdquo; effects (e.g. poise &amp; knockback)
+            count once. Conditional buffs apply only when enabled above.
           </p>
         </div>
       )}
@@ -295,11 +314,14 @@ function effLabel(eff: NegEffect, element?: NegType) {
 }
 
 function effectOptions(source: EffectSource) {
-  return NEG_EFFECTS.filter((e) => e.source === source).map((o) => ({
-    value: o.id,
-    group: o.group,
-    label: `${o.label} (${o.value > 0 ? `+${o.value}` : o.value}%${o.element ? ` ${NEG_LABELS[o.element]}` : ""})${o.noStack ? " · no stack" : ""}`,
-  }));
+  return NEG_EFFECTS.filter((e) => e.source === source).map((o) => {
+    const note = stackNote(o.stack);
+    return {
+      value: o.id,
+      group: o.group,
+      label: `${o.label} (${o.value > 0 ? `+${o.value}` : o.value}%${o.element ? ` ${NEG_LABELS[o.element]}` : ""})${note ? ` · ${note}` : ""}`,
+    };
+  });
 }
 
 function EffectRow({ source, inst, onChange, onRemove, curse }: {
