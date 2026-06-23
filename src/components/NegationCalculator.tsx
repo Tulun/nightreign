@@ -29,6 +29,7 @@ export function NegationCalculator() {
   const [relics, setRelics] = useState<Relic[]>(NEW_RELICS);
   const [weapons, setWeapons] = useState<Inst[]>([]);
   const [talismanSlots, setTalismanSlots] = useState<string[]>(["", ""]);
+  const [condOn, setCondOn] = useState<Record<string, boolean>>({});
   const [hit, setHit] = useState(1000);
 
   const character = nightfarers.find((c) => c.name === charName) ?? nightfarers[0];
@@ -56,9 +57,18 @@ export function NegationCalculator() {
     return out;
   }, [relics, weapons, talismanSlots]);
 
+  const effKey = (eff: NegEffect, element?: NegType) => `${eff.id}:${element ?? ""}`;
+  const alwaysOn = activeEffects.filter(({ eff }) => !eff.condition);
+  const conditional = activeEffects.filter(({ eff }) => eff.condition);
+  const condKeys = conditional.map(({ eff, element }) => effKey(eff, element));
+  const allCondOn = condKeys.length > 0 && condKeys.every((k) => condOn[k]);
+
   const applied: AppliedNeg[] = useMemo(
-    () => activeEffects.map(({ eff, element }) => ({ scope: eff.scope, value: eff.value, element })),
-    [activeEffects],
+    () =>
+      activeEffects
+        .filter(({ eff, element }) => !eff.condition || condOn[`${eff.id}:${element ?? ""}`])
+        .map(({ eff, element }) => ({ scope: eff.scope, value: eff.value, element })),
+    [activeEffects, condOn],
   );
   const final = useMemo(() => computeNegations(character.negations, applied), [character, applied]);
 
@@ -166,8 +176,66 @@ export function NegationCalculator() {
             <p className="mt-1 font-display text-2xl font-bold text-parchment">{character.name}</p>
           </div>
 
-          <Section title="Negation by Damage Type">
-            <p className="mb-3 font-body text-sm text-parchment-muted">Each source reduces the remaining damage multiplicatively — you can never reach 100%.</p>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {/* Always active */}
+            <Section title="Always Active">
+              <ul className="space-y-1.5 font-body text-sm">
+                <li className="flex items-center justify-between gap-3 rounded-md border border-night-700 bg-night-900/40 px-3 py-2">
+                  <span className="text-parchment-muted">Base negation <span className="text-parchment-faint">(Lv15 · {character.name})</span></span>
+                  <span className="font-semibold tabular-nums text-parchment-faint">base</span>
+                </li>
+                {alwaysOn.map(({ eff, element }, i) => (
+                  <li key={i} className="flex items-center justify-between gap-3 rounded-md border border-night-700 bg-night-900/40 px-3 py-2">
+                    <span className="min-w-0">
+                      <span className="text-parchment">{effLabel(eff, element)}</span>
+                      <span className="ml-1.5 text-[0.7rem] text-parchment-faint">{scopeLabel(eff.scope, element)}</span>
+                    </span>
+                    <span className={`shrink-0 font-semibold tabular-nums ${eff.value < 0 ? "text-red-300" : "text-sky-300"}`}>{eff.value > 0 ? `+${eff.value}` : eff.value}%</span>
+                  </li>
+                ))}
+              </ul>
+              {alwaysOn.length === 0 && <p className="mt-2 font-body text-xs text-parchment-faint">No unconditional buffs — only base negation applies.</p>}
+            </Section>
+
+            {/* Conditional */}
+            <Section title="Conditional Buffs">
+              {conditional.length === 0 ? (
+                <p className="font-body text-sm text-parchment-faint">No conditional buffs in this build.</p>
+              ) : (
+                <>
+                  <button type="button" onClick={() => setCondOn((p) => { const v = !allCondOn; const next = { ...p }; condKeys.forEach((k) => (next[k] = v)); return next; })}
+                    className="mb-2 w-full rounded border border-night-600 bg-night-800 px-3 py-1.5 font-body text-xs font-semibold text-gold-bright transition-colors hover:bg-night-700">
+                    {allCondOn ? "Disable all conditions" : "Assume all conditions met"}
+                  </button>
+                  <ul className="space-y-1.5">
+                    {conditional.map(({ eff, element }, i) => {
+                      const k = effKey(eff, element);
+                      const on = !!condOn[k];
+                      return (
+                        <li key={i}>
+                          <button type="button" onClick={() => setCondOn((p) => ({ ...p, [k]: !p[k] }))}
+                            className={`flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left font-body text-sm transition-colors ${on ? "border-emerald-500/50 bg-emerald-500/10" : "border-night-700 bg-night-900/40 hover:bg-night-800"}`}>
+                            <span className={`inline-flex h-4 w-7 shrink-0 items-center rounded-full px-0.5 transition-colors ${on ? "bg-emerald-500" : "bg-night-600"}`}>
+                              <span className={`h-3 w-3 rounded-full bg-night-950 transition-transform ${on ? "translate-x-3" : ""}`} />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="text-parchment">{effLabel(eff, element)}</span>
+                              <span className="block text-[0.7rem] text-parchment-faint">{eff.condition} · {scopeLabel(eff.scope, element)}</span>
+                            </span>
+                            <span className={`shrink-0 font-semibold tabular-nums ${eff.value < 0 ? "text-red-300" : "text-sky-300"}`}>{eff.value > 0 ? `+${eff.value}` : eff.value}%</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <p className="mt-2 font-body text-[0.7rem] italic text-parchment-faint">Toggle the conditions you want to assume are active. Some are mutually exclusive (e.g. low HP vs. full HP).</p>
+                </>
+              )}
+            </Section>
+          </div>
+
+          <Section title="Cumulative Negation by Damage Type">
+            <p className="mb-3 font-body text-sm text-parchment-muted">Base + always-active + the conditions you enabled, stacked multiplicatively.</p>
             <label className="mb-3 flex items-center gap-2 font-body text-sm text-parchment-muted">
               Simulate hit value:
               <input type="number" value={hit} min={1} onChange={(e) => setHit(Math.max(1, Number(e.target.value) || 0))}
@@ -188,11 +256,14 @@ export function NegationCalculator() {
                   {NEG_TYPES.map((t) => {
                     const f = final[t];
                     const mult = 1 - f / 100;
+                    const gained = f - character.negations[t];
                     return (
                       <tr key={t} className="border-b border-night-800/70">
                         <td className="py-2 pr-3 font-display font-semibold text-parchment">{NEG_LABELS[t]}</td>
                         <td className="px-2 py-2 text-right tabular-nums text-parchment-faint">{character.negations[t]}%</td>
-                        <td className="px-2 py-2 text-right font-semibold tabular-nums text-sky-300">{f.toFixed(1)}%</td>
+                        <td className="px-2 py-2 text-right font-semibold tabular-nums text-sky-300">
+                          {f.toFixed(1)}%{gained > 0.05 && <span className="ml-1 text-[0.7rem] text-emerald-400">+{gained.toFixed(1)}</span>}
+                        </td>
                         <td className="px-2 py-2 text-right tabular-nums text-parchment-muted">×{mult.toFixed(3)}</td>
                         <td className="px-2 py-2 text-right font-semibold tabular-nums text-gold-dim">~{Math.round(hit * mult)}</td>
                       </tr>
@@ -203,42 +274,9 @@ export function NegationCalculator() {
             </div>
           </Section>
 
-          <Section title="Active Negation Buffs">
-            {activeEffects.length === 0 ? (
-              <p className="font-body text-sm text-parchment-faint">No effects selected — showing base negation only.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left font-body text-sm">
-                  <thead>
-                    <tr className="border-b border-night-600 text-parchment-faint">
-                      <th className="py-2 pr-3 font-semibold">Effect</th>
-                      <th className="px-2 py-2 font-semibold">Source</th>
-                      <th className="px-2 py-2 font-semibold">Applies To</th>
-                      <th className="px-2 py-2 font-semibold">Condition</th>
-                      <th className="px-2 py-2 text-right font-semibold">Negation</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeEffects.map(({ eff, element }, i) => (
-                      <tr key={i} className="border-b border-night-800/70">
-                        <td className="py-2 pr-3 text-parchment">{eff.label.replace("[Element]", element ? NEG_LABELS[element] : "Element")}</td>
-                        <td className="px-2 py-2 text-parchment-muted capitalize">{eff.source}</td>
-                        <td className="px-2 py-2 text-parchment-muted">{scopeLabel(eff.scope, element)}</td>
-                        <td className="px-2 py-2 text-parchment-muted">{eff.condition ?? "Always active"}</td>
-                        <td className={`px-2 py-2 text-right font-semibold tabular-nums ${eff.value < 0 ? "text-red-300" : "text-sky-300"}`}>
-                          {eff.value > 0 ? `+${eff.value}` : eff.value}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Section>
-
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={() => setStep("buffs")} className="rounded-lg border border-night-600 bg-night-800 px-4 py-2 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700">← Edit Buffs</button>
-            <button type="button" onClick={() => { setRelics(NEW_RELICS()); setWeapons([]); setTalismanSlots(["", ""]); setStep("character"); }}
+            <button type="button" onClick={() => { setRelics(NEW_RELICS()); setWeapons([]); setTalismanSlots(["", ""]); setCondOn({}); setStep("character"); }}
               className="rounded-lg border border-gold-faint bg-night-800 px-4 py-2 font-body text-sm font-semibold text-gold-bright transition-colors hover:bg-night-700">New Calculation</button>
           </div>
 
@@ -250,6 +288,10 @@ export function NegationCalculator() {
       )}
     </div>
   );
+}
+
+function effLabel(eff: NegEffect, element?: NegType) {
+  return eff.label.replace("[Element]", element ? NEG_LABELS[element] : "Element");
 }
 
 function effectOptions(source: EffectSource) {
