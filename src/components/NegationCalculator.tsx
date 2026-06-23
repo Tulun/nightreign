@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { nightfarers } from "@/data/characters";
 import { greatshields } from "@/data/greatshields";
+import { colossalSwords, colossalWeapons } from "@/data/blockWeapons";
 import { Dropdown } from "@/components/Dropdown";
 import { StatIcon } from "@/components/StatIcon";
 import {
@@ -24,7 +25,24 @@ import {
 type Step = "character" | "buffs" | "results";
 interface Inst { effectId: string; element?: NegType }
 interface Relic { enabled: boolean; effects: Inst[]; curses: Inst[] }
-interface Loadout { relics: Relic[]; weapons: Inst[]; talismanSlots: string[]; shieldId: string; condOn: Record<string, boolean> }
+interface Loadout { relics: Relic[]; weapons: Inst[]; talismanSlots: string[]; block: string; condOn: Record<string, boolean> }
+
+interface BlockStats { name: string; physical: number; negation: { magic: number; fire: number; lightning: number; holy: number }; guardBoost: number }
+
+/** A guarding block source is stored as "kind:id"; resolve it to its guard stats. */
+function resolveBlock(block: string): BlockStats | undefined {
+  if (!block) return undefined;
+  const sep = block.indexOf(":");
+  const kind = block.slice(0, sep);
+  const id = block.slice(sep + 1);
+  const src =
+    kind === "shield" ? greatshields.find((s) => s.id === id) :
+    kind === "sword" ? colossalSwords.find((s) => s.id === id) :
+    kind === "weapon" ? colossalWeapons.find((s) => s.id === id) : undefined;
+  if (!src) return undefined;
+  // Physical guard is 100 on every greatshield and colossal armament.
+  return { name: src.name, physical: 100, negation: src.negation, guardBoost: src.guardBoost };
+}
 
 const NEW_RELICS = (): Relic[] => Array.from({ length: 6 }, () => ({ enabled: false, effects: [], curses: [] }));
 
@@ -45,7 +63,7 @@ export function NegationCalculator() {
   const [relics, setRelics] = useState<Relic[]>(NEW_RELICS);
   const [weapons, setWeapons] = useState<Inst[]>([]);
   const [talismanSlots, setTalismanSlots] = useState<string[]>(["", ""]);
-  const [shieldId, setShieldId] = useState("");
+  const [block, setBlock] = useState("");
   const [condOn, setCondOn] = useState<Record<string, boolean>>({});
   const [hit, setHit] = useState(1000);
 
@@ -56,7 +74,7 @@ export function NegationCalculator() {
     setRelics(l?.relics ?? NEW_RELICS());
     setWeapons(l?.weapons ?? []);
     setTalismanSlots(l?.talismanSlots ?? ["", ""]);
-    setShieldId(l?.shieldId ?? "");
+    setBlock(l?.block ?? "");
     setCondOn(l?.condOn ?? {});
   }
 
@@ -75,9 +93,9 @@ export function NegationCalculator() {
   useEffect(() => {
     if (!loaded) return;
     const s = readStore();
-    s[charName] = { relics, weapons, talismanSlots, shieldId, condOn };
+    s[charName] = { relics, weapons, talismanSlots, block, condOn };
     writeStore(s);
-  }, [loaded, charName, relics, weapons, talismanSlots, shieldId, condOn]);
+  }, [loaded, charName, relics, weapons, talismanSlots, block, condOn]);
 
   function selectChar(name: string) {
     try { localStorage.setItem("nr-negation-char", name); } catch { /* ignore */ }
@@ -112,21 +130,21 @@ export function NegationCalculator() {
     talismanSlots.forEach((id) => { if (id) add({ effectId: id }); });
     weapons.forEach(add);
 
-    // A guarding shield blocks 100% physical (a given), so only its affinity
-    // Guarded Damage Negation is added — that's the part that actually varies.
-    const shield = shieldId ? greatshields.find((s) => s.id === shieldId) : undefined;
-    if (shield) {
+    // A guarding block source blocks 100% physical (a given on every shield and
+    // colossal arm), so only its affinity Guarded Damage Negation is added.
+    const blk = resolveBlock(block);
+    if (blk) {
       (["magic", "fire", "lightning", "holy"] as const).forEach((el) =>
         out.push({
           eff: {
-            id: `shield-${el}`, label: `${shield.name} guard`, source: "shield", group: "Shield",
-            scope: "element", value: shield.negation[el], stack: "no", element: el, condition: "While guarding",
+            id: `shield-${el}`, label: `${blk.name} guard`, source: "shield", group: "Shield",
+            scope: "element", value: blk.negation[el], stack: "no", element: el, condition: "While guarding",
           },
           element: el,
         }));
     }
     return out;
-  }, [relics, weapons, talismanSlots, shieldId]);
+  }, [relics, weapons, talismanSlots, block]);
 
   const effKey = (eff: NegEffect, element?: NegType) => `${eff.id}:${element ?? ""}`;
 
@@ -271,14 +289,41 @@ export function NegationCalculator() {
               className="mt-2 w-full rounded border border-dashed border-night-600 px-2 py-1.5 font-body text-xs text-sky-300 hover:bg-night-700">+ Add Weapon Passive</button>
           </Section>
 
-          <Section title="Shield (While Guarding)">
+          <Section title="Blocking">
             <p className="mb-3 font-body text-sm text-parchment-muted">
-              Pick a greatshield to see your negation while blocking. Every greatshield blocks 100% physical, so only its
-              affinity (magic/fire/lightning/holy) Guarded Damage Negation is added — toggle it under Conditional Buffs.
+              Pick the armament you guard behind to see your negation while blocking. Greatshields, colossal swords and
+              colossal weapons all block 100% physical, so only the affinity (magic/fire/lightning/holy) Guarded Damage
+              Negation is added — toggle it under Conditional Buffs. Only one can be selected at a time.
             </p>
-            <Dropdown value={shieldId} searchable placeholder="No shield (not blocking)"
-              options={greatshields.map((s) => ({ value: s.id, label: s.name, icon: s.icon ?? `/icons/greatshields/${s.id}.png` }))}
-              onChange={setShieldId} />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <BlockSelect label="Greatshield" kind="shield" block={block} onChange={setBlock}
+                options={greatshields.map((s) => ({ value: s.id, label: s.name, icon: s.icon ?? `/icons/greatshields/${s.id}.png` }))} />
+              <BlockSelect label="Colossal Sword" kind="sword" block={block} onChange={setBlock}
+                options={colossalSwords.map((s) => ({ value: s.id, label: s.name }))} />
+              <BlockSelect label="Colossal Weapon" kind="weapon" block={block} onChange={setBlock}
+                options={colossalWeapons.map((s) => ({ value: s.id, label: s.name }))} />
+            </div>
+            {(() => {
+              const b = resolveBlock(block);
+              if (!b) return null;
+              return (
+                <div className="mt-3 rounded-lg border border-night-700 bg-night-900/50 p-3">
+                  <p className="mb-2 flex items-center gap-1.5 font-display text-sm font-semibold text-parchment"><ShieldGlyph />{b.name}</p>
+                  <div className="flex flex-wrap gap-2 font-body text-sm">
+                    <GuardStat label="Physical" value={b.physical} />
+                    <GuardStat label="Magic" value={b.negation.magic} icon={NEG_ICONS.magic} />
+                    <GuardStat label="Fire" value={b.negation.fire} icon={NEG_ICONS.fire} />
+                    <GuardStat label="Lightning" value={b.negation.lightning} icon={NEG_ICONS.lightning} />
+                    <GuardStat label="Holy" value={b.negation.holy} icon={NEG_ICONS.holy} />
+                    <span className="inline-flex items-center gap-1 rounded-md border border-night-700 bg-night-900/60 px-2 py-1">
+                      <span className="text-parchment-faint">Guard Boost</span>
+                      <span className="font-semibold tabular-nums text-gold-dim">{b.guardBoost}</span>
+                    </span>
+                  </div>
+                  <p className="mt-2 font-body text-[0.7rem] text-parchment-faint">Guarded Damage Negation. Physical is fully blocked; the affinity values feed the blocking toggle.</p>
+                </div>
+              );
+            })()}
           </Section>
 
           <Nav onBack={() => setStep("character")} onNext={() => setStep("results")} nextLabel="Calculate Negation" />
@@ -491,6 +536,31 @@ function EffectRow({ source, inst, onChange, onRemove, curse }: {
 
 function TalismanSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return <Dropdown value={value} placeholder="None" options={effectOptions("talisman")} onChange={onChange} />;
+}
+
+function GuardStat({ label, value, icon }: { label: string; value: number; icon?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-night-700 bg-night-900/60 px-2 py-1">
+      {icon && <StatIcon src={icon} alt="" size={13} />}
+      <span className="text-parchment-faint">{label}</span>
+      <span className={`font-semibold tabular-nums ${value >= 100 ? "text-emerald-300" : "text-sky-300"}`}>{value}%</span>
+    </span>
+  );
+}
+
+/** One of three coupled block-source pickers — selecting any clears the others. */
+function BlockSelect({ label, kind, block, onChange, options }: {
+  label: string; kind: string; block: string; onChange: (v: string) => void; options: { value: string; label: string; icon?: string }[];
+}) {
+  const prefix = `${kind}:`;
+  const value = block.startsWith(prefix) ? block.slice(prefix.length) : "";
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="font-body text-[0.65rem] uppercase tracking-wide text-parchment-faint">{label}</span>
+      <Dropdown value={value} searchable placeholder="None" options={options}
+        onChange={(v) => onChange(v ? prefix + v : "")} />
+    </label>
+  );
 }
 
 function Steps({ step }: { step: Step }) {
