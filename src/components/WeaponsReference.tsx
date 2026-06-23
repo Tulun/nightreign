@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { weapons } from "@/data/weapons";
+import { Dropdown } from "@/components/Dropdown";
 import {
   AP_COLUMNS,
   RARITY_META,
@@ -163,18 +164,12 @@ function Select({
   return (
     <label className="flex flex-col gap-1">
       <span className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">{label}</span>
-      <select
+      <Dropdown
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-night-600 bg-night-900 px-2 py-1.5 font-body text-sm text-parchment focus:border-gold-faint focus:outline-none"
-      >
-        <option value="all">All</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {labels?.[o] ?? o}
-          </option>
-        ))}
-      </select>
+        clearable={false}
+        onChange={onChange}
+        options={[{ value: "all", label: "All" }, ...options.map((o) => ({ value: o, label: labels?.[o] ?? o }))]}
+      />
     </label>
   );
 }

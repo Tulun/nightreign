@@ -22,6 +22,7 @@ const sections: { label: string; href: string; soon?: boolean }[] = [
   { label: "Boss Codex", href: "/bosses" },
   { label: "Weapons", href: "/weapons" },
   { label: "Weapon Passives", href: "/weapon-passives" },
+  { label: "Talismans", href: "/talismans" },
   { label: "Nightlords", href: "/nightlords" },
   { label: "Relics", href: "/relics" },
   { label: "Shifting Earth", href: "/shifting-earth", soon: true },

@@ -29,7 +29,7 @@ export function scopeLabel(scope: Scope, element?: NegType): string {
   }
 }
 
-export type EffectSource = "relic" | "weapon" | "curse";
+export type EffectSource = "relic" | "weapon" | "curse" | "talisman";
 
 export interface NegEffect {
   id: string;
@@ -42,6 +42,8 @@ export interface NegEffect {
   value: number;
   /** Scope "element": the player chooses which element it applies to. */
   needsElement?: boolean;
+  /** Scope "element" with a baked-in element (e.g. drake talismans). */
+  element?: NegType;
   condition?: string;
   /** Only one copy counts even across relics. */
   noStack?: boolean;
@@ -96,6 +98,21 @@ export const NEG_EFFECTS: NegEffect[] = [
   { id: "c-repeat", label: "Repeated Evasions Lower Negation", source: "curse", group: "Curse", scope: "all", value: -35, condition: "On repeated rolls" },
   { id: "c-flask", label: "Reduced Negation for Flask Usages", source: "curse", group: "Curse", scope: "all", value: -45, condition: "While using a flask" },
   { id: "c-stam", label: "Low Stamina Impairs Negation", source: "curse", group: "Curse", scope: "all", value: -15, condition: "Stamina ≤ 50%" },
+
+  // ── Defensive talismans (shown in the talisman slots) ──
+  { id: "t-spelldrake", label: "Spelldrake Talisman", source: "talisman", group: "Elemental", scope: "element", element: "magic", value: 20 },
+  { id: "t-flamedrake", label: "Flamedrake Talisman", source: "talisman", group: "Elemental", scope: "element", element: "fire", value: 20 },
+  { id: "t-boltdrake", label: "Boltdrake Talisman", source: "talisman", group: "Elemental", scope: "element", element: "lightning", value: 20 },
+  { id: "t-haligdrake", label: "Haligdrake Talisman", source: "talisman", group: "Elemental", scope: "element", element: "holy", value: 20 },
+  { id: "t-pearldrake", label: "Pearldrake Talisman", source: "talisman", group: "Elemental", scope: "affinity", value: 10 },
+  { id: "t-dragoncrest", label: "Dragoncrest Shield Talisman", source: "talisman", group: "Physical", scope: "physical", value: 15 },
+  { id: "t-bluefeather", label: "Blue-Feathered Branchsword", source: "talisman", group: "Conditional", scope: "all", value: 50, condition: "Below 40% HP" },
+  { id: "t-ritualshield", label: "Ritual Shield Talisman", source: "talisman", group: "Conditional", scope: "all", value: 30, condition: "At 100% HP" },
+  { id: "t-crucible", label: "Crucible Feather Talisman", source: "talisman", group: "Penalty", scope: "all", value: -10 },
+  { id: "t-firescorp", label: "Fire Scorpion Charm", source: "talisman", group: "Penalty", scope: "physical", value: -3 },
+  { id: "t-boltscorp", label: "Lightning Scorpion Charm", source: "talisman", group: "Penalty", scope: "physical", value: -3 },
+  { id: "t-magicscorp", label: "Magic Scorpion Charm", source: "talisman", group: "Penalty", scope: "physical", value: -3 },
+  { id: "t-sacredscorp", label: "Sacred Scorpion Charm", source: "talisman", group: "Penalty", scope: "physical", value: -3 },
 ];
 
 export const NEG_EFFECT_MAP: Record<string, NegEffect> = Object.fromEntries(NEG_EFFECTS.map((e) => [e.id, e]));

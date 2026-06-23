@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { nightfarers } from "@/data/characters";
+import { Dropdown } from "@/components/Dropdown";
 import {
   computeNegations,
   ELEMENTS,
@@ -27,6 +28,7 @@ export function NegationCalculator() {
   const [charName, setCharName] = useState(nightfarers[0].name);
   const [relics, setRelics] = useState<Relic[]>(NEW_RELICS);
   const [weapons, setWeapons] = useState<Inst[]>([]);
+  const [talismanSlots, setTalismanSlots] = useState<string[]>(["", ""]);
   const [hit, setHit] = useState(1000);
 
   const character = nightfarers.find((c) => c.name === charName) ?? nightfarers[0];
@@ -42,16 +44,17 @@ export function NegationCalculator() {
     const add = (inst: Inst) => {
       const eff = inst.effectId ? NEG_EFFECT_MAP[inst.effectId] : undefined;
       if (!eff) return;
-      const element = eff.needsElement ? inst.element ?? "magic" : undefined;
+      const element = eff.needsElement ? inst.element ?? "magic" : eff.element;
       const key = `${eff.id}:${element ?? ""}`;
       if (seen.has(key)) return;
       seen.add(key);
       out.push({ eff, element });
     };
     relics.forEach((r) => { if (r.enabled) { r.effects.forEach(add); r.curses.forEach(add); } });
+    talismanSlots.forEach((id) => { if (id) add({ effectId: id }); });
     weapons.forEach(add);
     return out;
-  }, [relics, weapons]);
+  }, [relics, weapons, talismanSlots]);
 
   const applied: AppliedNeg[] = useMemo(
     () => activeEffects.map(({ eff, element }) => ({ scope: eff.scope, value: eff.value, element })),
@@ -65,12 +68,11 @@ export function NegationCalculator() {
 
       {step === "character" && (
         <Section title="Character">
-          <label className="mb-4 flex flex-col gap-1">
+          <label className="mb-4 flex max-w-sm flex-col gap-1">
             <span className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">Nightfarer</span>
-            <select value={charName} onChange={(e) => setCharName(e.target.value)}
-              className="w-full max-w-sm rounded-lg border border-night-600 bg-night-900 px-3 py-2 font-display text-sm font-semibold text-parchment focus:border-gold-faint focus:outline-none">
-              {nightfarers.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
-            </select>
+            <Dropdown value={charName} clearable={false}
+              options={nightfarers.map((c) => ({ value: c.name, label: c.name }))}
+              onChange={setCharName} />
           </label>
           <p className="mb-2 font-body text-sm text-parchment-muted">Base negation at Lv15 — all damage types:</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -128,6 +130,18 @@ export function NegationCalculator() {
             </div>
           </Section>
 
+          <Section title="Defensive Talismans">
+            <p className="mb-3 font-body text-sm text-parchment-muted">Select up to 2 talismans with negation effects.</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {[0, 1].map((slot) => (
+                <label key={slot} className="flex flex-col gap-1">
+                  <span className="font-body text-[0.65rem] uppercase tracking-wide text-parchment-faint">Talisman Slot {slot + 1}</span>
+                  <TalismanSelect value={talismanSlots[slot]} onChange={(v) => setTalismanSlots((s) => s.map((x, i) => (i === slot ? v : x)))} />
+                </label>
+              ))}
+            </div>
+          </Section>
+
           <Section title="Defensive Weapon Passives">
             <p className="mb-3 font-body text-sm text-parchment-muted">Add weapon passives that provide damage negation.</p>
             <div className="space-y-1.5">
@@ -139,7 +153,6 @@ export function NegationCalculator() {
             </div>
             <button type="button" onClick={() => setWeapons((w) => [...w, { effectId: "" }])}
               className="mt-2 w-full rounded border border-dashed border-night-600 px-2 py-1.5 font-body text-xs text-sky-300 hover:bg-night-700">+ Add Weapon Passive</button>
-            <p className="mt-3 font-body text-[0.7rem] italic text-parchment-faint">Defensive talismans aren&rsquo;t a separate item type in this tool yet — their negation effects live under relics.</p>
           </Section>
 
           <Nav onBack={() => setStep("character")} onNext={() => setStep("results")} nextLabel="Calculate Negation" />
@@ -225,7 +238,7 @@ export function NegationCalculator() {
 
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={() => setStep("buffs")} className="rounded-lg border border-night-600 bg-night-800 px-4 py-2 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700">← Edit Buffs</button>
-            <button type="button" onClick={() => { setRelics(NEW_RELICS()); setWeapons([]); setStep("character"); }}
+            <button type="button" onClick={() => { setRelics(NEW_RELICS()); setWeapons([]); setTalismanSlots(["", ""]); setStep("character"); }}
               className="rounded-lg border border-gold-faint bg-night-800 px-4 py-2 font-body text-sm font-semibold text-gold-bright transition-colors hover:bg-night-700">New Calculation</button>
           </div>
 
@@ -239,36 +252,36 @@ export function NegationCalculator() {
   );
 }
 
+function effectOptions(source: EffectSource) {
+  return NEG_EFFECTS.filter((e) => e.source === source).map((o) => ({
+    value: o.id,
+    group: o.group,
+    label: `${o.label} (${o.value > 0 ? `+${o.value}` : o.value}%${o.element ? ` ${NEG_LABELS[o.element]}` : ""})${o.noStack ? " · no stack" : ""}`,
+  }));
+}
+
 function EffectRow({ source, inst, onChange, onRemove, curse }: {
   source: EffectSource; inst: Inst; onChange: (v: Inst) => void; onRemove: () => void; curse?: boolean;
 }) {
   const eff = inst.effectId ? NEG_EFFECT_MAP[inst.effectId] : undefined;
-  const opts = NEG_EFFECTS.filter((e) => e.source === source);
-  const groups = Array.from(new Set(opts.map((o) => o.group)));
   return (
     <div className="flex items-center gap-1.5">
-      <select value={inst.effectId} onChange={(e) => onChange({ effectId: e.target.value, element: inst.element })}
-        className={`min-w-0 flex-1 rounded border bg-night-900 px-2 py-1.5 font-body text-xs text-parchment focus:outline-none ${curse ? "border-red-500/40 focus:border-red-400" : "border-night-600 focus:border-gold-faint"}`}>
-        <option value="">{curse ? "Select curse…" : "Select effect…"}</option>
-        {groups.map((g) => (
-          <optgroup key={g} label={g}>
-            {opts.filter((o) => o.group === g).map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label} ({o.value > 0 ? `+${o.value}` : o.value}%){o.noStack ? " · no stack" : ""}
-              </option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
+      <Dropdown value={inst.effectId} className="min-w-0 flex-1" tone={curse ? "curse" : "default"}
+        placeholder={curse ? "Select curse…" : "Select effect…"}
+        options={effectOptions(source)}
+        onChange={(v) => onChange({ effectId: v, element: inst.element })} />
       {eff?.needsElement && (
-        <select value={inst.element ?? "magic"} onChange={(e) => onChange({ ...inst, element: e.target.value as NegType })}
-          className="rounded border border-night-600 bg-night-900 px-1.5 py-1.5 font-body text-xs text-parchment focus:border-gold-faint focus:outline-none">
-          {ELEMENTS.map((el) => <option key={el} value={el}>{NEG_LABELS[el]}</option>)}
-        </select>
+        <Dropdown value={inst.element ?? "magic"} clearable={false} className="w-28 shrink-0"
+          options={ELEMENTS.map((el) => ({ value: el, label: NEG_LABELS[el] }))}
+          onChange={(v) => onChange({ ...inst, element: v as NegType })} />
       )}
-      <button type="button" onClick={onRemove} aria-label="Remove" className="grid h-7 w-7 shrink-0 place-items-center rounded border border-night-600 text-parchment-faint hover:text-gold">×</button>
+      <button type="button" onClick={onRemove} aria-label="Remove" className="grid h-9 w-9 shrink-0 place-items-center rounded border border-night-600 text-parchment-faint hover:text-gold">×</button>
     </div>
   );
+}
+
+function TalismanSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return <Dropdown value={value} placeholder="None" options={effectOptions("talisman")} onChange={onChange} />;
 }
 
 function Steps({ step }: { step: Step }) {
