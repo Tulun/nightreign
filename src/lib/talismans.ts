@@ -5,7 +5,11 @@
 
 export interface Talisman {
   name: string;
+  /** Short in-game effect description. */
   effect: string;
+  /** Mechanical detail (exact multipliers / values). */
+  detail?: string;
+  note?: string;
 }
 
 export type TalismanCategory = "Negation" | "Resistance" | "Offensive" | "Regen" | "Stat" | "Utility";
@@ -23,4 +27,4 @@ export function talismanCategory(t: Talisman): TalismanCategory {
   return "Utility";
 }
 
-export const TALISMAN_CREDIT = "Effects from eldenringnightreign.wiki.fextralife.com";
+export const TALISMAN_CREDIT = "Data from the community Nightreign talisman sheet";

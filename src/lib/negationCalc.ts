@@ -127,7 +127,7 @@ export const NEG_EFFECTS: NegEffect[] = [
   { id: "t-haligdrake", label: "Haligdrake Talisman", source: "talisman", group: "Elemental", scope: "element", element: "holy", value: 20, stack: "no" },
   { id: "t-pearldrake", label: "Pearldrake Talisman", source: "talisman", group: "Elemental", scope: "affinity", value: 10, stack: "no" },
   { id: "t-dragoncrest", label: "Dragoncrest Shield Talisman", source: "talisman", group: "Physical", scope: "physical", value: 15, stack: "no" },
-  { id: "t-bluefeather", label: "Blue-Feathered Branchsword", source: "talisman", group: "Conditional", scope: "all", value: 50, condition: "Below 40% HP", stack: "no" },
+  { id: "t-bluefeather", label: "Blue-Feathered Branchsword", source: "talisman", group: "Conditional", scope: "all", value: 40, condition: "Below 40% HP", stack: "no" },
   { id: "t-ritualshield", label: "Ritual Shield Talisman", source: "talisman", group: "Conditional", scope: "all", value: 30, condition: "At 100% HP", stack: "no" },
   { id: "t-crucible", label: "Crucible Feather Talisman", source: "talisman", group: "Penalty", scope: "all", value: -10, stack: "no" },
   { id: "t-firescorp", label: "Fire Scorpion Charm", source: "talisman", group: "Penalty", scope: "physical", value: -3, stack: "no" },

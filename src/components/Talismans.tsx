@@ -56,6 +56,8 @@ export function Talismans() {
                   <div key={t.name} className="frame rounded-lg bg-night-800 px-3 py-2.5">
                     <h4 className="font-display text-sm font-semibold text-parchment">{t.name}</h4>
                     <p className="mt-1 font-body text-sm text-parchment-muted">{t.effect}</p>
+                    {t.detail && <p className="mt-1 font-body text-xs text-parchment-faint">{t.detail}</p>}
+                    {t.note && <p className="mt-1 font-body text-xs italic text-amber-300/80">{t.note}</p>}
                   </div>
                 ))}
               </div>
