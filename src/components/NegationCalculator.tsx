@@ -193,15 +193,14 @@ export function NegationCalculator() {
       <Steps step={step} />
 
       {step === "character" && (
-        <Section title="Character">
+        <Section title="Nightfarer" className="mx-auto max-w-3xl">
           <label className="mb-4 flex max-w-sm flex-col gap-1">
-            <span className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">Nightfarer</span>
             <Dropdown value={charName} clearable={false}
               options={nightfarers.map((c) => ({ value: c.name, label: c.name }))}
               onChange={selectChar} />
           </label>
           <p className="mb-2 font-body text-sm text-parchment-muted">Base negation at Lv15 — all damage types:</p>
-          <div className="grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {NEG_TYPES.map((t) => (
               <div key={t} className="flex items-center justify-between gap-2 rounded-md border border-night-700 bg-night-900/60 px-3 py-2">
                 <span className="flex min-w-0 items-center gap-1.5 font-body text-sm text-parchment-muted">
@@ -576,9 +575,9 @@ function Steps({ step }: { step: Step }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="frame rounded-lg bg-night-850/40 p-4">
+    <div className={`frame rounded-lg bg-night-850/40 p-4 ${className}`}>
       <h3 className="eyebrow mb-3 text-sky-300">{title}</h3>
       {children}
     </div>
