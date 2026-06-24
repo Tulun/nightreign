@@ -26,7 +26,6 @@ const sections: { label: string; href: string; soon?: boolean }[] = [
   { label: "Talismans", href: "/talismans" },
   { label: "Nightlords", href: "/nightlords" },
   { label: "Relics", href: "/relics" },
-  { label: "Shifting Earth", href: "/shifting-earth", soon: true },
 ];
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
