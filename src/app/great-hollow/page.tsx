@@ -9,9 +9,9 @@ export default function GreatHollowPage() {
           Great Hollow Crystals
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
-          Crystals spawn in one of four sets. Tap the crystals you can see and
-          the maps narrow to the matching set — ambiguous picks (e.g. A/B) keep
-          both lit until another crystal confirms which.
+          Crystals spawn in one of four sets (A/B/C/D). These reference maps mark
+          every spawn location with the set(s) it belongs to — match what you see
+          in your run against the maps below.
         </p>
       </header>
 
