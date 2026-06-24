@@ -201,7 +201,7 @@ export function NegationCalculator() {
               onChange={selectChar} />
           </label>
           <p className="mb-2 font-body text-sm text-parchment-muted">Base negation at Lv15 — all damage types:</p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid max-w-xl grid-cols-1 gap-2 sm:grid-cols-2">
             {NEG_TYPES.map((t) => (
               <div key={t} className="flex items-center justify-between gap-2 rounded-md border border-night-700 bg-night-900/60 px-3 py-2">
                 <span className="flex min-w-0 items-center gap-1.5 font-body text-sm text-parchment-muted">

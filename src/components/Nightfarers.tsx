@@ -6,6 +6,8 @@ import {
   RESIST_COLUMNS,
   type Nightfarer,
 } from "@/lib/characters";
+import { NEG_ICONS } from "@/lib/negationCalc";
+import { StatIcon } from "@/components/StatIcon";
 
 /** Base-stat cards for the 10 Nightfarers. */
 export function Nightfarers() {
@@ -56,7 +58,9 @@ function NightfarerCard({ c }: { c: Nightfarer }) {
             const cls = v >= 24 ? "border-sky-500/60 bg-sky-500/10 text-sky-300" : v <= 12 ? "border-red-500/40 text-red-300" : "border-night-700 text-parchment-muted";
             return (
               <div key={n.key} className={`rounded border ${cls} px-1 py-1 text-center`}>
-                <div className="font-body text-[0.55rem] uppercase tracking-wide text-parchment-faint">{n.label}</div>
+                <div className="flex items-center justify-center gap-0.5 font-body text-[0.55rem] uppercase tracking-wide text-parchment-faint">
+                  {NEG_ICONS[n.key] && <StatIcon src={NEG_ICONS[n.key]!} alt="" size={12} />}{n.label}
+                </div>
                 <div className="font-display text-xs font-semibold tabular-nums">{v}%</div>
               </div>
             );

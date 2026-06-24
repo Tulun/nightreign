@@ -77,11 +77,15 @@ export const WEAKNESS: Record<WeaknessElement, { label: string; color: string; i
   poison: { label: "Poison", color: "#8fbf3f", icon: "/icons/status/poison.png" },
   madness: { label: "Madness", color: "#e0a838", icon: "/icons/status/madness.png" },
   sleep: { label: "Sleep", color: "#8fb8e0", icon: "/icons/status/sleep.png" },
-  strike: { label: "Strike", color: "#cbb890" },
+  strike: { label: "Strike", color: "#cbb890", icon: "/icons/elements/strike.png" },
 };
 
-/** Affinity icons for elemental damage types (physical types have no icon). */
+/** Icons for every damage-negation type — physical (standard/slash/strike/pierce) and elemental. */
 export const ELEMENT_ICON: Partial<Record<NegationKey, string>> = {
+  standard: "/icons/elements/standard.png",
+  slash: "/icons/elements/slash.png",
+  strike: "/icons/elements/strike.png",
+  pierce: "/icons/elements/pierce.png",
   magic: "/icons/elements/magic-affinity.png",
   fire: "/icons/elements/fire-affinity.png",
   lightning: "/icons/elements/lightning-affinity.png",
