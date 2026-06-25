@@ -46,21 +46,21 @@ export const weaponIcons: Record<string, string> = {
   "Scepter of the All-Knowing": "/icons/weapons/scepter-of-the-all-knowing.png", // set 3
   "Sword of St. Trina":         "/icons/weapons/sword-of-st-trina.png",          // set 4
   "Ornamental Straight Sword":  "/icons/weapons/ornamental-straight-sword.png",  // set 5
-  // "Bloody Helice":              "/icons/weapons/bloody-helice.png",              // set 6
-  // "Icerind Hatchet":            "/icons/weapons/icerind-hatchet.png",            // set 7
-  // "Winged Scythe":              "/icons/weapons/winged-scythe.png",              // set 8
-  // "Halo Scythe":                "/icons/weapons/halo-scythe.png",                // set 9
-  // "Royal Greatsword":           "/icons/weapons/royal-greatsword.png",           // set 10
-  // "Cleanrot Spear":             "/icons/weapons/cleanrot-spear.png",             // set 11
-  // "Envoy's Horn":               "/icons/weapons/envoys-horn.png",                // set 12
-  // "Gargoyle's Black Blades":    "/icons/weapons/gargoyles-black-blades.png",     // set 13
-  // "Frozen Needle":              "/icons/weapons/frozen-needle.png",              // set 14
-  // "Clinging Bone":              "/icons/weapons/clinging-bone.png",              // set 15
-  // "Coded Sword":                "/icons/weapons/coded-sword.png",                // set 16
-  // "Vyke's War Spear":           "/icons/weapons/vykes-war-spear.png",            // set 17
-  // "Onyx Lord's Greatsword":     "/icons/weapons/onyx-lords-greatsword.png",      // set 18
-  // "Magma Whip Candlestick":     "/icons/weapons/magma-whip-candlestick.png",     // set 19
-  // "Cipher Pata":                "/icons/weapons/cipher-pata.png",                // set 20
+  "Bloody Helice":              "/icons/weapons/bloody-helice.png",              // set 6
+  "Icerind Hatchet":            "/icons/weapons/icerind-hatchet.png",            // set 7
+  "Winged Scythe":              "/icons/weapons/winged-scythe.png",              // set 8
+  "Halo Scythe":                "/icons/weapons/halo-scythe.png",                // set 9
+  "Royal Greatsword":           "/icons/weapons/royal-greatsword.png",           // set 10
+  "Cleanrot Spear":             "/icons/weapons/cleanrot-spear.png",             // set 11
+  "Envoy's Horn":               "/icons/weapons/envoys-horn.png",                // set 12
+  "Gargoyle's Black Blades":    "/icons/weapons/gargoyles-black-blades.png",     // set 13
+  "Frozen Needle":              "/icons/weapons/frozen-needle.png",              // set 14
+  "Clinging Bone":              "/icons/weapons/clinging-bone.png",              // set 15
+  "Coded Sword":                "/icons/weapons/coded-sword.png",                // set 16
+  "Vyke's War Spear":           "/icons/weapons/vykes-war-spear.png",            // set 17
+  "Onyx Lord's Greatsword":     "/icons/weapons/onyx-lords-greatsword.png",      // set 18
+  "Magma Whip Candlestick":     "/icons/weapons/magma-whip-candlestick.png",     // set 19
+  "Cipher Pata":                "/icons/weapons/cipher-pata.png",                // set 20
 };
 
 /**

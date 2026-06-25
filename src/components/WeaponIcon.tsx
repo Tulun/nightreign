@@ -52,7 +52,7 @@ export function WeaponIcon({ src, alt, size = 64, tier }: WeaponIconProps) {
           alt={alt}
           fill
           sizes={`${size}px`}
-          className={`object-contain ${frame ? "p-[12%]" : "p-1.5"}`}
+          className={`object-contain ${frame ? "p-[18%]" : "p-1.5"}`}
         />
       ) : (
         <BladeGlyph />
