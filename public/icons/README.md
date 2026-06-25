@@ -2,19 +2,21 @@
 
 Image assets, grouped by feature:
 
-- `weapons/` — town-map set weapon art. **Mapped by weapon name** in
+- `weapons/` — town-map set weapon art, in per-type subfolders, with rarity
+  backdrops under `weapons/backgrounds/`. **Mapped by weapon name** in
   [`src/data/weaponIcons.ts`](../../src/data/weaponIcons.ts) — see that folder's
-  README for the workflow.
+  README for the layout and workflow.
 - `cocktails/`, `elements/`, `greatshields/`, `status/` — art for those features.
 
 ## Town-map weapons (quick version)
 
-1. Drop the image in `weapons/`.
+1. Drop the image in its weapon-type folder, e.g.
+   `weapons/straight-swords/coded-sword.png`.
 2. Add a line to `src/data/weaponIcons.ts`, keyed by the exact weapon name from
    `src/data/sets.ts`:
 
    ```ts
-   "St. Trina's Sword": "/icons/weapons/st-trinas-sword.png",
+   "Coded Sword": "/icons/weapons/straight-swords/coded-sword.png",
    ```
 
 A weapon with no entry shows the framed blade-glyph placeholder, so the registry

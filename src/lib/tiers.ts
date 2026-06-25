@@ -27,7 +27,8 @@ export const HIGHLIGHT_COLOR = "#f2cb3c";
  * Add blue.png / common.png here as you make them.
  */
 export const TIER_FRAMES: Partial<Record<Tier, string>> = {
-  purple: "/icons/weapons/purple.png",
-  // blue: "/icons/weapons/blue.png",
-  // common: "/icons/weapons/common.png",
+  common: "/icons/weapons/backgrounds/white.png",
+  blue: "/icons/weapons/backgrounds/blue.png",
+  purple: "/icons/weapons/backgrounds/purple.png",
+  // backgrounds/yellow.png (legendary) exists but is unused — backdrops are tier-only.
 };
