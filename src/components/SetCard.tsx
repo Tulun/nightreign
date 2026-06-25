@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { MerchantSet } from "@/lib/types";
 import { getSetSignature } from "@/lib/types";
+import { iconFor } from "@/data/weaponIcons";
 import { TIER_STYLES, HIGHLIGHT_COLOR } from "@/lib/tiers";
 import { WeaponIcon } from "./WeaponIcon";
 
@@ -24,7 +25,7 @@ export function SetCard({ set }: { set: MerchantSet }) {
         {label}
       </span>
 
-      <WeaponIcon src={sig?.icon} alt={sig?.name ?? "Unrecorded set"} tier={sig?.tier} />
+      <WeaponIcon src={iconFor(sig)} alt={sig?.name ?? "Unrecorded set"} tier={sig?.tier} />
 
       <div className="min-w-0 flex-1">
         <p className="eyebrow">Set {label}</p>

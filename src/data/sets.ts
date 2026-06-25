@@ -10,7 +10,9 @@ import type { MerchantSet } from "@/lib/types";
  *  Each WeaponEntry: { name, passive, tier, highlighted?, icon? }
  *    - tier: "common" (grey) | "blue" | "purple"  — matches the row colour.
  *    - highlighted: true if the row text was yellow in the source sheet.
- *    - icon: optional, e.g. "/icons/envoys-horn.png" (drop art in /public/icons).
+ *    - icon: optional per-row override. Normally leave it off — weapon art is
+ *      mapped by name in src/data/weaponIcons.ts (set once, shows everywhere
+ *      the weapon appears). Drop the images in /public/icons/weapons/.
  *
  *  Passives are stored in sentence case; the UI uppercases them for display,
  *  so you can keep editing them in normal case here.

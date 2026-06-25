@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { Tier } from "@/lib/tiers";
-import { TIER_STYLES } from "@/lib/tiers";
+import { TIER_STYLES, TIER_FRAMES } from "@/lib/tiers";
 import { asset } from "@/lib/assets";
 
 interface WeaponIconProps {
@@ -14,23 +14,37 @@ interface WeaponIconProps {
 
 /**
  * Renders the weapon's icon if `src` is set, otherwise a framed placeholder
- * with a simple blade glyph. Drop images in /public/icons and set an entry's
- * `icon` in src/data/sets.ts to replace the placeholder.
+ * with a simple blade glyph. When the weapon's `tier` has a decorative backdrop
+ * (see TIER_FRAMES), the weapon art is composited on top of it; otherwise the
+ * plain CSS frame is used. Weapon art is mapped by name in src/data/weaponIcons.ts.
  */
 export function WeaponIcon({ src, alt, size = 64, tier }: WeaponIconProps) {
   const ring = tier ? TIER_STYLES[tier].bar : undefined;
+  // Backdrop only applies once there's a weapon image to sit on it.
+  const frame = src && tier ? TIER_FRAMES[tier] : undefined;
 
   return (
     <div
-      className="frame relative grid shrink-0 place-items-center overflow-hidden rounded bg-night-900"
+      className={`relative grid shrink-0 place-items-center overflow-hidden rounded ${
+        frame ? "" : "frame bg-night-900"
+      }`}
       style={{
         width: size,
         height: size,
-        ...(ring ? { borderColor: ring, boxShadow: `0 0 0 1px ${ring}55` } : {}),
+        ...(!frame && ring ? { borderColor: ring, boxShadow: `0 0 0 1px ${ring}55` } : {}),
       }}
     >
+      {frame && (
+        <Image src={asset(frame)} alt="" aria-hidden fill sizes={`${size}px`} className="object-cover" />
+      )}
       {src ? (
-        <Image src={asset(src)} alt={alt} fill sizes={`${size}px`} className="object-contain p-1.5" />
+        <Image
+          src={asset(src)}
+          alt={alt}
+          fill
+          sizes={`${size}px`}
+          className={`object-contain ${frame ? "p-[16%]" : "p-1.5"}`}
+        />
       ) : (
         <BladeGlyph />
       )}

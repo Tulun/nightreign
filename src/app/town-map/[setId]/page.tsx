@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSet, sets } from "@/data/sets";
 import { getSetSignature } from "@/lib/types";
+import { iconFor } from "@/data/weaponIcons";
 import { HIGHLIGHT_COLOR } from "@/lib/tiers";
 import { WeaponIcon } from "@/components/WeaponIcon";
 import { MerchantSection } from "@/components/MerchantSection";
@@ -36,7 +37,7 @@ export default function SetDetailPage({
 
       {/* Set signature (last Normal Merchant item) */}
       <header className="mt-5 flex items-center gap-5 border-b border-night-600 pb-7">
-        <WeaponIcon src={sig?.icon} alt={sig?.name ?? "Unrecorded"} size={88} tier={sig?.tier} />
+        <WeaponIcon src={iconFor(sig)} alt={sig?.name ?? "Unrecorded"} size={88} tier={sig?.tier} />
         <div className="min-w-0">
           <p className="eyebrow">Set {label} · Signature weapon</p>
           <h2
