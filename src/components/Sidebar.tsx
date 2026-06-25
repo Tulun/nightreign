@@ -32,8 +32,8 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full flex-col px-5 py-6">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full flex-col">
+      <div className="flex shrink-0 items-center justify-between px-5 pb-3 pt-6">
         <p className="eyebrow">References</p>
         <button
           type="button"
@@ -47,7 +47,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </button>
       </div>
 
-      <nav className="mt-5">
+      <nav className="flex-1 overflow-y-auto px-5 pt-2 pb-[calc(env(safe-area-inset-bottom)+2rem)]">
         <ul className="space-y-1">
           {sections.map((s) => {
             const active =

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cinzel, EB_Garamond } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
@@ -20,6 +20,11 @@ const body = EB_Garamond({
 export const metadata: Metadata = {
   title: "Nightreign Field Grimoire",
   description: "A quick-reference companion for Elden Ring Nightreign.",
+};
+
+export const viewport: Viewport = {
+  // Let content extend under the iOS toolbars so safe-area insets resolve.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
