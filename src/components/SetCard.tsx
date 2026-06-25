@@ -25,7 +25,7 @@ export function SetCard({ set }: { set: MerchantSet }) {
         {label}
       </span>
 
-      <WeaponIcon src={iconFor(sig)} alt={sig?.name ?? "Unrecorded set"} tier={sig?.tier} />
+      <WeaponIcon src={iconFor(sig)} alt={sig?.name ?? "Unrecorded set"} size={80} tier={sig?.tier} />
 
       <div className="min-w-0 flex-1">
         <p className="eyebrow">Set {label}</p>

@@ -35,7 +35,16 @@ export function WeaponIcon({ src, alt, size = 64, tier }: WeaponIconProps) {
       }}
     >
       {frame && (
-        <Image src={asset(frame)} alt="" aria-hidden fill sizes={`${size}px`} className="object-cover" />
+        // Scaled up so the purple square fills the box (the source art has
+        // transparent margin + a smoke wisp around the frame).
+        <Image
+          src={asset(frame)}
+          alt=""
+          aria-hidden
+          fill
+          sizes={`${size}px`}
+          className="scale-[1.35] object-cover"
+        />
       )}
       {src ? (
         <Image
@@ -43,7 +52,7 @@ export function WeaponIcon({ src, alt, size = 64, tier }: WeaponIconProps) {
           alt={alt}
           fill
           sizes={`${size}px`}
-          className={`object-contain ${frame ? "p-[16%]" : "p-1.5"}`}
+          className={`object-contain ${frame ? "p-[12%]" : "p-1.5"}`}
         />
       ) : (
         <BladeGlyph />

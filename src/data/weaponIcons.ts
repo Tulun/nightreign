@@ -16,13 +16,13 @@ import type { WeaponEntry } from "@/lib/types";
  *     src/data/sets.ts — copy/paste it; the key is case- and punctuation-
  *     sensitive (apostrophes, "'s", etc. must match):
  *
- *         "Rivers of Blood": "/icons/weapons/rivers-of-blood.webp",
+ *         "Rivers of Blood": "/icons/weapons/rivers-of-blood.png",
  *
  *  ── CONVENTIONS ───────────────────────────────────────────────────────────
  *  • Path  — relative to /public, must start with "/icons/weapons/".
  *  • File  — kebab-case of the name, e.g. "Golem Greatbow" →
- *            "golem-greatbow.webp", "Crepus's Black Crossbow" →
- *            "crepuss-black-crossbow.webp" (drop apostrophes). This is just a
+ *            "golem-greatbow.png", "Crepus's Black Crossbow" →
+ *            "crepuss-black-crossbow.png" (drop apostrophes). This is just a
  *            recommendation — the value here is the source of truth, so any
  *            filename works as long as the path matches the file you dropped.
  *  • Art   — square PNG or WEBP, ~128×128, transparent background preferred.
@@ -43,24 +43,24 @@ export const weaponIcons: Record<string, string> = {
   //  convention (rename the path here if your file differs).
   "Siluria's Tree": "/icons/weapons/silurias-tree.png", // set 0, 1
   "Magma Blade":                "/icons/weapons/magma-blade.png",                // set 2
-  // "Scepter of the All-Knowing": "/icons/weapons/scepter-of-the-all-knowing.webp", // set 3
-  // "Sword of St. Trina":         "/icons/weapons/sword-of-st-trina.webp",          // set 4
-  // "Ornamental Straight Sword":  "/icons/weapons/ornamental-straight-sword.webp",  // set 5
-  // "Bloody Helice":              "/icons/weapons/bloody-helice.webp",              // set 6
-  // "Icerind Hatchet":            "/icons/weapons/icerind-hatchet.webp",            // set 7
-  // "Winged Scythe":              "/icons/weapons/winged-scythe.webp",              // set 8
-  // "Halo Scythe":                "/icons/weapons/halo-scythe.webp",                // set 9
-  // "Royal Greatsword":           "/icons/weapons/royal-greatsword.webp",           // set 10
-  // "Cleanrot Spear":             "/icons/weapons/cleanrot-spear.webp",             // set 11
-  // "Envoy's Horn":               "/icons/weapons/envoys-horn.webp",                // set 12
-  // "Gargoyle's Black Blades":    "/icons/weapons/gargoyles-black-blades.webp",     // set 13
-  // "Frozen Needle":              "/icons/weapons/frozen-needle.webp",              // set 14
-  // "Clinging Bone":              "/icons/weapons/clinging-bone.webp",              // set 15
-  // "Coded Sword":                "/icons/weapons/coded-sword.webp",                // set 16
-  // "Vyke's War Spear":           "/icons/weapons/vykes-war-spear.webp",            // set 17
-  // "Onyx Lord's Greatsword":     "/icons/weapons/onyx-lords-greatsword.webp",      // set 18
-  // "Magma Whip Candlestick":     "/icons/weapons/magma-whip-candlestick.webp",     // set 19
-  // "Cipher Pata":                "/icons/weapons/cipher-pata.webp",                // set 20
+  "Scepter of the All-Knowing": "/icons/weapons/scepter-of-the-all-knowing.png", // set 3
+  "Sword of St. Trina":         "/icons/weapons/sword-of-st-trina.png",          // set 4
+  "Ornamental Straight Sword":  "/icons/weapons/ornamental-straight-sword.png",  // set 5
+  // "Bloody Helice":              "/icons/weapons/bloody-helice.png",              // set 6
+  // "Icerind Hatchet":            "/icons/weapons/icerind-hatchet.png",            // set 7
+  // "Winged Scythe":              "/icons/weapons/winged-scythe.png",              // set 8
+  // "Halo Scythe":                "/icons/weapons/halo-scythe.png",                // set 9
+  // "Royal Greatsword":           "/icons/weapons/royal-greatsword.png",           // set 10
+  // "Cleanrot Spear":             "/icons/weapons/cleanrot-spear.png",             // set 11
+  // "Envoy's Horn":               "/icons/weapons/envoys-horn.png",                // set 12
+  // "Gargoyle's Black Blades":    "/icons/weapons/gargoyles-black-blades.png",     // set 13
+  // "Frozen Needle":              "/icons/weapons/frozen-needle.png",              // set 14
+  // "Clinging Bone":              "/icons/weapons/clinging-bone.png",              // set 15
+  // "Coded Sword":                "/icons/weapons/coded-sword.png",                // set 16
+  // "Vyke's War Spear":           "/icons/weapons/vykes-war-spear.png",            // set 17
+  // "Onyx Lord's Greatsword":     "/icons/weapons/onyx-lords-greatsword.png",      // set 18
+  // "Magma Whip Candlestick":     "/icons/weapons/magma-whip-candlestick.png",     // set 19
+  // "Cipher Pata":                "/icons/weapons/cipher-pata.png",                // set 20
 };
 
 /**

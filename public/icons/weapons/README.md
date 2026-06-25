@@ -12,7 +12,7 @@ that sells it (e.g. `Golem Greatbow` appears in 12 sets).
    `src/data/sets.ts`:
 
    ```ts
-   "Rivers of Blood": "/icons/weapons/rivers-of-blood.webp",
+   "Rivers of Blood": "/icons/weapons/rivers-of-blood.png",
    ```
 
 That's it — the set cards and the set-detail signature header pick it up. Until
@@ -20,8 +20,8 @@ a weapon is mapped, it shows the framed blade-glyph placeholder.
 
 ## Conventions
 
-- **Filename** — kebab-case of the name: `Golem Greatbow` → `golem-greatbow.webp`,
-  `Crepus's Black Crossbow` → `crepuss-black-crossbow.webp` (drop apostrophes).
+- **Filename** — kebab-case of the name: `Golem Greatbow` → `golem-greatbow.png`,
+  `Crepus's Black Crossbow` → `crepuss-black-crossbow.png` (drop apostrophes).
   This is only a recommendation; the path in `weaponIcons.ts` is what actually
   matters, so any filename works as long as they match.
 - **Format** — square PNG or WEBP, ~128×128, transparent background preferred.

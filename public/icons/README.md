@@ -14,7 +14,7 @@ Image assets, grouped by feature:
    `src/data/sets.ts`:
 
    ```ts
-   "St. Trina's Sword": "/icons/weapons/st-trinas-sword.webp",
+   "St. Trina's Sword": "/icons/weapons/st-trinas-sword.png",
    ```
 
 A weapon with no entry shows the framed blade-glyph placeholder, so the registry

@@ -13,7 +13,7 @@ export interface WeaponEntry {
   /** True if the entry was shown in yellow text in the source sheet. */
   highlighted?: boolean;
   /**
-   * Per-entry icon override, e.g. "/icons/weapons/envoys-horn.webp". Usually
+   * Per-entry icon override, e.g. "/icons/weapons/envoys-horn.png". Usually
    * leave this undefined: weapon art is mapped centrally by name in
    * src/data/weaponIcons.ts (so it's set once per weapon, not per row). Set
    * this only to override the registry for a single row.
