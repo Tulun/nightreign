@@ -41,6 +41,7 @@ const groups: NavGroup[] = [
       { label: "Shields", href: "/shields" },
       { label: "Talismans", href: "/talismans" },
       { label: "Weapon Passives", href: "/weapon-passives" },
+      { label: "Weapon Skills", href: "/weapon-skills" },
     ],
   },
   {
@@ -53,7 +54,10 @@ const groups: NavGroup[] = [
   },
   {
     title: "Other",
-    items: [{ label: "Libra Deals", href: "/libra" }],
+    items: [
+      { label: "Night Invader Drops", href: "/night-invaders" },
+      { label: "Libra Deals", href: "/libra" },
+    ],
   },
 ];
 
