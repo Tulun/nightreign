@@ -55,6 +55,7 @@ const groups: NavGroup[] = [
   {
     title: "Other",
     items: [
+      { label: "Depth Buffs", href: "/depth-buffs" },
       { label: "Night Invader Drops", href: "/night-invaders" },
       { label: "Libra Deals", href: "/libra" },
     ],
