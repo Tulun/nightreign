@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { MerchantSet } from "@/lib/types";
 import { getSetSignature } from "@/lib/types";
 import { iconFor } from "@/data/weaponIcons";
+import { passiveBoost } from "@/lib/passiveBoost";
 import { TIER_STYLES, HIGHLIGHT_COLOR } from "@/lib/tiers";
 import { WeaponIcon } from "./WeaponIcon";
 
@@ -13,6 +14,7 @@ export function SetCard({ set }: { set: MerchantSet }) {
   const sig = getSetSignature(set);
   const tier = sig ? TIER_STYLES[sig.tier] : undefined;
   const nameColor = sig?.highlighted ? HIGHLIGHT_COLOR : undefined;
+  const boost = sig ? passiveBoost(sig.passive, sig.tier) : null;
   const label = String(set.id).padStart(2, "0");
 
   return (
@@ -37,11 +39,11 @@ export function SetCard({ set }: { set: MerchantSet }) {
             >
               {sig.name}
             </h3>
-            <p
-              className="mt-0.5 truncate font-body text-[0.95rem] uppercase tracking-[0.03em] text-parchment-muted"
-              style={nameColor ? { color: nameColor } : undefined}
-            >
-              {sig.passive}
+            <p className="mt-0.5 flex items-baseline gap-1.5 font-body text-[0.95rem] uppercase tracking-[0.03em] text-parchment-muted">
+              <span className="truncate" style={nameColor ? { color: nameColor } : undefined}>
+                {sig.passive}
+              </span>
+              {boost && <span className="shrink-0 font-semibold text-gold-bright">{boost}</span>}
             </p>
           </>
         ) : (

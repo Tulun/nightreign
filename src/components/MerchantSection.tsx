@@ -1,6 +1,7 @@
 import type { WeaponEntry } from "@/lib/types";
 import { TIER_STYLES, HIGHLIGHT_COLOR } from "@/lib/tiers";
 import { iconFor } from "@/data/weaponIcons";
+import { passiveBoost } from "@/lib/passiveBoost";
 import { WeaponIcon } from "./WeaponIcon";
 
 /** A labelled list of weapon entries (one merchant's inventory). */
@@ -36,6 +37,7 @@ export function MerchantSection({
 function MerchantRow({ item }: { item: WeaponEntry }) {
   const tier = TIER_STYLES[item.tier];
   const textColor = item.highlighted ? HIGHLIGHT_COLOR : undefined;
+  const boost = passiveBoost(item.passive, item.tier);
 
   return (
     <li
@@ -55,6 +57,9 @@ function MerchantRow({ item }: { item: WeaponEntry }) {
           style={textColor ? { color: textColor } : undefined}
         >
           {item.passive}
+          {boost && (
+            <span className="ml-1.5 whitespace-nowrap font-semibold text-gold-bright">{boost}</span>
+          )}
         </p>
       </div>
     </li>

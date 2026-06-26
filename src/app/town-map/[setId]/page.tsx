@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getSet, sets } from "@/data/sets";
 import { getSetSignature } from "@/lib/types";
 import { iconFor } from "@/data/weaponIcons";
+import { passiveBoost } from "@/lib/passiveBoost";
 import { HIGHLIGHT_COLOR } from "@/lib/tiers";
 import { WeaponIcon } from "@/components/WeaponIcon";
 import { MerchantSection } from "@/components/MerchantSection";
@@ -24,6 +25,7 @@ export default function SetDetailPage({
 
   const sig = getSetSignature(set);
   const sigColor = sig?.highlighted ? HIGHLIGHT_COLOR : undefined;
+  const sigBoost = sig ? passiveBoost(sig.passive, sig.tier) : null;
   const label = String(set.id).padStart(2, "0");
 
   return (
@@ -52,6 +54,7 @@ export default function SetDetailPage({
               style={sigColor ? { color: sigColor } : undefined}
             >
               {sig.passive}
+              {sigBoost && <span className="ml-2 font-semibold text-gold-bright">{sigBoost}</span>}
             </p>
           )}
         </div>
