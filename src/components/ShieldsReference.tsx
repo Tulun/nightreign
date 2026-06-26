@@ -1,10 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { shields as smallMedium } from "@/data/shields";
 import { greatshields } from "@/data/greatshields";
 import { iconFor } from "@/data/weaponIcons";
 import { STAT_ORDER, type Affinity } from "@/lib/greatshields";
+import { AFFINITY_ICON } from "@/lib/weapons";
+import { asset } from "@/lib/assets";
 import { WeaponIcon } from "@/components/WeaponIcon";
 import { Dropdown } from "@/components/Dropdown";
 
@@ -89,16 +92,22 @@ export function ShieldsReference() {
         {list.length} of {ALL_SHIELDS.length} shields
       </p>
 
-      <div className="frame overflow-x-auto rounded-lg">
-        <table className="w-full border-collapse text-left font-body text-xs">
+      <div className="frame max-h-[75vh] overflow-auto rounded-lg">
+        <table className="w-full border-collapse text-left font-body text-sm">
           <thead>
-            <tr className="border-b border-night-600 bg-night-850 text-parchment-faint">
-              <th className="sticky left-0 z-10 bg-night-850 px-3 py-2 font-semibold">Name</th>
-              <th className="px-2 py-2 font-semibold">Class</th>
+            <tr className="text-parchment-faint">
+              <th className="sticky left-0 top-0 z-30 border-b border-night-600 bg-night-850 px-3 py-2.5 font-semibold">Name</th>
+              <th className="sticky top-0 z-20 border-b border-night-600 bg-night-850 px-2.5 py-2.5 font-semibold">Class</th>
               {STAT_ORDER.map((s) => (
-                <th key={s.key} className="px-2 py-2 text-right font-semibold">{s.label}</th>
+                <th key={s.key} className="sticky top-0 z-20 border-b border-night-600 bg-night-850 px-2.5 py-2.5 text-right font-semibold">
+                  {AFFINITY_ICON[s.key] ? (
+                    <Image src={asset(AFFINITY_ICON[s.key])} alt={s.label} title={s.label} width={18} height={18} className="ml-auto" />
+                  ) : (
+                    s.label
+                  )}
+                </th>
               ))}
-              <th className="px-2 py-2 text-right font-semibold">Guard</th>
+              <th className="sticky top-0 z-20 border-b border-night-600 bg-night-850 px-2.5 py-2.5 text-right font-semibold">Guard</th>
             </tr>
           </thead>
           <tbody>
@@ -121,24 +130,24 @@ function Row({ s }: { s: ShieldRow }) {
   const meta = CLASS_META[s.cls];
   return (
     <tr className="border-b border-night-800/70 hover:bg-night-800/60">
-      <td className="sticky left-0 z-10 bg-night-900 px-3 py-1.5 font-display font-semibold text-parchment">
+      <td className="sticky left-0 z-10 bg-night-900 px-3 py-2.5 font-display font-semibold text-parchment">
         <div className="flex items-center gap-2.5">
-          <WeaponIcon src={iconFor({ name: s.name })} alt={s.name} size={36} />
+          <WeaponIcon src={iconFor({ name: s.name })} alt={s.name} size={44} />
           <span>{s.name}</span>
         </div>
       </td>
-      <td className="px-2 py-1.5">
+      <td className="px-2.5 py-2.5">
         <span style={{ color: meta.color }}>{meta.label}</span>
       </td>
       {STAT_ORDER.map((stat) => {
         const v = s.negation[stat.key];
         return (
-          <td key={stat.key} className="px-2 py-1.5 text-right tabular-nums text-parchment-muted">
+          <td key={stat.key} className="px-2.5 py-2.5 text-right tabular-nums text-parchment-muted">
             {v}
           </td>
         );
       })}
-      <td className="px-2 py-1.5 text-right tabular-nums font-semibold text-gold-dim">{s.guardBoost}</td>
+      <td className="px-2.5 py-2.5 text-right tabular-nums font-semibold text-gold-dim">{s.guardBoost}</td>
     </tr>
   );
 }

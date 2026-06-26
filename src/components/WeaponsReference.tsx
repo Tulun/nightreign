@@ -1,12 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { weapons } from "@/data/weapons";
+import { weaponSkills } from "@/data/weaponSkills";
 import { Dropdown } from "@/components/Dropdown";
 import { WeaponIcon } from "@/components/WeaponIcon";
 import { iconFor } from "@/data/weaponIcons";
+import { asset } from "@/lib/assets";
+import { STATUS_ICON, type StatusKey } from "@/lib/nightlords";
 import {
   AP_COLUMNS,
+  AFFINITY_ICON,
+  DAMAGE_TYPE_ICON,
+  DAMAGE_TYPE_LABEL,
+  damageTypesFor,
   RARITY_META,
   RARITY_FRAMES,
   SCALING_STATS,
@@ -16,6 +24,30 @@ import {
 
 /** Weapon-class order = first-seen order in the data. */
 const TYPE_ORDER = Array.from(new Set(weapons.map((w) => w.type)));
+
+// Skill name → effect, for the Skill column tooltip. Strips parenthetical
+// suffixes ("(Skill)", "(1)") so a weapon's skill matches the skill entry.
+const normSkill = (s: string) =>
+  s.toLowerCase().replace(/\([^)]*\)/g, "").replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+const SKILL_EFFECT: Record<string, string> = {};
+for (const sk of weaponSkills) {
+  const k = normSkill(sk.name);
+  if (k && !(k in SKILL_EFFECT)) SKILL_EFFECT[k] = sk.effect;
+}
+function skillEffect(skill?: string | null): string | undefined {
+  if (!skill) return undefined;
+  return SKILL_EFFECT[normSkill(skill)] ?? SKILL_EFFECT[normSkill(skill.split(",")[0])];
+}
+
+// Weapon status text → status-effect icon key.
+const STATUS_KEY: Record<string, StatusKey> = {
+  "Blood Loss": "bleed",
+  Frost: "frost",
+  Madness: "madness",
+  Poison: "poison",
+  Rot: "rot",
+  Sleep: "sleep",
+};
 /** Rarity sort rank — Common first, unranked last. */
 const RARITY_RANK: Record<string, number> = { normal: 0, blue: 1, purple: 2, gold: 3 };
 
@@ -78,20 +110,27 @@ export function WeaponsReference() {
           Weapon data not loaded yet.
         </p>
       ) : (
-        <div className="frame overflow-x-auto rounded-lg">
-          <table className="w-full border-collapse text-left font-body text-xs">
+        <div className="frame max-h-[75vh] overflow-auto rounded-lg">
+          <table className="w-full border-collapse text-left font-body text-sm">
             <thead>
-              <tr className="border-b border-night-600 bg-night-850 text-parchment-faint">
-                <th className="sticky left-0 z-10 bg-night-850 px-3 py-2 font-semibold">Name</th>
-                <th className="px-2 py-2 font-semibold">Type</th>
+              <tr className="text-parchment-faint">
+                <th className="sticky left-0 top-0 z-30 border-b border-night-600 bg-night-850 px-3 py-2.5 font-semibold">Name</th>
+                <th className="sticky top-0 z-20 border-b border-night-600 bg-night-850 px-2.5 py-2.5 font-semibold">Type</th>
+                <th className="sticky top-0 z-20 border-b border-night-600 bg-night-850 px-2.5 py-2.5 font-semibold">Dmg</th>
                 {AP_COLUMNS.map((c) => (
-                  <th key={c.key} className="px-2 py-2 text-right font-semibold">{c.label}</th>
+                  <th key={c.key} className="sticky top-0 z-20 border-b border-night-600 bg-night-850 px-2.5 py-2.5 text-right font-semibold">
+                    {AFFINITY_ICON[c.key] ? (
+                      <Image src={asset(AFFINITY_ICON[c.key])} alt={c.label} title={c.label} width={18} height={18} className="ml-auto" />
+                    ) : (
+                      c.label
+                    )}
+                  </th>
                 ))}
                 {SCALING_STATS.map((s) => (
-                  <th key={s.key} className="px-2 py-2 text-center font-semibold">{s.label}</th>
+                  <th key={s.key} className="sticky top-0 z-20 border-b border-night-600 bg-night-850 px-2.5 py-2.5 text-center font-semibold">{s.label}</th>
                 ))}
-                <th className="px-2 py-2 font-semibold">Status</th>
-                <th className="px-2 py-2 font-semibold">Skill</th>
+                <th className="sticky top-0 z-20 border-b border-night-600 bg-night-850 px-2.5 py-2.5 font-semibold">Status</th>
+                <th className="sticky top-0 z-20 border-b border-night-600 bg-night-850 px-2.5 py-2.5 font-semibold">Skill</th>
               </tr>
             </thead>
             <tbody>
@@ -111,14 +150,15 @@ export function WeaponsReference() {
 }
 
 function Row({ w }: { w: Weapon }) {
+  const eff = skillEffect(w.skill);
   return (
     <tr className="border-b border-night-800/70 hover:bg-night-800/60">
-      <td className="sticky left-0 z-10 bg-night-900 px-3 py-1.5 font-display font-semibold">
+      <td className="sticky left-0 z-10 bg-night-900 px-3 py-2.5 font-display font-semibold">
         <div className="flex items-center gap-2.5">
           <WeaponIcon
             src={iconFor({ name: w.name, type: w.type })}
             alt={w.name}
-            size={36}
+            size={44}
             frame={w.rarity ? RARITY_FRAMES[w.rarity] : undefined}
             ring={w.rarity ? RARITY_META[w.rarity].color : undefined}
           />
@@ -131,11 +171,25 @@ function Row({ w }: { w: Weapon }) {
           </span>
         </div>
       </td>
-      <td className="px-2 py-1.5 text-parchment-muted">{w.type}</td>
+      <td className="px-2.5 py-2.5 text-parchment-muted">{w.type}</td>
+      <td className="px-2.5 py-2.5">
+        <div className="flex items-center gap-1">
+          {damageTypesFor(w.name, w.type).map((dt) => (
+            <Image
+              key={dt}
+              src={asset(DAMAGE_TYPE_ICON[dt])}
+              alt={DAMAGE_TYPE_LABEL[dt]}
+              title={DAMAGE_TYPE_LABEL[dt]}
+              width={18}
+              height={18}
+            />
+          ))}
+        </div>
+      </td>
       {AP_COLUMNS.map((c) => {
         const v = w.ap?.[c.key];
         return (
-          <td key={c.key} className="px-2 py-1.5 text-right tabular-nums text-parchment-muted">
+          <td key={c.key} className="px-2.5 py-2.5 text-right tabular-nums text-parchment-muted">
             {v ? v : <span className="text-parchment-faint">–</span>}
           </td>
         );
@@ -143,19 +197,43 @@ function Row({ w }: { w: Weapon }) {
       {SCALING_STATS.map((s) => {
         const g = w.scaling?.[s.key];
         return (
-          <td key={s.key} className="px-2 py-1.5 text-center">
+          <td key={s.key} className="px-2.5 py-2.5 text-center">
             {g ? <span className="font-semibold text-gold-dim">{g}</span> : <span className="text-parchment-faint">–</span>}
           </td>
         );
       })}
-      <td className="px-2 py-1.5">
-        {w.status ? (
-          <span className="rounded border border-red-500/40 px-1.5 py-0.5 text-[0.65rem] text-red-300">{w.status}</span>
+      <td className="px-2.5 py-2.5">
+        {w.status && STATUS_KEY[w.status] ? (
+          <Image
+            src={asset(STATUS_ICON[STATUS_KEY[w.status]])}
+            alt={w.status}
+            title={w.status}
+            width={22}
+            height={22}
+            className="inline-block"
+          />
+        ) : w.status ? (
+          <span className="rounded border border-red-500/40 px-1.5 py-0.5 text-xs text-red-300">{w.status}</span>
         ) : (
           <span className="text-parchment-faint">–</span>
         )}
       </td>
-      <td className="px-2 py-1.5 text-parchment-muted">{w.skill ?? "–"}</td>
+      <td className="px-2.5 py-2.5 text-parchment-muted">
+        {w.skill ? (
+          eff ? (
+            <span
+              title={eff}
+              className="cursor-help underline decoration-dotted decoration-night-500 underline-offset-2"
+            >
+              {w.skill}
+            </span>
+          ) : (
+            w.skill
+          )
+        ) : (
+          "–"
+        )}
+      </td>
     </tr>
   );
 }
