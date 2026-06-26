@@ -1,73 +1,69 @@
-import type { WeaponEntry } from "@/lib/types";
+import { weapons } from "@/data/weapons";
+import { greatshields } from "@/data/greatshields";
+import { shields } from "@/data/shields";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
- *  WEAPON ICON REGISTRY  ·  add weapon art here
+ *  WEAPON / SHIELD ICON RESOLUTION
  * ─────────────────────────────────────────────────────────────────────────
  *
- *  The town-map sets reuse the same weapons heavily — 378 entries across the
- *  21 sets, but only ~207 distinct weapons (e.g. "Golem Greatbow" shows up in
- *  12 sets). A weapon's icon depends only on its NAME, so map each weapon ONCE
- *  here and it renders everywhere that weapon appears.
+ *  Weapon art lives in public/icons/weapons/<type>/<name>.png, where <type> is
+ *  the weapon's type from src/data/weapons.ts (kebab-case + pluralised, e.g.
+ *  "Curved Greatsword" → curved-greatswords/) and <name> is the kebab-case name
+ *  with apostrophes dropped (e.g. "Onyx Lord's Greatsword" → onyx-lords-greatsword).
  *
- *  ── HOW TO SLOT IN AN ICON ────────────────────────────────────────────────
- *  1. Drop the image in the weapon-TYPE subfolder under public/icons/weapons/,
- *     e.g. a whip goes in  public/icons/weapons/whips/  and a straight sword in
- *     public/icons/weapons/straight-swords/  (the type is in src/data/weapons.ts,
- *     folder = kebab-case + pluralised, e.g. "Curved Greatsword" →
- *     curved-greatswords). Rarity backdrops live in  public/icons/weapons/backgrounds/.
- *  2. Add a line below, keyed by the weapon's EXACT name as written in
- *     src/data/sets.ts — copy/paste it; the key is case- and punctuation-
- *     sensitive (apostrophes, "'s", etc. must match):
+ *  Shields aren't in weapons.ts, so they resolve from their own data instead:
+ *    • greatshields → /icons/greatshields/<id>.png   (src/data/greatshields.ts)
+ *    • small/medium → /icons/<class>-shields/<id>.png (src/data/shields.ts)
  *
- *         "Rivers of Blood": "/icons/weapons/katanas/rivers-of-blood.png",
+ *  `iconFor` resolves all of the above automatically from a name, so dropping a
+ *  correctly-named file in the right folder is all that's needed — no per-item
+ *  wiring. Missing files degrade to the placeholder (WeaponIcon's onError).
  *
- *  ── CONVENTIONS ───────────────────────────────────────────────────────────
- *  • Path  — relative to /public: "/icons/weapons/<type-plural>/<file>.png".
- *  • File  — kebab-case of the name, e.g. "Golem Greatbow" →
- *            "golem-greatbow.png", "Crepus's Black Crossbow" →
- *            "crepuss-black-crossbow.png" (drop apostrophes). This is just a
- *            recommendation — the value here is the source of truth, so any
- *            path works as long as it matches the file you dropped.
- *  • Art   — square PNG or WEBP, ~128×128, transparent background preferred.
- *
- *  A weapon with no entry here falls back to the framed blade-glyph
- *  placeholder, so the registry can be filled in gradually — nothing breaks
- *  while it's incomplete.
- *
- *  Per-entry override: a WeaponEntry in sets.ts may set its own `icon`; that
- *  always wins over this registry for that single row (rarely needed).
+ *  The `weaponIcons` map below is only for one-off overrides (a non-standard
+ *  filename/location for a single name). A WeaponEntry in sets.ts may also set
+ *  its own `icon`, which wins over everything.
  * ─────────────────────────────────────────────────────────────────────────
  */
 export const weaponIcons: Record<string, string> = {
-  // ── Signature weapons (the icon shown on each town-map grid card) ─────────
-  "Siluria's Tree": "/icons/weapons/great-spears/silurias-tree.png", // set 0, 1
-  "Magma Blade": "/icons/weapons/curved-swords/magma-blade.png", // set 2
-  "Scepter of the All-Knowing": "/icons/weapons/hammers/scepter-of-the-all-knowing.png", // set 3
-  "Sword of St. Trina": "/icons/weapons/straight-swords/sword-of-st-trina.png", // set 4
-  "Ornamental Straight Sword": "/icons/weapons/straight-swords/ornamental-straight-sword.png", // set 5
-  "Bloody Helice": "/icons/weapons/heavy-thrusting-swords/bloody-helice.png", // set 6
-  "Icerind Hatchet": "/icons/weapons/axes/icerind-hatchet.png", // set 7
-  "Winged Scythe": "/icons/weapons/reapers/winged-scythe.png", // set 8
-  "Halo Scythe": "/icons/weapons/reapers/halo-scythe.png", // set 9
-  "Royal Greatsword": "/icons/weapons/colossal-swords/royal-greatsword.png", // set 10
-  "Cleanrot Spear": "/icons/weapons/spears/cleanrot-spear.png", // set 11
-  "Envoy's Horn": "/icons/weapons/hammers/envoys-horn.png", // set 12
-  "Gargoyle's Black Blades": "/icons/weapons/twinblades/gargoyles-black-blades.png", // set 13
-  "Frozen Needle": "/icons/weapons/thrusting-swords/frozen-needle.png", // set 14
-  "Clinging Bone": "/icons/weapons/fists/clinging-bone.png", // set 15
-  "Coded Sword": "/icons/weapons/straight-swords/coded-sword.png", // set 16
-  "Vyke's War Spear": "/icons/weapons/great-spears/vykes-war-spear.png", // set 17
-  "Onyx Lord's Greatsword": "/icons/weapons/curved-greatswords/onyx-lords-greatsword.png", // set 18
-  "Magma Whip Candlestick": "/icons/weapons/whips/magma-whip-candlestick.png", // set 19
-  "Cipher Pata": "/icons/weapons/fists/cipher-pata.png", // set 20
+  // (none currently — add a "Name": "/path.png" line here only to override.)
 };
 
+// Strip accents (é → e) so "Great Épée" and "Great Epee" resolve the same.
+const deburr = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const norm = (s: string) => deburr(s.toLowerCase()).replace(/['’.]/g, "").replace(/\s+/g, " ").trim();
+const slug = (s: string) =>
+  deburr(s.toLowerCase()).replace(/['’]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const typeFolder = (t: string) => {
+  const k = t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (/(ch|sh|s|x|z)$/.test(k)) return k + "es";
+  return k.endsWith("s") ? k : k + "s";
+};
+
+/** weapon name (normalised) → type, for deriving the folder from a set entry. */
+const nameToType: Record<string, string> = {};
+for (const w of weapons) nameToType[norm(w.name)] = w.type;
+
+/** shield name → icon path (greatshields + small/medium). */
+const shieldIcons: Record<string, string> = {};
+for (const g of greatshields) shieldIcons[g.name] = g.icon ?? `/icons/greatshields/${g.id}.png`;
+for (const s of shields) shieldIcons[s.name] = `/icons/${s.class}-shields/${s.id}.png`;
+
 /**
- * Resolve the icon for a weapon entry: its own `icon` if set, otherwise the
- * shared registry (keyed by name). Returns undefined → show the placeholder.
+ * Resolve the icon path for a weapon/shield/entry:
+ *   1. its own `icon` override, else
+ *   2. a `weaponIcons` override, else
+ *   3. a shield path (greatshields / small / medium), else
+ *   4. a derived /icons/weapons/<type>/<name>.png path.
+ * Returns undefined when nothing matches (→ placeholder). A path to a missing
+ * file also degrades to the placeholder via WeaponIcon's onError.
  */
-export function iconFor(entry?: Pick<WeaponEntry, "name" | "icon">): string | undefined {
+export function iconFor(entry?: { name: string; icon?: string; type?: string }): string | undefined {
   if (!entry) return undefined;
-  return entry.icon ?? weaponIcons[entry.name];
+  if (entry.icon) return entry.icon;
+  if (weaponIcons[entry.name]) return weaponIcons[entry.name];
+  if (shieldIcons[entry.name]) return shieldIcons[entry.name];
+  const type = entry.type ?? nameToType[norm(entry.name)];
+  if (!type) return undefined;
+  return `/icons/weapons/${typeFolder(type)}/${slug(entry.name)}.png`;
 }

@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import type { Tier } from "@/lib/tiers";
 import { TIER_STYLES, TIER_FRAMES } from "@/lib/tiers";
 import { asset } from "@/lib/assets";
@@ -8,51 +11,50 @@ interface WeaponIconProps {
   alt: string;
   /** Pixel size of the square. Defaults to 64. */
   size?: number;
-  /** Optional tier — colours the frame to match the entry's rarity. */
+  /** Convenience: derives the backdrop + ring from a town-map tier. */
   tier?: Tier;
+  /** Explicit rarity backdrop path (overrides `tier`); used by the weapon page. */
+  frame?: string;
+  /** Explicit ring/border colour (overrides `tier`). */
+  ring?: string;
 }
 
 /**
- * Renders the weapon's icon if `src` is set, otherwise a framed placeholder
- * with a simple blade glyph. When the weapon's `tier` has a decorative backdrop
- * (see TIER_FRAMES), the weapon art is composited on top of it; otherwise the
- * plain CSS frame is used. Weapon art is mapped by name in src/data/weaponIcons.ts.
+ * Renders the weapon's icon composited over its rarity backdrop. Falls back to a
+ * framed blade-glyph placeholder when there's no art or the image fails to load
+ * (so a missing/mis-named file degrades gracefully instead of showing broken art).
+ * Art paths are resolved by name in src/data/weaponIcons.ts (`iconFor`).
  */
-export function WeaponIcon({ src, alt, size = 64, tier }: WeaponIconProps) {
-  const ring = tier ? TIER_STYLES[tier].bar : undefined;
-  // Backdrop only applies once there's a weapon image to sit on it.
-  const frame = src && tier ? TIER_FRAMES[tier] : undefined;
+export function WeaponIcon({ src, alt, size = 64, tier, frame, ring }: WeaponIconProps) {
+  const [errored, setErrored] = useState(false);
+  useEffect(() => setErrored(false), [src]);
+
+  const showImage = Boolean(src) && !errored;
+  const backdrop = showImage ? frame ?? (tier ? TIER_FRAMES[tier] : undefined) : undefined;
+  const border = ring ?? (tier ? TIER_STYLES[tier].bar : undefined);
 
   return (
     <div
       className={`relative grid shrink-0 place-items-center overflow-hidden rounded ${
-        frame ? "" : "frame bg-night-900"
+        backdrop ? "" : "frame bg-night-900"
       }`}
       style={{
         width: size,
         height: size,
-        ...(!frame && ring ? { borderColor: ring, boxShadow: `0 0 0 1px ${ring}55` } : {}),
+        ...(!backdrop && border ? { borderColor: border, boxShadow: `0 0 0 1px ${border}55` } : {}),
       }}
     >
-      {frame && (
-        // Scaled up so the purple square fills the box (the source art has
-        // transparent margin + a smoke wisp around the frame).
-        <Image
-          src={asset(frame)}
-          alt=""
-          aria-hidden
-          fill
-          sizes={`${size}px`}
-          className="scale-[1.35] object-cover"
-        />
+      {backdrop && (
+        <Image src={asset(backdrop)} alt="" aria-hidden fill sizes={`${size}px`} className="scale-[1.35] object-cover" />
       )}
-      {src ? (
+      {showImage ? (
         <Image
-          src={asset(src)}
+          src={asset(src as string)}
           alt={alt}
           fill
           sizes={`${size}px`}
-          className={`object-contain ${frame ? "p-[18%]" : "p-1.5"}`}
+          className="object-contain p-[18%]"
+          onError={() => setErrored(true)}
         />
       ) : (
         <BladeGlyph />

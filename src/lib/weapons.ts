@@ -62,4 +62,12 @@ export const RARITY_META: Record<WeaponRarity, { label: string; color: string }>
   gold: { label: "Legendary", color: "#e3b23c" },
 };
 
+/** Rarity backdrop composited behind weapon icons (Legendary uses the gold/yellow art). */
+export const RARITY_FRAMES: Record<WeaponRarity, string> = {
+  normal: "/icons/weapons/backgrounds/white.png",
+  blue: "/icons/weapons/backgrounds/blue.png",
+  purple: "/icons/weapons/backgrounds/purple.png",
+  gold: "/icons/weapons/backgrounds/yellow.png",
+};
+
 export const WEAPON_CREDIT = "Stats from eldenringnightreign.wiki.fextralife.com";

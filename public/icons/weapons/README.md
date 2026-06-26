@@ -1,9 +1,10 @@
 # Weapon icons (town-map sets)
 
-Art for the weapons listed in the town-map sets, organised by weapon **type** so
-it stays manageable as more weapons are added. Map each one **by weapon name** in
-[`src/data/weaponIcons.ts`](../../../src/data/weaponIcons.ts). Mapping by name
-means you add a weapon's art **once** and it shows in every set that sells it.
+Art for the weapons, organised by weapon **type**. Icons resolve automatically
+**by name** via `iconFor` in [`src/data/weaponIcons.ts`](../../../src/data/weaponIcons.ts):
+it looks up the weapon's type and derives the path below, so you just drop a
+correctly-named file in the right folder — no code change needed. The art then
+shows everywhere the weapon appears (shop cards, merchant rows, weapon page).
 
 ## Folder layout
 
@@ -23,22 +24,20 @@ pluralised form — e.g. `Curved Greatsword` → `curved-greatswords/`,
 
 ## Workflow
 
-1. Save the image in its type folder, e.g. `whips/magma-whip-candlestick.png`.
-2. Add a line to `src/data/weaponIcons.ts`, keyed by the **exact** name from
-   `src/data/sets.ts`:
+Just save the image in its type folder, named to match the weapon — that's it:
 
-   ```ts
-   "Coded Sword": "/icons/weapons/straight-swords/coded-sword.png",
-   ```
+```
+whips/magma-whip-candlestick.png
+straight-swords/coded-sword.png
+```
 
-That's it — the set cards, set-detail signature, and merchant rows pick it up.
-Until a weapon is mapped, it shows the framed blade-glyph placeholder.
+Until a weapon's file exists it shows the framed blade-glyph placeholder.
 
 ## Conventions
 
-- **Filename** — kebab-case of the name: `Golem Greatbow` → `golem-greatbow.png`,
-  `Crepus's Black Crossbow` → `crepuss-black-crossbow.png` (drop apostrophes).
-  This is only a recommendation; the path in `weaponIcons.ts` is what actually
-  matters, so any filename works as long as they match.
+- **Filename** — kebab-case of the name with apostrophes dropped: `Golem Greatbow`
+  → `golem-greatbow.png`, `Crepus's Black-Key Crossbow` → `crepuss-black-key-crossbow.png`,
+  `Great Épée` → `great-epee.png` (accents stripped). This must match, since the
+  path is derived from the name.
 - **Format** — square PNG or WEBP, ~128×128, transparent background preferred.
-- **Path** — `/icons/weapons/<type-plural>/<file>` (relative to `/public`).
+- **Path** — `/icons/weapons/<type-plural>/<name>.png` (relative to `/public`).

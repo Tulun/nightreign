@@ -3,9 +3,12 @@
 import { useMemo, useState } from "react";
 import { weapons } from "@/data/weapons";
 import { Dropdown } from "@/components/Dropdown";
+import { WeaponIcon } from "@/components/WeaponIcon";
+import { iconFor } from "@/data/weaponIcons";
 import {
   AP_COLUMNS,
   RARITY_META,
+  RARITY_FRAMES,
   SCALING_STATS,
   WEAPON_CREDIT,
   type Weapon,
@@ -111,13 +114,22 @@ function Row({ w }: { w: Weapon }) {
   return (
     <tr className="border-b border-night-800/70 hover:bg-night-800/60">
       <td className="sticky left-0 z-10 bg-night-900 px-3 py-1.5 font-display font-semibold">
-        <span
-          className={w.rarity ? "" : "text-parchment"}
-          style={w.rarity ? { color: RARITY_META[w.rarity].color } : undefined}
-          title={w.rarity ? RARITY_META[w.rarity].label : undefined}
-        >
-          {w.name}
-        </span>
+        <div className="flex items-center gap-2.5">
+          <WeaponIcon
+            src={iconFor({ name: w.name, type: w.type })}
+            alt={w.name}
+            size={36}
+            frame={w.rarity ? RARITY_FRAMES[w.rarity] : undefined}
+            ring={w.rarity ? RARITY_META[w.rarity].color : undefined}
+          />
+          <span
+            className={w.rarity ? "" : "text-parchment"}
+            style={w.rarity ? { color: RARITY_META[w.rarity].color } : undefined}
+            title={w.rarity ? RARITY_META[w.rarity].label : undefined}
+          >
+            {w.name}
+          </span>
+        </div>
       </td>
       <td className="px-2 py-1.5 text-parchment-muted">{w.type}</td>
       {AP_COLUMNS.map((c) => {
