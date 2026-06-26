@@ -54,3 +54,36 @@ export function passiveBoost(passive: string, tier: Tier): string | null {
   const idx = TIER_INDEX[tier];
   return idx < tokens.length ? formatToken(tokens[idx]) : null;
 }
+
+/** The full effect text for a passive name (or null if unknown). */
+export function passiveEffect(passive: string): string | null {
+  return effectByName[normalize(passive)] ?? null;
+}
+
+/**
+ * Effect text with its per-tier list collapsed to just the epic/purple value,
+ * e.g. "Increases discovery by 20 / 30 / 40" → "Increases discovery by 40".
+ * Used for flat passives where there's no clean percent to show.
+ */
+export function passivePurpleEffect(passive: string): string | null {
+  const effect = effectByName[normalize(passive)];
+  if (!effect) return null;
+  return effect.replace(/[\d.]+x?%?(?:\s*\/\s*[\d.]+x?%?)+/, (run) => {
+    const tokens = run.split("/").map((t) => t.trim());
+    return tokens[Math.min(TIER_INDEX.purple, tokens.length - 1)];
+  });
+}
+
+/**
+ * The per-tier percent range for a passive, e.g. "+15% / +18% / +21%", when the
+ * effect is a multiplier/percent list. Null for flat/non-percent effects (the
+ * caller can fall back to passiveEffect).
+ */
+export function passivePercentRange(passive: string): string | null {
+  const effect = effectByName[normalize(passive)];
+  if (!effect) return null;
+  const run = effect.match(/[\d.]+x?%?(?:\s*\/\s*[\d.]+x?%?)+/);
+  if (!run) return null;
+  const parts = run[0].split("/").map((t) => formatToken(t.trim()));
+  return parts.every((p) => p !== null) ? parts.join(" / ") : null;
+}

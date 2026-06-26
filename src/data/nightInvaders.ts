@@ -1,8 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────
-//  Night Invader drop-specific passives.
+//  Night Invader drop-specific weapon passives, by Nightfarer.
 //
-//  Each Nightfarer has a pool of passives that Night Invaders drop for them.
-//  Revenant has no Night Invader.
+//  Night Invaders drop weapon passives; the names below are the canonical
+//  weapon-passive names (src/data/weaponPassives.ts), so the view can show each
+//  one's value. Revenant has no Night Invader and is omitted.
 //
 //  Source: community sheet
 //  https://docs.google.com/spreadsheets/d/1Yu1QWcDTBSIwx3NA9SuyrxqY7pCeE9jzzb9wcRInVJg
@@ -10,125 +11,118 @@
 
 export interface NightInvaderDrops {
   nightfarer: string;
-  /** Drop-specific passives for this Nightfarer (empty if none). */
+  /** Canonical weapon-passive names this Nightfarer's Night Invader drops. */
   passives: string[];
-  /** Shown when there are no drops (e.g. no Night Invader exists). */
-  note?: string;
 }
 
 export const nightInvaderDrops: NightInvaderDrops[] = [
   {
     nightfarer: "Wylder",
     passives: [
-      "Skill DMG +",
-      "Skill FP cost -",
-      "Continuous HP regen",
-      "HP regen on hit",
-      "FP regen on hit",
-      "Taking damage restores FP",
-      "Taking damage ups negation",
+      "Improved Skill Attack Power",
+      "Reduced Skill FP Cost",
+      "Continuous HP Recovery",
+      "HP Restoration upon Landing Attacks",
+      "FP Restoration upon Landing Attacks",
+      "Taking Damage Restores FP",
+      "Taking Damage Boosts Damage Negation",
     ],
   },
   {
     nightfarer: "Guardian",
     passives: [
-      "Magic negation +",
-      "Fire negation +",
-      "Lightning negation +",
-      "Holy negation +",
-      "Guarding ability +",
-      "Guard counters DMG +",
-      "Guarding ups poise",
-      "Guarding ups negation",
+      "Improved Magic Damage Negation",
+      "Improved Fire Damage Negation",
+      "Improved Lightning Damage Negation",
+      "Improved Holy Damage Negation",
+      "Improved Guarding Ability",
+      "Improved Guard Counters",
+      "Successful Guarding Ups Poise",
+      "Successful Guarding Ups Damage Negation",
     ],
   },
   {
     nightfarer: "Ironeye",
     passives: [
-      "Range weapon DMG +",
-      "Item discovery +",
-      "Targeting -",
-      "Continuous HP regen",
-      "HP regen on kill",
-      "Full HP DMG +",
-      "Full HP negation +",
+      "Improved Ranged Weapon Attacks",
+      "Improved Item Discovery",
+      "Less Likely to Be Targeted",
+      "Continuous HP Recovery",
+      "Defeating Enemies Restores HP",
+      "Improved Attack Power at Full HP",
+      "Improved Damage Negation at Full HP",
     ],
   },
   {
     nightfarer: "Duchess",
     passives: [
-      "Critical DMG +",
-      "Dual wield DMG +",
-      "Glintblades",
-      "HP regen on hit",
-      "Successive hits ups negation",
-      "Full HP DMG +",
-      "Full HP negation +",
+      "Improved Critical Hits",
+      "Attack Up When Wielding Two Armaments",
+      "Multiple Periodical Glintblades",
+      "HP Restoration upon Landing Attacks",
+      "Successive Attacks Negate Damage",
+      "Improved Attack Power at Full HP",
+      "Improved Damage Negation at Full HP",
     ],
   },
   {
     nightfarer: "Scholar",
     passives: [
-      "Full HP DMG +",
-      "Full HP negation +",
-      "Successive hits ups negation",
-      "HP regen on hit",
-      "FP regen on hit",
-      "Melee DMG +",
-      "Rolling DMG +",
+      "Improved Attack Power at Full HP",
+      "Improved Damage Negation at Full HP",
+      "Successive Attacks Negate Damage",
+      "HP Restoration upon Landing Attacks",
+      "FP Restoration upon Landing Attacks",
+      "Improved Melee Attack Power",
+      "Improved Rolling Attacks",
     ],
   },
   {
     nightfarer: "Raider",
     passives: [
-      "Two hand DMG +",
-      "Dual wield DMG +",
-      "Charge attack DMG +",
-      "Jump attack DMG +",
-      "Charged attack ups negation",
-      "Taking damage restores FP",
-      "Taking damage ups negation",
+      "Improved Attack Power When Two-Handing",
+      "Attack Up When Wielding Two Armaments",
+      "Improved Charged Attacks",
+      "Improved Jump Attacks",
+      "Damage Negation Up upon Landing Charge Attacks",
+      "Taking Damage Restores FP",
+      "Taking Damage Boosts Damage Negation",
     ],
-  },
-  {
-    nightfarer: "Revenant",
-    passives: [],
-    note: "No Night Invader",
   },
   {
     nightfarer: "Recluse",
     passives: [
-      "Magic DMG +",
-      "Sorcery DMG +",
-      "Charged sorcery DMG +",
-      "Cast speed +",
-      "Spell FP cost -",
-      "Casting spells ups negation",
-      "Full HP negation +",
+      "Improved Magic Attack Power",
+      "Improved Sorceries",
+      "Improved Charged Sorceries",
+      "Improved Spell Casting Speed",
+      "Reduced Spell FP Cost",
+      "Damage Negation Up While Casting Spells",
+      "Improved Damage Negation at Full HP",
     ],
   },
   {
     nightfarer: "Executor",
     passives: [
-      "Two hand DMG +",
-      "Skill DMG +",
-      "Skill FP cost -",
-      "HP regen on hit",
-      "Successive hits ups negation",
-      "HP regen on kill",
-      "FP regen on kill",
+      "Improved Attack Power When Two-Handing",
+      "Improved Skill Attack Power",
+      "Reduced Skill FP Cost",
+      "HP Restoration upon Landing Attacks",
+      "Successive Attacks Negate Damage",
+      "Defeating Enemies Restores HP",
+      "Defeating Enemies Restores FP",
     ],
   },
   {
     nightfarer: "Undertaker",
     passives: [
-      "Taking damage ups negation",
-      "Melee DMG +",
-      "Full HP DMG +",
-      "Full HP negation +",
-      "Chain attack finisher DMG +",
-      "Skill DMG +",
-      "Skill FP cost -",
+      "Taking Damage Boosts Damage Negation",
+      "Improved Melee Attack Power",
+      "Improved Attack Power at Full HP",
+      "Improved Damage Negation at Full HP",
+      "Improved Chain Attack Finishers",
+      "Improved Skill Attack Power",
+      "Reduced Skill FP Cost",
     ],
   },
 ];

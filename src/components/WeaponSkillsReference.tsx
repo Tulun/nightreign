@@ -31,19 +31,19 @@ export function WeaponSkillsReference() {
         {list.length} of {weaponSkills.length} skills
       </p>
 
-      <ul className="space-y-2">
+      <ul className="space-y-3">
         {list.map((s) => (
-          <li key={s.id} className="frame flex gap-3 rounded-lg bg-night-800/60 p-3">
-            <WeaponIcon src={`/icons/weapon-skills/${s.id}.png`} alt={s.name} size={52} />
+          <li key={s.id} className="frame flex gap-4 rounded-lg bg-night-800/60 p-4">
+            <WeaponIcon src={`/icons/weapon-skills/${s.id}.png`} alt={s.name} size={84} />
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <h3 className="font-display text-base font-semibold text-parchment">{s.name}</h3>
-                <span className="font-body text-xs text-gold-dim">{s.fp} FP</span>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                <h3 className="font-display text-xl font-semibold text-parchment">{s.name}</h3>
+                <span className="font-body text-sm font-semibold text-gold-dim">{s.fp} FP</span>
               </div>
-              <p className="mt-0.5 font-body text-xs uppercase tracking-[0.03em] text-parchment-faint">
+              <p className="mt-1 font-body text-sm uppercase tracking-[0.03em] text-parchment-faint">
                 {s.armaments}
               </p>
-              <p className="mt-1 font-body text-sm leading-snug text-parchment-muted">{s.effect}</p>
+              <p className="mt-1.5 font-body text-base leading-relaxed text-parchment-muted">{s.effect}</p>
             </div>
           </li>
         ))}
