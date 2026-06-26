@@ -25,22 +25,22 @@ const groups: NavGroup[] = [
     title: "Nightfarers",
     items: [
       { label: "Base Stats", href: "/nightfarers" },
+      { label: "Stat Swaps", href: "/stat-swaps" },
       { label: "Recluse Cocktails", href: "/recluse-cocktails" },
       { label: "Bagcraft", href: "/bagcraft" },
-      { label: "Stat Swaps", href: "/stat-swaps" },
+      { label: "Greatshield Affinity", href: "/greatshields" },
       { label: "Negation Calculator", href: "/negation" },
       { label: "Attack Calculator", href: "/attack" },
-      { label: "Greatshield Affinity", href: "/greatshields" },
     ],
   },
   {
     title: "Items",
     items: [
+      { label: "Relics", href: "/relics" },
       { label: "Weapons", href: "/weapons" },
       { label: "Shields", href: "/shields" },
       { label: "Talismans", href: "/talismans" },
       { label: "Weapon Passives", href: "/weapon-passives" },
-      { label: "Relics", href: "/relics" },
     ],
   },
   {
