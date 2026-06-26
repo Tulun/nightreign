@@ -109,7 +109,7 @@ export const sets: MerchantSet[] = [
       { name: "Spiked Palisade Shield", passive: "Improved magic damage negation", tier: "blue" },
       { name: "Butchering Knife", passive: "Improved guard counters", tier: "purple" },
       { name: "Erdtree Bow", passive: "Improved ranged weapon attacks", tier: "purple", highlighted: true },
-      { name: "Pulley Crossbow", passive: "Improved charge attacks", tier: "purple", highlighted: true },
+      { name: "Pulley Crossbow", passive: "Improved charged attacks", tier: "purple", highlighted: true },
       { name: "Meteorite Staff", passive: "Reduced spell FP cost", tier: "purple" },
     ],
     normalMerchant: [
@@ -153,7 +153,7 @@ export const sets: MerchantSet[] = [
   {
     id: 5,
     specialMerchant: [
-      { name: "Forked Greatsword", passive: "Damage negation up upon landing attacks", tier: "blue" },
+      { name: "Forked Greatsword", passive: "Damage negation up upon landing charged attacks", tier: "blue" },
       { name: "Nagakiba", passive: "Improved charged attacks", tier: "blue", highlighted: true },
       { name: "Nightrider Glaive", passive: "Attacks release mist of frost", tier: "blue" },
       { name: "Composite Bow", passive: "Successful guarding ups damage negation", tier: "blue" },
@@ -162,7 +162,7 @@ export const sets: MerchantSet[] = [
       { name: "Giant's Seal", passive: "Improved fire attack power", tier: "blue" },
       { name: "Eclipse Crest Greatshield", passive: "Improved fire damage negation", tier: "blue" },
       { name: "Glintstone Kris", passive: "Attack up when wielding two armaments", tier: "purple", highlighted: true },
-      { name: "Beastclaw Greathammer", passive: "Fire attacks follows charge attacks that land", tier: "purple", highlighted: true },
+      { name: "Beastclaw Greathammer", passive: "Fire attack follows charge attacks that land", tier: "purple", highlighted: true },
       { name: "Prince of Death's Staff", passive: "Continuous HP recovery", tier: "purple" },
     ],
     normalMerchant: [
@@ -178,7 +178,7 @@ export const sets: MerchantSet[] = [
   {
     id: 6,
     specialMerchant: [
-      { name: "Erdsteel Dagger", passive: "Fire attacks follows charge attacks that land", tier: "blue", highlighted: true },
+      { name: "Erdsteel Dagger", passive: "Fire attack follows charge attacks that land", tier: "blue", highlighted: true },
       { name: "Gargoyle's Greatsword", passive: "Reduced skill FP cost", tier: "blue" },
       { name: "Great Omenkiller Cleaver", passive: "Improved fire damage negation", tier: "blue" },
       { name: "Ripple Crescent Halberd", passive: "Improved skill attack power", tier: "blue" },
@@ -197,7 +197,7 @@ export const sets: MerchantSet[] = [
       { name: "Warped Axe", passive: "Improved lightning attack power", tier: "blue" },
       { name: "Treespear", passive: "Improved magic damage negation", tier: "blue" },
       { name: "Gilded Iron Shield", passive: "Multiple periodical glintblades", tier: "blue", highlighted: true },
-      { name: "Bloody Helice", passive: "Lightning follows charge attacks that land", tier: "purple", highlighted: true },
+      { name: "Bloody Helice", passive: "Lightning attack follows charge attacks that land", tier: "purple", highlighted: true },
     ],
   },
   {
@@ -211,7 +211,7 @@ export const sets: MerchantSet[] = [
       { name: "Hand Ballista", passive: "Multiple periodical glintblades", tier: "blue", highlighted: true },
       { name: "Crystal Staff", passive: "Improved charged sorceries", tier: "blue" },
       { name: "Golden Greatshield", passive: "Savage pillars of flame rise while walking", tier: "blue", highlighted: true },
-      { name: "Gargoyle's Black Axe", passive: "Holy attacks follows charge attacks that land", tier: "purple", highlighted: true },
+      { name: "Gargoyle's Black Axe", passive: "Holy attack follows charge attacks that land", tier: "purple", highlighted: true },
       { name: "Pulley Bow", passive: "Reduced skill FP cost", tier: "purple" },
       { name: "Golden Order Seal", passive: "Improved ranged weapon attacks", tier: "purple", highlighted: true },
     ],
@@ -267,7 +267,7 @@ export const sets: MerchantSet[] = [
     ],
     normalMerchant: [
       { name: "Great Épée", passive: "Improved blood loss resistance", tier: "common" },
-      { name: "Omen Cleaver", passive: "Improved charge attacks", tier: "blue", highlighted: true },
+      { name: "Omen Cleaver", passive: "Improved charged attacks", tier: "blue", highlighted: true },
       { name: "Godskin Peeler", passive: "Damage negation up upon landing charged attacks", tier: "blue" },
       { name: "Urumi", passive: "Improved chain attack finishers", tier: "blue" },
       { name: "Clawmark Seal", passive: "Improved skill attack power", tier: "blue" },
@@ -285,7 +285,7 @@ export const sets: MerchantSet[] = [
       { name: "Golem Greatbow", passive: "Improved ranged weapon attacks", tier: "blue", highlighted: true },
       { name: "Albinauric Staff", passive: "Defeating enemies restores HP", tier: "blue" },
       { name: "Briar Greatshield", passive: "Improved sorceries", tier: "blue", highlighted: true },
-      { name: "Black Knife", passive: "Improved charge attacks", tier: "purple", highlighted: true },
+      { name: "Black Knife", passive: "Improved charged attacks", tier: "purple", highlighted: true },
       { name: "Alabaster Lord's Sword", passive: "Improved madness resistance", tier: "purple" },
       { name: "Jar Cannon", passive: "Improved ranged weapon attacks", tier: "purple", highlighted: true },
       { name: "Golden Order Seal", passive: "Less likely to be targeted", tier: "purple" },
@@ -330,7 +330,7 @@ export const sets: MerchantSet[] = [
     id: 12,
     specialMerchant: [
       { name: "Wakizashi", passive: "Reduced skill FP cost", tier: "blue" },
-      { name: "Inseparable Sword", passive: "Holy attacks follows charge attacks that land", tier: "blue", highlighted: true },
+      { name: "Inseparable Sword", passive: "Holy attack follows charge attacks that land", tier: "blue", highlighted: true },
       { name: "Gargoyle's Great Axe", passive: "Improved fire damage negation", tier: "blue" },
       { name: "Albinauric Bow", passive: "Improved skill attack power", tier: "blue" },
       { name: "Golem Greatbow", passive: "Improved attack power at full HP", tier: "blue", highlighted: true },
@@ -382,7 +382,7 @@ export const sets: MerchantSet[] = [
     specialMerchant: [
       { name: "Bloodstained Dagger", passive: "Improved critical hits", tier: "blue", highlighted: true },
       { name: "Claymore", passive: "Improved attack power when two-handing", tier: "blue", highlighted: true },
-      { name: "Gargoyle's Great Axe", passive: "Improved charge attacks", tier: "blue", highlighted: true },
+      { name: "Gargoyle's Great Axe", passive: "Improved charged attacks", tier: "blue", highlighted: true },
       { name: "Pest's Glaive", passive: "Reduced skill FP cost", tier: "blue" },
       { name: "Hand Ballista", passive: "Magma surge sprint", tier: "blue" },
       { name: "Carian Glintstone Staff", passive: "Less likely to be targeted", tier: "blue" },
@@ -407,7 +407,7 @@ export const sets: MerchantSet[] = [
     specialMerchant: [
       { name: "Erdsteel Dagger", passive: "Attack up when wielding two armaments", tier: "blue", highlighted: true },
       { name: "Knight's Greatsword", passive: "Improved chain attack finishers", tier: "blue" },
-      { name: "Guardian's Swordspear", passive: "Improved charge attacks", tier: "blue", highlighted: true },
+      { name: "Guardian's Swordspear", passive: "Improved charged attacks", tier: "blue", highlighted: true },
       { name: "Composite Bow", passive: "Improved attack power at full HP", tier: "blue", highlighted: true },
       { name: "Full Moon Crossbow", passive: "Less likely to be targeted", tier: "blue" },
       { name: "Staff of the Guilty", passive: "Defeating enemies restores HP", tier: "blue" },
@@ -495,7 +495,7 @@ export const sets: MerchantSet[] = [
     normalMerchant: [
       { name: "Rapier", passive: "Successive attacks negate damage", tier: "common" },
       { name: "Grossmesser", passive: "Holy attack follows charge attacks that land", tier: "blue", highlighted: true },
-      { name: "Warhawk's Talon", passive: "Improved charge attacks", tier: "blue", highlighted: true },
+      { name: "Warhawk's Talon", passive: "Improved charged attacks", tier: "blue", highlighted: true },
       { name: "Thorned Whip", passive: "Improved attack power when two-handing", tier: "blue", highlighted: true },
       { name: "Iron Ball", passive: "Improved magic damage negation", tier: "blue" },
       { name: "Gilded Greatshield", passive: "Improved lightning attack power", tier: "blue" },
@@ -507,7 +507,7 @@ export const sets: MerchantSet[] = [
     specialMerchant: [
       { name: "Crystal Knife", passive: "Continuous HP recovery", tier: "blue" },
       { name: "Nagakiba", passive: "Improved attack power when two-handing", tier: "blue", highlighted: true },
-      { name: "Rotten Greataxe", passive: "Improved charge attacks", tier: "blue", highlighted: true },
+      { name: "Rotten Greataxe", passive: "Improved charged attacks", tier: "blue", highlighted: true },
       { name: "Albinauric Bow", passive: "Reduced skill FP cost", tier: "blue" },
       { name: "Golem Greatbow", passive: "Defeating enemies restores HP", tier: "blue" },
       { name: "Crepus's Black-Key Crossbow", passive: "Improved damage negation at low HP", tier: "blue" },
@@ -545,9 +545,9 @@ export const sets: MerchantSet[] = [
     ],
     normalMerchant: [
       { name: "Club", passive: "Taking damage restores FP", tier: "common" },
-      { name: "Lordsworn's Straight Sword", passive: "Improved charge attacks", tier: "blue", highlighted: true },
+      { name: "Lordsworn's Straight Sword", passive: "Improved charged attacks", tier: "blue", highlighted: true },
       { name: "Beastman's Curved Sword", passive: "Damage negation up upon landing charged attacks", tier: "blue" },
-      { name: "Monk's Flameblade", passive: "Lightning follows charge attacks that land", tier: "blue", highlighted: true },
+      { name: "Monk's Flameblade", passive: "Lightning attack follows charge attacks that land", tier: "blue", highlighted: true },
       { name: "Treespear", passive: "Improved item discovery", tier: "blue" },
       { name: "Eclipse Crest Greatshield", passive: "Improved damage negation at full HP", tier: "blue" },
       { name: "Cipher Pata", passive: "Reduced skill FP cost", tier: "purple" },

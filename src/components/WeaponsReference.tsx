@@ -5,6 +5,7 @@ import Image from "next/image";
 import { weapons } from "@/data/weapons";
 import { weaponSkills } from "@/data/weaponSkills";
 import { Dropdown } from "@/components/Dropdown";
+import { MultiSelect } from "@/components/MultiSelect";
 import { WeaponIcon } from "@/components/WeaponIcon";
 import { iconFor } from "@/data/weaponIcons";
 import { asset } from "@/lib/assets";
@@ -51,32 +52,50 @@ const STATUS_KEY: Record<string, StatusKey> = {
 /** Rarity sort rank — Common first, unranked last. */
 const RARITY_RANK: Record<string, number> = { normal: 0, blue: 1, purple: 2, gold: 3 };
 
+/** Scaling grades, best → worst. Index doubles as the sort rank. */
+const GRADES = ["S", "A", "B", "C", "D", "E"];
+const gradeRank = (g?: string | null) => (g ? GRADES.indexOf(g) : 99);
+
 export function WeaponsReference() {
   const [query, setQuery] = useState("");
-  const [type, setType] = useState("all");
+  const [types, setTypes] = useState<string[]>([]);
   const [status, setStatus] = useState("all");
-  const [scaling, setScaling] = useState("all");
+  const [scaleAttr, setScaleAttr] = useState("all");
+  const [grades, setGrades] = useState<string[]>([]);
   const [rarity, setRarity] = useState("all");
 
-  const types = useMemo(() => Array.from(new Set(weapons.map((w) => w.type))).sort(), []);
+  const allTypes = useMemo(() => Array.from(new Set(weapons.map((w) => w.type))).sort(), []);
   const statuses = useMemo(
     () => Array.from(new Set(weapons.map((w) => w.status).filter(Boolean) as string[])).sort(),
     [],
   );
 
   const q = query.trim().toLowerCase();
+  const typeSet = new Set(types);
+  const gradeSet = new Set(grades);
+  const attr = scaleAttr === "all" ? null : (scaleAttr as keyof NonNullable<Weapon["scaling"]>);
+
   const list = weapons
     .filter((w) => {
-      if (type !== "all" && w.type !== type) return false;
+      if (typeSet.size && !typeSet.has(w.type)) return false;
       if (status !== "all" && w.status !== status) return false;
       if (rarity !== "all" && w.rarity !== rarity) return false;
-      if (scaling !== "all" && !w.scaling?.[scaling as keyof typeof w.scaling]) return false;
+      if (attr) {
+        const g = w.scaling?.[attr];
+        if (!g) return false; // must scale with the chosen attribute
+        if (gradeSet.size && !gradeSet.has(g)) return false; // within chosen grades
+      }
       if (q && !w.name.toLowerCase().includes(q) && !(w.skill?.toLowerCase().includes(q) ?? false)) return false;
       return true;
     })
     .sort((a, b) => {
       const t = TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type);
       if (t !== 0) return t;
+      // With a scaling attribute chosen, best grade rises to the top of its type.
+      if (attr) {
+        const g = gradeRank(a.scaling?.[attr]) - gradeRank(b.scaling?.[attr]);
+        if (g !== 0) return g;
+      }
       const r = (a.rarity ? RARITY_RANK[a.rarity] : 4) - (b.rarity ? RARITY_RANK[b.rarity] : 4);
       if (r !== 0) return r;
       return a.name.localeCompare(b.name);
@@ -93,11 +112,26 @@ export function WeaponsReference() {
           placeholder="Search weapons by name or skill…"
           className="w-full rounded-lg border border-night-600 bg-night-900 px-3 py-2 font-body text-sm text-parchment placeholder:text-parchment-faint focus:border-gold-faint focus:outline-none"
         />
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <Select label="Type" value={type} onChange={setType} options={types} />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <Field label="Type">
+            <MultiSelect
+              values={types}
+              onChange={setTypes}
+              placeholder="All types"
+              options={allTypes.map((t) => ({ value: t, label: t }))}
+            />
+          </Field>
           <Select label="Status" value={status} onChange={setStatus} options={statuses} />
-          <Select label="Scales with" value={scaling} onChange={setScaling} options={SCALING_STATS.map((s) => s.key)} labels={Object.fromEntries(SCALING_STATS.map((s) => [s.key, s.label]))} />
           <Select label="Rarity" value={rarity} onChange={setRarity} options={["normal", "blue", "purple", "gold"]} labels={{ normal: "Common", blue: "Rare", purple: "Epic", gold: "Legendary" }} />
+          <Select label="Scale for" value={scaleAttr} onChange={(v) => { setScaleAttr(v); if (v === "all") setGrades([]); }} options={SCALING_STATS.map((s) => s.key)} labels={Object.fromEntries(SCALING_STATS.map((s) => [s.key, s.label]))} placeholder="Any attribute" />
+          <Field label="Grades">
+            <MultiSelect
+              values={grades}
+              onChange={setGrades}
+              placeholder={attr ? "All grades" : "Pick an attribute"}
+              options={GRADES.map((g) => ({ value: g, label: g }))}
+            />
+          </Field>
         </div>
       </div>
 
@@ -238,28 +272,39 @@ function Row({ w }: { w: Weapon }) {
   );
 }
 
+/** Labelled wrapper so MultiSelect controls line up with the Select fields. */
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">{label}</span>
+      {children}
+    </label>
+  );
+}
+
 function Select({
   label,
   value,
   onChange,
   options,
   labels,
+  placeholder = "All",
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: string[];
   labels?: Record<string, string>;
+  placeholder?: string;
 }) {
   return (
-    <label className="flex flex-col gap-1">
-      <span className="font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">{label}</span>
+    <Field label={label}>
       <Dropdown
         value={value}
         clearable={false}
         onChange={onChange}
-        options={[{ value: "all", label: "All" }, ...options.map((o) => ({ value: o, label: labels?.[o] ?? o }))]}
+        options={[{ value: "all", label: placeholder }, ...options.map((o) => ({ value: o, label: labels?.[o] ?? o }))]}
       />
-    </label>
+    </Field>
   );
 }
