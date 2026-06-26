@@ -73,7 +73,7 @@ export const weaponPassives: WeaponPassive[] = [
   { name: "Successful Guarding Ups Poise", effect: "Reduces incoming poise damage by 0.88x / 0.82x / 0.76x after blocking", category: "defensive", stack: "yes" },
   { name: "Improved Guarding Ability", effect: "Reduces stamina damage taken when guarding by 0.9x / 0.85x / 0.8x", category: "defensive", stack: "yes" },
   { name: "Improved Poison/Blood Loss/Sleep/Deathblight/Rot/Frost/Madness Resist", effect: "Increases the respective status resistance by 57 / 75 / 112", category: "defensive", stack: "yes" },
-  { name: "Less Likely to Be Targeted", effect: "Decreases target priority by 300 / 450 / 600", category: "defensive", stack: "yes" },
+  { name: "Less Likely to Be Targeted", effect: "Decreases target priority by 6 / 9 / 12", category: "defensive", stack: "yes" },
 
   // ── Regen ───────────────────────────────────────────────────────────────
   { name: "Continuous HP Recovery", effect: "Recovers 1 HP/s", category: "regen", stack: "yes" },
