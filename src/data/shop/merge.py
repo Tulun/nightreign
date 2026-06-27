@@ -62,7 +62,9 @@ for d in old.values():
         for e in d[m]:
             e["name"] = fix(e["name"])
 # Unambiguous spelling fixes for skill / passive / curse text.
-SPELL = [("Glinstone", "Glintstone"), ("Eerdtree", "Erdtree"), ("Ligtning", "Lightning")]
+SPELL = [("Glinstone", "Glintstone"), ("Eerdtree", "Erdtree"), ("Ligtning", "Lightning"),
+         ("Continuos", "Continuous"), ("Launced", "Launched"), ("FR Restoration", "FP Restoration"),
+         ("Vengefull", "Vengeful"), ("Whraits", "Wraiths")]
 def spell(s):
     for a, b in SPELL:
         s = s.replace(a, b)
@@ -168,6 +170,115 @@ def mjs(m):
     ws = "\n".join(f"      {wjs(w)}," for w in m["weapons"])
     return "{\n      tears: " + js(m["tears"]) + ",\n      aromatics: " + js(m["aromatics"]) + ",\n      weapons: [\n" + ws + "\n      ],\n    }"
 
+def ljs(item):
+    p = [f'name: {js(item["name"])}', f'passive: {js(item["passive"])}']
+    if item.get("spell"):
+        p.append(f'spell: {js(item["spell"])}')
+    if item.get("icon"):
+        p.append(f'icon: {js(item["icon"])}')
+    return "{ " + ", ".join(p) + " }"
+
+def legjs(items):
+    if not items:
+        return "[]"
+    return "[\n" + "\n".join(f"      {ljs(i)}," for i in items) + "\n    ]"
+
+legendary = json.load(open(os.path.join(HERE, "legendary.json")))
+
+# ── Canonicalise passive names so equivalent passives share one spelling ──
+# (old and new data phrase the same passive differently — "Dmg"/"Damage",
+# "Successfull"/"Successful", "Negate(s)", casing). Map every variant to one
+# name: the weaponPassives.ts canonical when it matches, else the best Title-
+# Cased variant. Keeps the inline value (e.g. "(+18%)").
+import re
+_wp = open(os.path.join(HERE, "..", "weaponPassives.ts")).read()
+# Canonical names; expand "[Affinity]" placeholders to one per element so the
+# per-element variants (Holy/Fire/Magic Attack Follows…) all normalise alike.
+_wp_names = []
+for _n in re.findall(r'name: "([^"]+)"', _wp):
+    if "[Affinity]" in _n:
+        _wp_names += [_n.replace("[Affinity]", a) for a in ("Magic", "Fire", "Lightning", "Holy")]
+    elif not re.search(r"[/\[+]", _n):
+        _wp_names.append(_n)
+
+# Same passive, wording too different for the normaliser to catch → explicit alias.
+ALIAS = {
+    "Improved Damage Negation on Charge Attacks": "Damage Negation Up upon Landing Charge Attacks",
+    "Reduced Fp Cost": "Reduced FP Consumption",
+}
+
+_WORD_MAP = {"dmg": "damage", "negates": "negate", "improves": "boost", "boosts": "boost",
+             "ups": "up", "charged": "charge", "upon": "up", "when": "while",
+             "defeated": "defeat", "defeating": "defeat"}
+_DROP = {"and", "a", "an", "the"}  # joiners/articles ("&"/"and", "Release a Mist" vs "Release Mist")
+def _agg(s):
+    s = re.sub(r"[^a-z0-9 ]", " ", s.lower()).replace("successfull", "successful").replace("death blight", "deathblight")
+    out = []
+    for w in s.split():
+        if w in _DROP:
+            continue
+        w = _WORD_MAP.get(w, w)
+        if len(w) > 3 and w.endswith("s"):  # singular/plural
+            w = w[:-1]
+        if out and out[-1] == w:  # collapse "up up" → "up"
+            continue
+        out.append(w)
+    return " ".join(out)
+
+# Split a passive into (name, value), handling "(+18%)" and bare "+12%" / "+8".
+_VAL_RE = re.compile(r"\s*(?:\(([^)]*)\)|([+-][\d.]+%?))\s*$")
+def _split(p):
+    m = _VAL_RE.search(p)
+    if not m:
+        return p.strip(), ""
+    return p[:m.start()].strip(), (m.group(1) if m.group(1) is not None else m.group(2))
+
+_wpidx = {}
+for n in _wp_names:
+    _wpidx.setdefault(_agg(n), n)
+
+_names = set()
+for d in old.values():
+    for mk in ("special", "normal"):
+        for e in d[mk]:
+            if e.get("passive"): _names.add(_split(e["passive"])[0])
+for d in new.values():
+    for mk in ("special", "normal"):
+        for w in d[mk]["weapons"]:
+            for p in w["passives"]: _names.add(_split(p)[0])
+for items in legendary.values():
+    for it in items:
+        if it.get("passive"): _names.add(_split(it["passive"])[0])
+
+_groups = {}
+for n in _names:
+    _groups.setdefault(_agg(n), set()).add(n)
+CANON = {}
+def _pick(variants):  # prefer most Title-Cased, then longest, for a stable canonical
+    return max(sorted(variants), key=lambda s: (sum(w[:1].isupper() for w in s.split()), len(s)))
+for k, variants in _groups.items():
+    canon = _wpidx.get(k) or _pick(variants)
+    for v in variants:
+        CANON[v] = canon
+for _src, _dst in ALIAS.items():
+    CANON[_src] = CANON.get(_dst, _dst)
+
+def canon_passive(p):
+    name, val = _split(p)
+    return CANON.get(name, name) + (f" ({val})" if val else "")
+
+for d in old.values():
+    for mk in ("special", "normal"):
+        for e in d[mk]:
+            if e.get("passive"): e["passive"] = canon_passive(e["passive"])
+for d in new.values():
+    for mk in ("special", "normal"):
+        for w in d[mk]["weapons"]:
+            w["passives"] = [canon_passive(p) for p in w["passives"]]
+for items in legendary.values():
+    for it in items:
+        if it.get("passive"): it["passive"] = canon_passive(it["passive"])
+
 ids = sorted(new, key=int)
 lines = ['import type { MerchantSet } from "@/lib/types";\n',
          "/** MERGED shop data (source of truth) — generated by src/data/shop/merge.py",
@@ -179,7 +290,8 @@ lines = ['import type { MerchantSet } from "@/lib/types";\n',
 for oid in ids:
     m = {"special": merge_special(old[oid]["special"], new[oid]["special"]),
          "normal": merge_normal(old[oid]["normal"], new[oid]["normal"])}
-    lines.append(f"  {{\n    id: {oid},\n    special: {mjs(m['special'])},\n    normal: {mjs(m['normal'])},\n  }},")
+    leg = legjs(legendary.get(str(oid), []))
+    lines.append(f"  {{\n    id: {oid},\n    special: {mjs(m['special'])},\n    normal: {mjs(m['normal'])},\n    legendary: {leg},\n  }},")
 lines += ["];\n", "export function getSet(id: number): MerchantSet | undefined {",
           "  return sets.find((s) => s.id === id);", "}"]
 open(os.path.join(HERE, "..", "sets.ts"), "w").write("\n".join(lines) + "\n")

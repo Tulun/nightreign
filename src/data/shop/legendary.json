@@ -1,0 +1,461 @@
+{
+ "0": [
+  {
+   "name": "Dark Moon Greatsword",
+   "passive": "Improved Magic Attack Power (+12%)",
+   "icon": "/icons/weapons/greatswords/dark-moon-greatsword.png"
+  },
+  {
+   "name": "Axe of Godfrey",
+   "passive": "Improved Charge Attacks (+22%)",
+   "icon": "/icons/weapons/colossal-weapons/axe-of-godfrey.png"
+  },
+  {
+   "name": "Eclipse Shotel",
+   "passive": "Successive Attacks Negate Damage (+60%)",
+   "icon": "/icons/weapons/curved-swords/eclipse-shotel.png"
+  },
+  {
+   "name": "Mohgwyn's Sacred Spear",
+   "passive": "Reduced Skill FP Cost (-24%)",
+   "icon": "/icons/weapons/great-spears/mohgwyns-sacred-spear.png"
+  }
+ ],
+ "1": [
+  {
+   "name": "Sacred Relic Sword",
+   "passive": "Improved Holy Attack Power (+12%)",
+   "icon": "/icons/weapons/greatswords/sacred-relic-sword.png"
+  },
+  {
+   "name": "Axe of Godrick",
+   "passive": "Dmg Negation Up upon Landing Charge Attacks (+40%)",
+   "icon": "/icons/weapons/greataxes/axe-of-godrick.png"
+  },
+  {
+   "name": "Dragonking's Cragblade",
+   "passive": "Improved Jump Attacks (+20%)"
+  },
+  {
+   "name": "Sword of Night and Flame",
+   "passive": "Improved Skill Attack Power (+21%)",
+   "icon": "/icons/weapons/straight-swords/sword-of-night-and-flame.png"
+  }
+ ],
+ "2": [
+  {
+   "name": "Blasphemous Blade",
+   "passive": "HP Restoration Upon Landing Attacks (+8)",
+   "icon": "/icons/weapons/greatswords/blasphemous-blade.png"
+  },
+  {
+   "name": "Winged Greathorn",
+   "passive": "Defeating Enemies Restores FP (+8%)",
+   "icon": "/icons/weapons/greataxes/winged-greathorn.png"
+  },
+  {
+   "name": "Bastard Stars",
+   "passive": "Reduced Skill FP Cost (-24%)"
+  },
+  {
+   "name": "Sword of Night and Flame",
+   "passive": "Improved Skill Attack Power (+21%)",
+   "icon": "/icons/weapons/straight-swords/sword-of-night-and-flame.png"
+  }
+ ],
+ "3": [
+  {
+   "name": "Golden Order Greatsword",
+   "passive": "Attacks Generate Golden Shockwaves",
+   "icon": "/icons/weapons/greatswords/golden-order-greatsword.png"
+  },
+  {
+   "name": "Lion's Greatbow",
+   "passive": "Improved Ranged Weapon Attacks (+14%)"
+  },
+  {
+   "name": "Giant's Red Braid",
+   "passive": "Improved Fire Attack Power (+12%)",
+   "icon": "/icons/weapons/whips/giants-red-braid.png"
+  },
+  {
+   "name": "Grafted Blade Greatsword",
+   "passive": "Taking Damage Boosts Damage Negation (+36%)",
+   "icon": "/icons/weapons/colossal-swords/grafted-blade-greatsword.png"
+  }
+ ],
+ "4": [
+  {
+   "name": "Maliketh's Black Blade",
+   "passive": "Damage Negation at Full HP (+40%)",
+   "icon": "/icons/weapons/colossal-swords/malikeths-black-blade.png"
+  },
+  {
+   "name": "Devourer's Scepter",
+   "passive": "Attacks Generate Lava",
+   "icon": "/icons/weapons/great-hammers/devourers-scepter.png"
+  },
+  {
+   "name": "Hand of Malenia",
+   "passive": "Successive Attacks Negates Damage (+60%)",
+   "icon": "/icons/weapons/katanas/hand-of-malenia.png"
+  },
+  {
+   "name": "Carian Regal Scepter",
+   "passive": "Improved Sorceries (+11%)",
+   "spell": "Adula's Moonblade",
+   "icon": "/icons/weapons/glintstone-staffs/carian-regal-scepter.png"
+  }
+ ],
+ "5": [
+  {
+   "name": "Starscourge Greatsword",
+   "passive": "Improved Attack Power at Full HP (+14%)",
+   "icon": "/icons/weapons/colossal-swords/starscourge-greatsword.png"
+  },
+  {
+   "name": "Marika's Hammer",
+   "passive": "Improved Holy Attack Power (+12%)",
+   "icon": "/icons/weapons/hammers/marikas-hammer.png"
+  },
+  {
+   "name": "Morgott's Cursed Sword",
+   "passive": "Improved Critical Hits (+24%)",
+   "icon": "/icons/weapons/curved-greatswords/morgotts-cursed-sword.png"
+  },
+  {
+   "name": "Carian Regal Scepter",
+   "passive": "Reduced Spell Fp Cost (-20%)",
+   "spell": "Comet Azur",
+   "icon": "/icons/weapons/glintstone-staffs/carian-regal-scepter.png"
+  }
+ ],
+ "6": [
+  {
+   "name": "Ruin's Greatsword",
+   "passive": "Improved Charge Attacks (+22%)",
+   "icon": "/icons/weapons/colossal-swords/ruins-greatsword.png"
+  },
+  {
+   "name": "Grafted Dragon",
+   "passive": "Improved Critical Hits (+24%)",
+   "icon": "/icons/weapons/fists/grafted-dragon.png"
+  },
+  {
+   "name": "Bolt of Gransax",
+   "passive": "Improved Lightning Attack Power (+12%)",
+   "icon": "/icons/weapons/spears/bolt-of-gransax.png"
+  },
+  {
+   "name": "Marais Executioner's Sword",
+   "passive": "HP Restoration upon landing attacks (+8)",
+   "icon": "/icons/weapons/greatswords/marais-executioners-sword.png"
+  }
+ ],
+ "7": [
+  {
+   "name": "Dark Moon Greatsword",
+   "passive": "Improved Magic Attack Power (+12%)",
+   "icon": "/icons/weapons/greatswords/dark-moon-greatsword.png"
+  },
+  {
+   "name": "Axe of Godfrey",
+   "passive": "Improved Charge Attacks (+22%)",
+   "icon": "/icons/weapons/colossal-weapons/axe-of-godfrey.png"
+  },
+  {
+   "name": "Eclipse Shotel",
+   "passive": "Successive Attacks Negate Damage (+60%)",
+   "icon": "/icons/weapons/curved-swords/eclipse-shotel.png"
+  },
+  {
+   "name": "Mohgwyn's Sacred Spear",
+   "passive": "Reduced Skill FP Cost (-24%)",
+   "icon": "/icons/weapons/great-spears/mohgwyns-sacred-spear.png"
+  }
+ ],
+ "8": [
+  {
+   "name": "Sacred Relic Sword",
+   "passive": "Improved Holy Attack Power (+12%)",
+   "icon": "/icons/weapons/greatswords/sacred-relic-sword.png"
+  },
+  {
+   "name": "Axe of Godrick",
+   "passive": "Dmg Negation Up upon Landing Charge Attacks (+40%)",
+   "icon": "/icons/weapons/greataxes/axe-of-godrick.png"
+  },
+  {
+   "name": "Dragonking's Cragblade",
+   "passive": "Improved Jump Attacks (+20%)"
+  },
+  {
+   "name": "Sword of Night and Flame",
+   "passive": "Improved Skill Attack Power (+21%)",
+   "icon": "/icons/weapons/straight-swords/sword-of-night-and-flame.png"
+  }
+ ],
+ "9": [
+  {
+   "name": "Blasphemous Blade",
+   "passive": "HP Restoration Upon Landing Attacks (+8)",
+   "icon": "/icons/weapons/greatswords/blasphemous-blade.png"
+  },
+  {
+   "name": "Winged Greathorn",
+   "passive": "Defeating Enemies Restores FP (+8%)",
+   "icon": "/icons/weapons/greataxes/winged-greathorn.png"
+  },
+  {
+   "name": "Bastard Stars",
+   "passive": "Reduced Skill FP Cost (-24%)"
+  },
+  {
+   "name": "Sword of Night and Flame",
+   "passive": "Improved Skill Attack Power (+21%)",
+   "icon": "/icons/weapons/straight-swords/sword-of-night-and-flame.png"
+  }
+ ],
+ "10": [
+  {
+   "name": "Golden Order Greatsword",
+   "passive": "Attacks Generate Golden Shockwaves",
+   "icon": "/icons/weapons/greatswords/golden-order-greatsword.png"
+  },
+  {
+   "name": "Lion's Greatbow",
+   "passive": "Improved Ranged Weapon Attacks (+14%)"
+  },
+  {
+   "name": "Giant's Red Braid",
+   "passive": "Improved Fire Attack Power (+12%)",
+   "icon": "/icons/weapons/whips/giants-red-braid.png"
+  },
+  {
+   "name": "Grafted Blade Greatsword",
+   "passive": "Taking Damage Boosts Damage Negation (+36%)",
+   "icon": "/icons/weapons/colossal-swords/grafted-blade-greatsword.png"
+  }
+ ],
+ "11": [
+  {
+   "name": "Maliketh's Black Blade",
+   "passive": "Damage Negation at Full HP (+40%)",
+   "icon": "/icons/weapons/colossal-swords/malikeths-black-blade.png"
+  },
+  {
+   "name": "Devourer's Scepter",
+   "passive": "Attacks Generate Lava",
+   "icon": "/icons/weapons/great-hammers/devourers-scepter.png"
+  },
+  {
+   "name": "Hand of Malenia",
+   "passive": "Successive Attacks Negates Damage (+60%)",
+   "icon": "/icons/weapons/katanas/hand-of-malenia.png"
+  },
+  {
+   "name": "Carian Regal Scepter",
+   "passive": "Improved Sorceries (+11%)",
+   "spell": "Adula's Moonblade",
+   "icon": "/icons/weapons/glintstone-staffs/carian-regal-scepter.png"
+  }
+ ],
+ "12": [
+  {
+   "name": "Starscourge Greatsword",
+   "passive": "Improved Attack Power at Full HP (+14%)",
+   "icon": "/icons/weapons/colossal-swords/starscourge-greatsword.png"
+  },
+  {
+   "name": "Marika's Hammer",
+   "passive": "Improved Holy Attack Power (+12%)",
+   "icon": "/icons/weapons/hammers/marikas-hammer.png"
+  },
+  {
+   "name": "Morgott's Cursed Sword",
+   "passive": "Improved Critical Hits (+24%)",
+   "icon": "/icons/weapons/curved-greatswords/morgotts-cursed-sword.png"
+  },
+  {
+   "name": "Carian Regal Scepter",
+   "passive": "Reduced Spell Fp Cost (-20%)",
+   "spell": "Comet Azur",
+   "icon": "/icons/weapons/glintstone-staffs/carian-regal-scepter.png"
+  }
+ ],
+ "13": [
+  {
+   "name": "Ruin's Greatsword",
+   "passive": "Improved Charge Attacks (+22%)",
+   "icon": "/icons/weapons/colossal-swords/ruins-greatsword.png"
+  },
+  {
+   "name": "Grafted Dragon",
+   "passive": "Improved Critical Hits (+24%)",
+   "icon": "/icons/weapons/fists/grafted-dragon.png"
+  },
+  {
+   "name": "Bolt of Gransax",
+   "passive": "Improved Lightning Attack Power (+12%)",
+   "icon": "/icons/weapons/spears/bolt-of-gransax.png"
+  },
+  {
+   "name": "Marais Executioner's Sword",
+   "passive": "HP Restoration upon landing attacks (+8)",
+   "icon": "/icons/weapons/greatswords/marais-executioners-sword.png"
+  }
+ ],
+ "14": [
+  {
+   "name": "Dark Moon Greatsword",
+   "passive": "Improved Magic Attack Power (+12%)",
+   "icon": "/icons/weapons/greatswords/dark-moon-greatsword.png"
+  },
+  {
+   "name": "Axe of Godfrey",
+   "passive": "Improved Charge Attacks (+22%)",
+   "icon": "/icons/weapons/colossal-weapons/axe-of-godfrey.png"
+  },
+  {
+   "name": "Eclipse Shotel",
+   "passive": "Successive Attacks Negate Damage (+60%)",
+   "icon": "/icons/weapons/curved-swords/eclipse-shotel.png"
+  },
+  {
+   "name": "Mohgwyn's Sacred Spear",
+   "passive": "Reduced Skill FP Cost (-24%)",
+   "icon": "/icons/weapons/great-spears/mohgwyns-sacred-spear.png"
+  }
+ ],
+ "15": [
+  {
+   "name": "Sacred Relic Sword",
+   "passive": "Improved Holy Attack Power (+12%)",
+   "icon": "/icons/weapons/greatswords/sacred-relic-sword.png"
+  },
+  {
+   "name": "Axe of Godrick",
+   "passive": "Dmg Negation Up upon Landing Charge Attacks (+40%)",
+   "icon": "/icons/weapons/greataxes/axe-of-godrick.png"
+  },
+  {
+   "name": "Dragonking's Cragblade",
+   "passive": "Improved Jump Attacks (+20%)"
+  },
+  {
+   "name": "Sword of Night and Flame",
+   "passive": "Improved Skill Attack Power (+21%)",
+   "icon": "/icons/weapons/straight-swords/sword-of-night-and-flame.png"
+  }
+ ],
+ "16": [
+  {
+   "name": "Blasphemous Blade",
+   "passive": "HP Restoration Upon Landing Attacks (+8)",
+   "icon": "/icons/weapons/greatswords/blasphemous-blade.png"
+  },
+  {
+   "name": "Winged Greathorn",
+   "passive": "Defeating Enemies Restores FP (+8%)",
+   "icon": "/icons/weapons/greataxes/winged-greathorn.png"
+  },
+  {
+   "name": "Bastard Stars",
+   "passive": "Reduced Skill FP Cost (-24%)"
+  },
+  {
+   "name": "Sword of Night and Flame",
+   "passive": "Improved Skill Attack Power (+21%)",
+   "icon": "/icons/weapons/straight-swords/sword-of-night-and-flame.png"
+  }
+ ],
+ "17": [
+  {
+   "name": "Golden Order Greatsword",
+   "passive": "Attacks Generate Golden Shockwaves",
+   "icon": "/icons/weapons/greatswords/golden-order-greatsword.png"
+  },
+  {
+   "name": "Lion's Greatbow",
+   "passive": "Improved Ranged Weapon Attacks (+14%)"
+  },
+  {
+   "name": "Giant's Red Braid",
+   "passive": "Improved Fire Attack Power (+12%)",
+   "icon": "/icons/weapons/whips/giants-red-braid.png"
+  },
+  {
+   "name": "Grafted Blade Greatsword",
+   "passive": "Taking Damage Boosts Damage Negation (+36%)",
+   "icon": "/icons/weapons/colossal-swords/grafted-blade-greatsword.png"
+  }
+ ],
+ "18": [
+  {
+   "name": "Maliketh's Black Blade",
+   "passive": "Damage Negation at Full HP (+40%)",
+   "icon": "/icons/weapons/colossal-swords/malikeths-black-blade.png"
+  },
+  {
+   "name": "Devourer's Scepter",
+   "passive": "Attacks Generate Lava",
+   "icon": "/icons/weapons/great-hammers/devourers-scepter.png"
+  },
+  {
+   "name": "Hand of Malenia",
+   "passive": "Successive Attacks Negates Damage (+60%)",
+   "icon": "/icons/weapons/katanas/hand-of-malenia.png"
+  },
+  {
+   "name": "Carian Regal Scepter",
+   "passive": "Improved Sorceries (+11%)",
+   "spell": "Adula's Moonblade",
+   "icon": "/icons/weapons/glintstone-staffs/carian-regal-scepter.png"
+  }
+ ],
+ "19": [
+  {
+   "name": "Starscourge Greatsword",
+   "passive": "Improved Attack Power at Full HP (+14%)",
+   "icon": "/icons/weapons/colossal-swords/starscourge-greatsword.png"
+  },
+  {
+   "name": "Marika's Hammer",
+   "passive": "Improved Holy Attack Power (+12%)",
+   "icon": "/icons/weapons/hammers/marikas-hammer.png"
+  },
+  {
+   "name": "Morgott's Cursed Sword",
+   "passive": "Improved Critical Hits (+24%)",
+   "icon": "/icons/weapons/curved-greatswords/morgotts-cursed-sword.png"
+  },
+  {
+   "name": "Carian Regal Scepter",
+   "passive": "Reduced Spell Fp Cost (-20%)",
+   "spell": "Comet Azur",
+   "icon": "/icons/weapons/glintstone-staffs/carian-regal-scepter.png"
+  }
+ ],
+ "20": [
+  {
+   "name": "Ruin's Greatsword",
+   "passive": "Improved Charge Attacks (+22%)",
+   "icon": "/icons/weapons/colossal-swords/ruins-greatsword.png"
+  },
+  {
+   "name": "Grafted Dragon",
+   "passive": "Improved Critical Hits (+24%)",
+   "icon": "/icons/weapons/fists/grafted-dragon.png"
+  },
+  {
+   "name": "Bolt of Gransax",
+   "passive": "Improved Lightning Attack Power (+12%)",
+   "icon": "/icons/weapons/spears/bolt-of-gransax.png"
+  },
+  {
+   "name": "Marais Executioner's Sword",
+   "passive": "HP Restoration upon landing attacks (+8)",
+   "icon": "/icons/weapons/greatswords/marais-executioners-sword.png"
+  }
+ ]
+}

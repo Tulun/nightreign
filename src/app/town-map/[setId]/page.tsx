@@ -31,7 +31,7 @@ export default function SetDetailPage({
         href="/town-map"
         className="inline-flex items-center gap-1.5 font-body text-sm text-parchment-muted transition-colors hover:text-gold"
       >
-        <span aria-hidden="true">←</span> All sets
+        <span aria-hidden="true">←</span> All seeds
       </Link>
 
       {/* Set signature (its Purple weapon) */}

@@ -17,7 +17,7 @@ type NavGroup = { title?: string; items: NavItem[] };
 const groups: NavGroup[] = [
   {
     items: [
-      { label: "Town Map Seeds", href: "/town-map" },
+      { label: "Merchant Inventories", href: "/town-map" },
       { label: "Great Hollow", href: "/great-hollow" },
     ],
   },

@@ -61,12 +61,26 @@ export interface Merchant {
   aromatics: string[];
 }
 
-/** One town-map seed (1–21), with its Super (special) and Normal merchants. */
+/**
+ * A Legendary merchant weapon (Great Hollow only — a rarer occurrence). Shared
+ * across a group of seeds; carries just a name, passive, and optional spell.
+ */
+export interface LegendaryItem {
+  name: string;
+  passive: string;
+  spell?: string;
+  /** Resolved icon path, when one exists on disk. */
+  icon?: string;
+}
+
+/** One seed (1–21), with its Super (special), Normal, and Legendary merchants. */
 export interface MerchantSet {
   /** Seed number 1–21. Used in the URL (/town-map/1) and shown as the seal. */
   id: number;
   special: Merchant;
   normal: Merchant;
+  /** Great Hollow Legendary merchant stock (rarer; shown under the Normal merchant). */
+  legendary: LegendaryItem[];
 }
 
 /**

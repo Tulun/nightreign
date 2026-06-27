@@ -2,17 +2,18 @@ import type { MerchantSet, ShopWeapon } from "@/lib/types";
 import { sets } from "@/data/sets";
 
 // ─────────────────────────────────────────────────────────────────────────
-//  Town Map (seed shop) filtering + search.
+//  Merchant Inventories (seed shop) filtering + search.
 //
-//  Two filter groups, each in its own dropdown:
-//    - "weapon"  → a specific staff/seal by name (every seed carries some).
-//    - "passive" → a weapon passive (matched on the passive name, ignoring its
-//                  inline value like "(+18%)"). Matches across both merchants.
+//  Three filter groups, each in its own dropdown:
+//    - "weapon"    → a specific staff/seal by name (every seed carries some).
+//    - "passive"   → a weapon passive (matched on the passive name, ignoring its
+//                    inline value like "(+18%)"). Matches across both merchants.
+//    - "legendary" → a Great Hollow Legendary merchant weapon by name.
 //
 //  Filters use ANY (OR) semantics; the free-text search then narrows further.
 // ─────────────────────────────────────────────────────────────────────────
 
-export type FilterKind = "weapon" | "passive";
+export type FilterKind = "weapon" | "passive" | "legendary";
 export type WeaponSource = "special" | "normal" | "both";
 
 export interface FilterOption {
@@ -26,6 +27,7 @@ export interface FilterOption {
 export interface FilterGroups {
   weapons: FilterOption[];
   passives: FilterOption[];
+  legendary: FilterOption[];
 }
 
 const NOT_A_STAFF = new Set(["Staff of the Avatar"]);
@@ -34,8 +36,8 @@ const isSeal = (name: string) => name.toLowerCase().includes("seal");
 
 const allWeapons = (set: MerchantSet): ShopWeapon[] => [...set.special.weapons, ...set.normal.weapons];
 
-/** Passive label without its trailing inline value, e.g. "Improved Skill Attack Power". */
-const passiveName = (p: string) => p.replace(/\s*\([^)]*\)\s*$/, "").trim();
+/** Passive label without its trailing inline value (parenthesised or bare), e.g. "Improved Skill Attack Power". */
+const passiveName = (p: string) => p.replace(/\s*(?:\([^)]*\)|[+-][\d.]+%?)\s*$/, "").trim();
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 const byLabel = (a: string, b: string) => a.localeCompare(b);
 
@@ -51,6 +53,7 @@ export function buildFilterOptions(): FilterGroups {
   const sealSpecial = new Set<string>();
   const sealNormal = new Set<string>();
   const passives = new Map<string, string>(); // norm(name) → display name
+  const legendaryNames = new Set<string>();
 
   for (const set of sets) {
     for (const w of set.special.weapons) {
@@ -68,6 +71,7 @@ export function buildFilterOptions(): FilterGroups {
         if (key && !passives.has(key)) passives.set(key, name);
       }
     }
+    for (const l of set.legendary) legendaryNames.add(l.name);
   }
 
   const uniqStaves = Array.from(new Set(Array.from(staffSpecial).concat(Array.from(staffNormal)))).sort(byLabel);
@@ -87,16 +91,40 @@ export function buildFilterOptions(): FilterGroups {
     dividerBefore: i === 0,
   }));
 
-  const passiveOptions: FilterOption[] = Array.from(passives.values())
-    .sort(byLabel)
-    .map((p) => ({ key: `passive:${p}`, label: p, kind: "passive" as const }));
+  // A few high-value passives are pinned to the top of the dropdown.
+  const PASSIVE_PRIORITY = [
+    "Taking Damage Boosts Damage Negation",
+    "Damage Negation Up upon Landing Charge Attacks",
+    "Successive Attacks Negate Damage",
+    "Less Likely to Be Targeted",
+    "Improved Damage Negation at Full HP",
+  ];
+  const rank = (label: string) => {
+    const i = PASSIVE_PRIORITY.indexOf(label);
+    return i === -1 ? PASSIVE_PRIORITY.length : i;
+  };
+  const sortedPassives = Array.from(passives.values()).sort((a, b) => rank(a) - rank(b) || byLabel(a, b));
+  const passiveOptions: FilterOption[] = sortedPassives.map((p, i) => ({
+    key: `passive:${p}`,
+    label: p,
+    kind: "passive" as const,
+    // Divider between the pinned passives and the rest.
+    dividerBefore: i > 0 && rank(sortedPassives[i - 1]) < PASSIVE_PRIORITY.length && rank(p) === PASSIVE_PRIORITY.length,
+  }));
 
-  return { weapons: [...staffOptions, ...sealOptions], passives: passiveOptions };
+  const legendaryOptions: FilterOption[] = Array.from(legendaryNames)
+    .sort(byLabel)
+    .map((name) => ({ key: `legendary:${name}`, label: name, kind: "legendary" as const }));
+
+  return { weapons: [...staffOptions, ...sealOptions], passives: passiveOptions, legendary: legendaryOptions };
 }
 
 function setMatches(set: MerchantSet, opt: FilterOption): boolean {
   if (opt.kind === "weapon") {
     return allWeapons(set).some((w) => w.name === opt.label || w.deep?.name === opt.label);
+  }
+  if (opt.kind === "legendary") {
+    return set.legendary.some((l) => l.name === opt.label);
   }
   const target = norm(opt.label);
   return allWeapons(set).some((w) =>
@@ -115,16 +143,20 @@ export function filterSets(
   return setsList.filter((set) => selected.some((o) => setMatches(set, o)));
 }
 
-/** Free-text search across weapon name, passives, skill, affinity, and curse. */
+/** Free-text search across weapon name, passives, skill, affinity, curse, and legendary stock. */
 export function searchSets(setsList: MerchantSet[], query: string): MerchantSet[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return setsList;
-  return setsList.filter((set) =>
-    allWeapons(set).some((w) =>
-      [
-        w.name, w.skill, w.affinity, ...w.passives,
-        w.deep?.name ?? "", w.deep?.skill ?? "", w.deep?.curse ?? "", ...(w.deep?.passives ?? []),
-      ].some((s) => s.toLowerCase().includes(needle)),
-    ),
+  return setsList.filter(
+    (set) =>
+      allWeapons(set).some((w) =>
+        [
+          w.name, w.skill, w.affinity, ...w.passives,
+          w.deep?.name ?? "", w.deep?.skill ?? "", w.deep?.curse ?? "", ...(w.deep?.passives ?? []),
+        ].some((s) => s.toLowerCase().includes(needle)),
+      ) ||
+      set.legendary.some((l) =>
+        [l.name, l.passive, l.spell ?? ""].some((s) => s.toLowerCase().includes(needle)),
+      ),
   );
 }

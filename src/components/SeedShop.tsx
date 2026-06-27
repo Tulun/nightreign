@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { MerchantSet } from "@/lib/types";
 import { MerchantSection } from "./MerchantSection";
+import { LegendarySection } from "./LegendarySection";
 
 /**
  * A set's Super + Normal merchant stock, with a "Deep of Night" toggle that
@@ -27,6 +28,7 @@ export function SeedShop({ set }: { set: MerchantSet }) {
       <div className="space-y-8">
         <MerchantSection title="Super Merchant" merchant={set.special} deepOfNight={deepOfNight} />
         <MerchantSection title="Normal Merchant" merchant={set.normal} deepOfNight={deepOfNight} />
+        <LegendarySection items={set.legendary} />
       </div>
     </div>
   );

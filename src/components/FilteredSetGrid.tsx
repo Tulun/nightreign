@@ -14,17 +14,17 @@ import { SetCard } from "./SetCard";
 const FILTERS_KEY = "nr:townmap:filters";
 const SEARCH_KEY = "nr:townmap:search";
 
-type OpenMenu = "weapons" | "passives" | null;
+type OpenMenu = "weapons" | "passives" | "legendary" | null;
 
 /**
- * The Town Map grid with a search field plus two multiselect filter dropdowns —
- * one for staves/seals, one for passives. The dropdowns combine with ANY (OR)
- * semantics; the search then narrows that result by item name/passive. Both the
- * selection and the query persist to localStorage across navigation/reloads.
+ * The Merchant Inventories grid with a search field plus multiselect filter
+ * dropdowns — staves/seals, passives, and legendary weapons. The dropdowns
+ * combine with ANY (OR) semantics; the search then narrows that result by item
+ * name/passive. Both the selection and query persist to localStorage.
  */
 export function FilteredSetGrid() {
-  const { weapons, passives } = useMemo(() => buildFilterOptions(), []);
-  const allOptions = useMemo(() => [...weapons, ...passives], [weapons, passives]);
+  const { weapons, passives, legendary } = useMemo(() => buildFilterOptions(), []);
+  const allOptions = useMemo(() => [...weapons, ...passives, ...legendary], [weapons, passives, legendary]);
 
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -143,6 +143,16 @@ export function FilteredSetGrid() {
             open={openMenu === "passives"}
             onOpen={() => setOpenMenu("passives")}
             onClose={() => setOpenMenu((m) => (m === "passives" ? null : m))}
+          />
+          <FilterMenu
+            title="Legendary"
+            options={legendary}
+            selected={selected}
+            onToggle={toggle}
+            badge={countIn(legendary)}
+            open={openMenu === "legendary"}
+            onOpen={() => setOpenMenu("legendary")}
+            onClose={() => setOpenMenu((m) => (m === "legendary" ? null : m))}
           />
 
           <button
