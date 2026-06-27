@@ -1,0 +1,2018 @@
+{
+"0": {
+"special": [
+{
+"name": "Ivory Sickle",
+"passive": "Attacks release mist of charm",
+"rarity": "Blue"
+},
+{
+"name": "Nagakiba",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Celebrant's Skull",
+"passive": "Improved attack power when two-handing",
+"rarity": "Blue"
+},
+{
+"name": "Guardian's Swordspear",
+"passive": "Improved guarding ability",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Improved holy damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Godslayer's Seal",
+"passive": "Improved fire damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Distinguished Greatshield",
+"passive": "Improved lightning damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Gargoyle's Blackblade",
+"passive": "Attack up when wielding two armaments",
+"rarity": "Purple"
+},
+{
+"name": "Serpent Bow",
+"passive": "Improved critical hits",
+"rarity": "Purple"
+},
+{
+"name": "Pulley Crossbow",
+"passive": "Improved attack power when two-handing",
+"rarity": "Purple"
+},
+{
+"name": "Prince of Death's Staff",
+"passive": "Damage negation up while casting spells",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Club",
+"passive": "Improved damage negation at low HP",
+"rarity": "White"
+},
+{
+"name": "Iron Cleaver",
+"passive": "Defeating enemies restores FP",
+"rarity": "Blue"
+},
+{
+"name": "Omen Cleaver",
+"passive": "Reduced skill FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Partisan",
+"passive": "Attack up when wielding two armaments",
+"rarity": "Blue"
+},
+{
+"name": "Carian Glintblade Staff",
+"passive": "Taking damage restores FP",
+"rarity": "Blue"
+},
+{
+"name": "Rift Shield",
+"passive": "Successful guarding ups poise",
+"rarity": "Blue"
+},
+{
+"name": "Siluria's Tree",
+"passive": "Multiple periodical glintblades",
+"rarity": "Purple"
+}
+]
+},
+"1": {
+"special": [
+{
+"name": "Ivory Sickle",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Forked Greatsword",
+"passive": "Improved attack power at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Rusted Anchor",
+"passive": "Attacks call vengeful spirits",
+"rarity": "Blue"
+},
+{
+"name": "Harp Bow",
+"passive": "Successful guarding ups damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved chain attack finishers",
+"rarity": "Blue"
+},
+{
+"name": "Full Moon Crossbow",
+"passive": "Improved attack power at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Giant's Seal",
+"passive": "Less likely to be targeted",
+"rarity": "Blue"
+},
+{
+"name": "Golden Beast Crest Shield",
+"passive": "Improved lightning attack power",
+"rarity": "Blue"
+},
+{
+"name": "Rivers of Blood",
+"passive": "HP restoration upon landing attacks",
+"rarity": "Purple"
+},
+{
+"name": "Golden Halberd",
+"passive": "Improved guard breaking",
+"rarity": "Purple"
+},
+{
+"name": "Azur's Glintstone Staff",
+"passive": "Improved spell casting speed",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Zweihander",
+"passive": "Improved damage negation at full HP",
+"rarity": "White"
+},
+{
+"name": "Nightrider Flail",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Highland Axe",
+"passive": "HP restoration upon landing attacks",
+"rarity": "Blue"
+},
+{
+"name": "Iron Ball",
+"passive": "Improved damage negation at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Staff of the Guilty",
+"passive": "Improved holy damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Iron Roundshield",
+"passive": "Improved sorceries",
+"rarity": "Blue"
+},
+{
+"name": "Siluria's Tree",
+"passive": "Defeating enemies restores HP",
+"rarity": "Purple"
+}
+]
+},
+"2": {
+"special": [
+{
+"name": "Claymore",
+"passive": "Improved attack power when two-handing",
+"rarity": "Blue"
+},
+{
+"name": "Meteoric Ore Blade",
+"passive": "Attacks generate lava",
+"rarity": "Blue"
+},
+{
+"name": "Nightrider Glaive",
+"passive": "Attack up when wielding two armaments",
+"rarity": "Blue"
+},
+{
+"name": "Composite Bow",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved magic damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"passive": "Improved item discovery",
+"rarity": "Blue"
+},
+{
+"name": "Gravel Stone Seal",
+"passive": "Improved lightning attack power",
+"rarity": "Blue"
+},
+{
+"name": "Icon Shield",
+"passive": "Improved holy damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Scorpion's Stinger",
+"passive": "FP restoration upon landing attacks",
+"rarity": "Purple"
+},
+{
+"name": "Prelate's Inferno Crozier",
+"passive": "Improved skill attack power",
+"rarity": "Purple"
+},
+{
+"name": "Lusat's Glintstone Staff",
+"passive": "Improved sorceries",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Lance",
+"passive": "Improved attack power when two-handing",
+"rarity": "White"
+},
+{
+"name": "Troll's Golden Sword",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Godskin Stitcher",
+"passive": "Improved attack power when two-handing",
+"rarity": "Blue"
+},
+{
+"name": "Shamshir",
+"passive": "Improved jump attacks",
+"rarity": "Blue"
+},
+{
+"name": "Staff of Loss",
+"passive": "Improved attack power when two-handing",
+"rarity": "Blue"
+},
+{
+"name": "Gilded Iron Shield",
+"passive": "Improved attack power at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Magma Blade",
+"passive": "Improved lightning damage negation",
+"rarity": "Purple"
+}
+]
+},
+"3": {
+"special": [
+{
+"name": "Misericorde",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Flamberge",
+"passive": "Improved critical hits",
+"rarity": "Blue"
+},
+{
+"name": "Meteoric Ore Blade",
+"passive": "Attack summons wraiths",
+"rarity": "Blue"
+},
+{
+"name": "Pest's Glaive",
+"passive": "Successful guarding ups damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved jump attacks",
+"rarity": "Blue"
+},
+{
+"name": "Clawmark Seal",
+"passive": "Damage negation up while casting spells",
+"rarity": "Blue"
+},
+{
+"name": "Spiked Palisade Shield",
+"passive": "Improved magic damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Butchering Knife",
+"passive": "Improved guard counters",
+"rarity": "Purple"
+},
+{
+"name": "Erdtree Bow",
+"passive": "Improved ranged weapon attacks",
+"rarity": "Purple"
+},
+{
+"name": "Pulley Crossbow",
+"passive": "Improved charged attacks",
+"rarity": "Purple"
+},
+{
+"name": "Meteorite Staff",
+"passive": "Reduced spell FP cost",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Longsword",
+"passive": "Improved holy damage negation",
+"rarity": "White"
+},
+{
+"name": "Chainlink Flail",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Grossmesser",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Bloodhound Claws",
+"passive": "Improved attack power at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Godslayer's Seal",
+"passive": "Improved spell casting speed",
+"rarity": "Blue"
+},
+{
+"name": "Ice Crest Shield",
+"passive": "Successful guarding ups damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Scepter of the All-Knowing",
+"passive": "Improved attack power when two-handing",
+"rarity": "Purple"
+}
+]
+},
+"4": {
+"special": [
+{
+"name": "Erdsteel Dagger",
+"passive": "Wraiths while walking",
+"rarity": "Blue"
+},
+{
+"name": "Serpentbone Blade",
+"passive": "Improved lightning attack power",
+"rarity": "Blue"
+},
+{
+"name": "Giant-Crusher",
+"passive": "Improved fire attack power",
+"rarity": "Blue"
+},
+{
+"name": "Horn Bow",
+"passive": "Successful guarding ups poise",
+"rarity": "Blue"
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Improved lightning damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Clawmark Seal",
+"passive": "Improved damage negation at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Redmane Greatshield",
+"passive": "Improved madness resistance",
+"rarity": "Blue"
+},
+{
+"name": "Death's Poker",
+"passive": "Reduced skill FP cost",
+"rarity": "Purple"
+},
+{
+"name": "Dragon Halberd",
+"passive": "Improved jump attacks",
+"rarity": "Purple"
+},
+{
+"name": "Lusat's Glintstone Staff",
+"passive": "Less likely to be targeted",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Falchion",
+"passive": "Improved lightning damage negation",
+"rarity": "White"
+},
+{
+"name": "Beastman's Cleaver",
+"passive": "Improved magic attack power",
+"rarity": "Blue"
+},
+{
+"name": "Iron Cleaver",
+"passive": "Improved rot resistance",
+"rarity": "Blue"
+},
+{
+"name": "Pike",
+"passive": "Attack up when wielding two armaments",
+"rarity": "Blue"
+},
+{
+"name": "Gravel Stone Seal",
+"passive": "Damage negation up while casting spells",
+"rarity": "Blue"
+},
+{
+"name": "Man-Serpent's Shield",
+"passive": "Improved holy damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Sword of St. Trina",
+"passive": "Reduced skill FP cost",
+"rarity": "Purple"
+}
+]
+},
+"5": {
+"special": [
+{
+"name": "Forked Greatsword",
+"passive": "Damage negation up upon landing charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Nagakiba",
+"passive": "Improved charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Nightrider Glaive",
+"passive": "Attacks release mist of frost",
+"rarity": "Blue"
+},
+{
+"name": "Composite Bow",
+"passive": "Successful guarding ups damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Taking damage boosts damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Giant's Seal",
+"passive": "Improved fire attack power",
+"rarity": "Blue"
+},
+{
+"name": "Eclipse Crest Greatshield",
+"passive": "Improved fire damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Glintstone Kris",
+"passive": "Attack up when wielding two armaments",
+"rarity": "Purple"
+},
+{
+"name": "Beastclaw Greathammer",
+"passive": "Fire attack follows charge attacks that land",
+"rarity": "Purple"
+},
+{
+"name": "Prince of Death's Staff",
+"passive": "Continuous HP recovery",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Twinblade",
+"passive": "Improved magic damage negation",
+"rarity": "White"
+},
+{
+"name": "Mace",
+"passive": "Improved damage negation at low HP",
+"rarity": "White"
+},
+{
+"name": "Celebrant's Cleaver",
+"passive": "Improved charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Grave Scythe",
+"passive": "Improved fire attack power",
+"rarity": "Blue"
+},
+{
+"name": "Venomous Fang",
+"passive": "Successful guarding ups damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Iron Roundshield",
+"passive": "Improved fire damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Ornamental Straight Sword",
+"passive": "Improved guard breaking",
+"rarity": "Purple"
+}
+]
+},
+"6": {
+"special": [
+{
+"name": "Erdsteel Dagger",
+"passive": "Fire attack follows charge attacks that land",
+"rarity": "Blue"
+},
+{
+"name": "Gargoyle's Greatsword",
+"passive": "Reduced skill FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Great Omenkiller Cleaver",
+"passive": "Improved fire damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Ripple Crescent Halberd",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Full Moon Crossbow",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Improved holy damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Godslayer's Seal",
+"passive": "Defeating enemies restores HP",
+"rarity": "Blue"
+},
+{
+"name": "Cuckoo Greatshield",
+"passive": "Magma surge sprint",
+"rarity": "Blue"
+},
+{
+"name": "Moonveil",
+"passive": "Improved magic damage negation",
+"rarity": "Purple"
+},
+{
+"name": "Black Bow",
+"passive": "Taking damage boosts damage negation",
+"rarity": "Purple"
+},
+{
+"name": "Azur's Glintstone Staff",
+"passive": "Improved magic attack power",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Dismounter",
+"passive": "Improved fire damage negation",
+"rarity": "White"
+},
+{
+"name": "Lordsworn's Straight Sword",
+"passive": "Improved holy damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Chainlink Flail",
+"passive": "Improved poison resistance",
+"rarity": "Blue"
+},
+{
+"name": "Warped Axe",
+"passive": "Improved lightning attack power",
+"rarity": "Blue"
+},
+{
+"name": "Treespear",
+"passive": "Improved magic damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Gilded Iron Shield",
+"passive": "Multiple periodical glintblades",
+"rarity": "Blue"
+},
+{
+"name": "Bloody Helice",
+"passive": "Lightning attack follows charge attacks that land",
+"rarity": "Purple"
+}
+]
+},
+"7": {
+"special": [
+{
+"name": "Misericorde",
+"passive": "Improved critical hits",
+"rarity": "Blue"
+},
+{
+"name": "Banished Knight's Greatsword",
+"passive": "Improved damage negation at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Meteoric Ore Blade",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Pest's Glaive",
+"passive": "Continuous HP recovery",
+"rarity": "Blue"
+},
+{
+"name": "Full Moon Crossbow",
+"passive": "Reduced skill FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Multiple periodical glintblades",
+"rarity": "Blue"
+},
+{
+"name": "Crystal Staff",
+"passive": "Improved charged sorceries",
+"rarity": "Blue"
+},
+{
+"name": "Golden Greatshield",
+"passive": "Savage pillars of flame rise while walking",
+"rarity": "Blue"
+},
+{
+"name": "Gargoyle's Black Axe",
+"passive": "Holy attack follows charge attacks that land",
+"rarity": "Purple"
+},
+{
+"name": "Pulley Bow",
+"passive": "Reduced skill FP cost",
+"rarity": "Purple"
+},
+{
+"name": "Golden Order Seal",
+"passive": "Improved ranged weapon attacks",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Bandit's Curved Sword",
+"passive": "Improved poison resistance",
+"rarity": "White"
+},
+{
+"name": "Torchpole",
+"passive": "Frostbite produces a mist of frost",
+"rarity": "Blue"
+},
+{
+"name": "Watchdog's Greatsword",
+"passive": "Defeating enemies restores FP",
+"rarity": "Blue"
+},
+{
+"name": "Spiked Caestus",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Carian Glintstone Staff",
+"passive": "Improved magic damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Kite Shield",
+"passive": "Improved guarding ability",
+"rarity": "Blue"
+},
+{
+"name": "Icerind Hatchet",
+"passive": "Improved magic attack power",
+"rarity": "Purple"
+}
+]
+},
+"8": {
+"special": [
+{
+"name": "Wakizashi",
+"passive": "Less likely to be targeted",
+"rarity": "Blue"
+},
+{
+"name": "Forked Greatsword",
+"passive": "Attack up when wielding two armaments",
+"rarity": "Blue"
+},
+{
+"name": "Ripple Crescent Halberd",
+"passive": "Taking damage restores FP",
+"rarity": "Blue"
+},
+{
+"name": "Harp Bow",
+"passive": "Reduced skill FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Full Moon Crossbow",
+"passive": "Improved ranged weapon attacks",
+"rarity": "Blue"
+},
+{
+"name": "Gelmir Glintstone Staff",
+"passive": "Magma surge sprint",
+"rarity": "Blue"
+},
+{
+"name": "Gilded Greatshield",
+"passive": "Improved blood loss resistance",
+"rarity": "Blue"
+},
+{
+"name": "Dragonscale Blade",
+"passive": "Improved skill attack power",
+"rarity": "Purple"
+},
+{
+"name": "Staff of the Avatar",
+"passive": "Defeating enemies restores HP",
+"rarity": "Purple"
+},
+{
+"name": "Frenzied Flame Seal",
+"passive": "Improved attack power at full HP",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Hand Axe",
+"passive": "Improved sleep resistance",
+"rarity": "White"
+},
+{
+"name": "Scavenger's Curved Sword",
+"passive": "Rot produces a mist of scarlet rot",
+"rarity": "Blue"
+},
+{
+"name": "Hammer",
+"passive": "Improved critical hits",
+"rarity": "Blue"
+},
+{
+"name": "Torchpole",
+"passive": "Improved jump attacks",
+"rarity": "Blue"
+},
+{
+"name": "Albinauric Staff",
+"passive": "Improved magic attack power",
+"rarity": "Blue"
+},
+{
+"name": "Sun Realm Shield",
+"passive": "Improved damage negation at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Winged Scythe",
+"passive": "Improved holy attack power",
+"rarity": "Purple"
+}
+]
+},
+"9": {
+"special": [
+{
+"name": "Knight's Greatsword",
+"passive": "Reduced skill FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Meteoric Ore Blade",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Troll's Hammer",
+"passive": "Improved fire damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Pest's Glaive",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved damage negation at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"passive": "Less likely to be targeted",
+"rarity": "Blue"
+},
+{
+"name": "Carian Glintblade Staff",
+"passive": "Improved magic attack power",
+"rarity": "Blue"
+},
+{
+"name": "Haligtree Crest Greatshield",
+"passive": "Storm of red lightning while walking",
+"rarity": "Blue"
+},
+{
+"name": "Cinquedea",
+"passive": "Magic attack follows charge attacks that land",
+"rarity": "Purple"
+},
+{
+"name": "Serpent Bow",
+"passive": "Improved fire attack power",
+"rarity": "Purple"
+},
+{
+"name": "Dragon Communion Seal",
+"passive": "Improved attack power at full HP",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Great Épée",
+"passive": "Improved blood loss resistance",
+"rarity": "White"
+},
+{
+"name": "Omen Cleaver",
+"passive": "Improved charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Godskin Peeler",
+"passive": "Damage negation up upon landing charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Urumi",
+"passive": "Improved chain attack finishers",
+"rarity": "Blue"
+},
+{
+"name": "Clawmark Seal",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Scorpion Kite Shield",
+"passive": "Continuous HP recovery",
+"rarity": "Blue"
+},
+{
+"name": "Halo Scythe",
+"passive": "Improved attack power when two-handing",
+"rarity": "Purple"
+}
+]
+},
+"10": {
+"special": [
+{
+"name": "Meteoric Ore Blade",
+"passive": "Improved magic attack power",
+"rarity": "Blue"
+},
+{
+"name": "Rotten Battle Hammer",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Guardian's Swordspear",
+"passive": "Attacks unleash lightning",
+"rarity": "Blue"
+},
+{
+"name": "Harp Bow",
+"passive": "Improved attack power when two-handing",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved ranged weapon attacks",
+"rarity": "Blue"
+},
+{
+"name": "Albinauric Staff",
+"passive": "Defeating enemies restores HP",
+"rarity": "Blue"
+},
+{
+"name": "Briar Greatshield",
+"passive": "Improved sorceries",
+"rarity": "Blue"
+},
+{
+"name": "Black Knife",
+"passive": "Improved charged attacks",
+"rarity": "Purple"
+},
+{
+"name": "Alabaster Lord's Sword",
+"passive": "Improved madness resistance",
+"rarity": "Purple"
+},
+{
+"name": "Jar Cannon",
+"passive": "Improved ranged weapon attacks",
+"rarity": "Purple"
+},
+{
+"name": "Golden Order Seal",
+"passive": "Less likely to be targeted",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Caestus",
+"passive": "Improved rot resistance",
+"rarity": "White"
+},
+{
+"name": "Beastman's Cleaver",
+"passive": "Improved attack power at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Twinned Knight Swords",
+"passive": "Reduced skill FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Morning Star",
+"passive": "Taking damage boosts damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Giant's Seal",
+"passive": "Improved fire attack power",
+"rarity": "Blue"
+},
+{
+"name": "Twinbird Kite Shield",
+"passive": "Improved holy attack power",
+"rarity": "Blue"
+},
+{
+"name": "Royal Greatsword",
+"passive": "Defeating enemies restores FP",
+"rarity": "Purple"
+}
+]
+},
+"11": {
+"special": [
+{
+"name": "Erdsteel Dagger",
+"passive": "Improved holy attack power",
+"rarity": "Blue"
+},
+{
+"name": "Forked Greatsword",
+"passive": "Improved rot resistance",
+"rarity": "Blue"
+},
+{
+"name": "Executioner's Greataxe",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Red Branch Shortbow",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"passive": "Improved ranged weapon attacks",
+"rarity": "Blue"
+},
+{
+"name": "Carian Glintstone Staff",
+"passive": "Many periodical glintblades",
+"rarity": "Blue"
+},
+{
+"name": "Distinguished Greatshield",
+"passive": "Continuous HP recovery",
+"rarity": "Blue"
+},
+{
+"name": "Rivers of Blood",
+"passive": "Improved fire attack power",
+"rarity": "Purple"
+},
+{
+"name": "Commander's Standard",
+"passive": "Improved guarding ability",
+"rarity": "Purple"
+},
+{
+"name": "Erdtree Seal",
+"passive": "Improved item discovery",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Scythe",
+"passive": "Improved madness resistance",
+"rarity": "White"
+},
+{
+"name": "Troll Knight's Sword",
+"passive": "Sleep produces a mist of sleep",
+"rarity": "Blue"
+},
+{
+"name": "Celebrant's Cleaver",
+"passive": "Improved frost resistance",
+"rarity": "Blue"
+},
+{
+"name": "Star Fist",
+"passive": "Improved fire damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Gravel Stone Seal",
+"passive": "Improved item discovery",
+"rarity": "Blue"
+},
+{
+"name": "Blue-Gold Kite Shield",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Cleanrot Spear",
+"passive": "Taking damage restores FP",
+"rarity": "Purple"
+}
+]
+},
+"12": {
+"special": [
+{
+"name": "Wakizashi",
+"passive": "Reduced skill FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Inseparable Sword",
+"passive": "Holy attack follows charge attacks that land",
+"rarity": "Blue"
+},
+{
+"name": "Gargoyle's Great Axe",
+"passive": "Improved fire damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Albinauric Bow",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"passive": "Savage pillars of flame rise while walking",
+"rarity": "Blue"
+},
+{
+"name": "Staff of the Guilty",
+"passive": "Continuous HP recovery",
+"rarity": "Blue"
+},
+{
+"name": "Golden Beast Crest Shield",
+"passive": "Improved fire attack power",
+"rarity": "Blue"
+},
+{
+"name": "Dragonscale Blade",
+"passive": "Improved lightning damage negation",
+"rarity": "Purple"
+},
+{
+"name": "Gargoyle's Black Halberd",
+"passive": "Taking damage restores FP",
+"rarity": "Purple"
+},
+{
+"name": "Dragon Communion Seal",
+"passive": "Improved chain attack finishers",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Zweihander",
+"passive": "Improved death blight resistance",
+"rarity": "White"
+},
+{
+"name": "Flail",
+"passive": "Madness produces a frenzied burst",
+"rarity": "White"
+},
+{
+"name": "Godskin Stitcher",
+"passive": "Improved critical hits",
+"rarity": "Blue"
+},
+{
+"name": "Gargoyle's Twinblade",
+"passive": "Improved item discovery",
+"rarity": "Blue"
+},
+{
+"name": "Star Fist",
+"passive": "Improved charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Large Leather Shield",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Envoy's Horn",
+"passive": "Defeating enemies restores HP",
+"rarity": "Purple"
+}
+]
+},
+"13": {
+"special": [
+{
+"name": "Misericorde",
+"passive": "Improved damage negation at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Meteoric Ore Blade",
+"passive": "Magic attack follows charge attacks that land",
+"rarity": "Blue"
+},
+{
+"name": "Rotten Battle Hammer",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Guardian's Swordspear",
+"passive": "Improved guarding ability",
+"rarity": "Blue"
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"passive": "Less likely to be targeted",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Multiple periodical glintblades",
+"rarity": "Blue"
+},
+{
+"name": "Staff of Loss",
+"passive": "Improved magic attack power",
+"rarity": "Blue"
+},
+{
+"name": "Icon Shield",
+"passive": "Improved lightning attack power",
+"rarity": "Blue"
+},
+{
+"name": "Sword of Milos",
+"passive": "Magic attack follows charge attacks that land",
+"rarity": "Purple"
+},
+{
+"name": "Erdtree Bow",
+"passive": "Improved ranged weapon attacks",
+"rarity": "Purple"
+},
+{
+"name": "Erdtree Seal",
+"passive": "Improved spell casting speed",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Broadsword",
+"passive": "Improved frost resistance",
+"rarity": "White"
+},
+{
+"name": "Serpent-God's Curved Sword",
+"passive": "Poison produces a mist of poison",
+"rarity": "Blue"
+},
+{
+"name": "Spiked Club",
+"passive": "Improved chain attack finishers",
+"rarity": "Blue"
+},
+{
+"name": "Serpent-Hunter",
+"passive": "Frostbite produces a mist of frost",
+"rarity": "Blue"
+},
+{
+"name": "Grave Scythe",
+"passive": "Improved critical hits",
+"rarity": "Blue"
+},
+{
+"name": "Black Leather Shield",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Gargoyle's Black Blades",
+"passive": "Damage negation up upon landing charged attacks",
+"rarity": "Purple"
+}
+]
+},
+"14": {
+"special": [
+{
+"name": "Bloodstained Dagger",
+"passive": "Improved critical hits",
+"rarity": "Blue"
+},
+{
+"name": "Claymore",
+"passive": "Improved attack power when two-handing",
+"rarity": "Blue"
+},
+{
+"name": "Gargoyle's Great Axe",
+"passive": "Improved charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Pest's Glaive",
+"passive": "Reduced skill FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Magma surge sprint",
+"rarity": "Blue"
+},
+{
+"name": "Carian Glintstone Staff",
+"passive": "Less likely to be targeted",
+"rarity": "Blue"
+},
+{
+"name": "Giant's Seal",
+"passive": "Continuous HP recovery",
+"rarity": "Blue"
+},
+{
+"name": "Moonveil",
+"passive": "HP restoration upon landing attacks",
+"rarity": "Purple"
+},
+{
+"name": "Pulley Bow",
+"passive": "Multiple periodical glintblades",
+"rarity": "Purple"
+},
+{
+"name": "Erdtree Greatbow",
+"passive": "Improved holy attack power",
+"rarity": "Purple"
+},
+{
+"name": "Jellyfish Shield",
+"passive": "Improved incantations",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Hookclaws",
+"passive": "Improved chain attack finishers",
+"rarity": "White"
+},
+{
+"name": "Warhawk's Talon",
+"passive": "Improved guard counters",
+"rarity": "Blue"
+},
+{
+"name": "Warpick",
+"passive": "Improved critical hits",
+"rarity": "Blue"
+},
+{
+"name": "Cross-Naginata",
+"passive": "Multiple periodical glintblades",
+"rarity": "Blue"
+},
+{
+"name": "Gelmir Glintstone Staff",
+"passive": "Improved poison resistance",
+"rarity": "Blue"
+},
+{
+"name": "Distinguished Greatshield",
+"passive": "Improved lightning attack power",
+"rarity": "Blue"
+},
+{
+"name": "Frozen Needle",
+"passive": "Improved magic damage negation",
+"rarity": "Purple"
+}
+]
+},
+"15": {
+"special": [
+{
+"name": "Erdsteel Dagger",
+"passive": "Attack up when wielding two armaments",
+"rarity": "Blue"
+},
+{
+"name": "Knight's Greatsword",
+"passive": "Improved chain attack finishers",
+"rarity": "Blue"
+},
+{
+"name": "Guardian's Swordspear",
+"passive": "Improved charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Composite Bow",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Full Moon Crossbow",
+"passive": "Less likely to be targeted",
+"rarity": "Blue"
+},
+{
+"name": "Staff of the Guilty",
+"passive": "Defeating enemies restores HP",
+"rarity": "Blue"
+},
+{
+"name": "Godslayer's Seal",
+"passive": "Improved damage negation at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Dragonscale Blade",
+"passive": "Wraiths while walking",
+"rarity": "Purple"
+},
+{
+"name": "Gargoyle's Black Axe",
+"passive": "Attack up when wielding two armaments",
+"rarity": "Purple"
+},
+{
+"name": "Jar Cannon",
+"passive": "Continuous HP recovery",
+"rarity": "Purple"
+},
+{
+"name": "One-Eyed Shield",
+"passive": "Improved fire damage negation",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Weathered Straight Sword",
+"passive": "HP restoration upon landing attacks",
+"rarity": "White"
+},
+{
+"name": "Cane Sword",
+"passive": "Taking damage restores FP",
+"rarity": "Blue"
+},
+{
+"name": "Nightrider Flail",
+"passive": "Improved jump attacks",
+"rarity": "Blue"
+},
+{
+"name": "Clayman's Harpoon",
+"passive": "Improved fire attack power",
+"rarity": "Blue"
+},
+{
+"name": "Crystal Staff",
+"passive": "Improved death blight resistance",
+"rarity": "Blue"
+},
+{
+"name": "Icon Shield",
+"passive": "Improved fire attack power",
+"rarity": "Blue"
+},
+{
+"name": "Clinging Bone",
+"passive": "Improved frost resistance",
+"rarity": "Purple"
+}
+]
+},
+"16": {
+"special": [
+{
+"name": "Crystal Knife",
+"passive": "HP restoration upon landing attacks",
+"rarity": "Blue"
+},
+{
+"name": "Nagakiba",
+"passive": "Improved attack power when two-handing",
+"rarity": "Blue"
+},
+{
+"name": "Celebrant's Skull",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Pest's Glaive",
+"passive": "Successful guarding ups damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved ranged weapon attacks",
+"rarity": "Blue"
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"passive": "Improved damage negation at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Staff of Loss",
+"passive": "Improved magic damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Giant's Seal",
+"passive": "Improved magic damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Helphen's Steeple",
+"passive": "Improved guard breaking",
+"rarity": "Purple"
+},
+{
+"name": "Black Bow",
+"passive": "Improved chain attack finishers",
+"rarity": "Purple"
+},
+{
+"name": "Visage Shield",
+"passive": "Successful guarding ups poise",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Forked Hatchet",
+"passive": "FP restoration upon landing attacks",
+"rarity": "White"
+},
+{
+"name": "Thorned Whip",
+"passive": "Improved lightning attack power",
+"rarity": "Blue"
+},
+{
+"name": "Watchdog's Greatsword",
+"passive": "Damage negation up upon landing charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Crystal Spear",
+"passive": "Improved jump attacks",
+"rarity": "Blue"
+},
+{
+"name": "Godslayer's Seal",
+"passive": "Improved spell casting speed",
+"rarity": "Blue"
+},
+{
+"name": "Spiked Palisade Shield",
+"passive": "Improved guarding ability",
+"rarity": "Blue"
+},
+{
+"name": "Coded Sword",
+"passive": "Improved chain attack finishers",
+"rarity": "Purple"
+}
+]
+},
+"17": {
+"special": [
+{
+"name": "Misericorde",
+"passive": "Successive attacks negate damage",
+"rarity": "Blue"
+},
+{
+"name": "Flamberge",
+"passive": "Improved holy damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Serpentbone Blade",
+"passive": "Fire attack follows charge attacks that land",
+"rarity": "Blue"
+},
+{
+"name": "Gargoyle's Halberd",
+"passive": "Continuous HP recovery",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Improved chain attack finishers",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Less likely to be targeted",
+"rarity": "Blue"
+},
+{
+"name": "Crystal Staff",
+"passive": "Defeating enemies restores HP",
+"rarity": "Blue"
+},
+{
+"name": "Gravel Stone Seal",
+"passive": "Defeating enemies restores FP",
+"rarity": "Blue"
+},
+{
+"name": "Cranial Vessel Candlestand",
+"passive": "Improved skill attack power",
+"rarity": "Purple"
+},
+{
+"name": "Erdtree Bow",
+"passive": "Improved holy attack power",
+"rarity": "Purple"
+},
+{
+"name": "Ant's Skull Plate",
+"passive": "Taking damage restores FP",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Greatsword",
+"passive": "Improved holy attack power",
+"rarity": "White"
+},
+{
+"name": "Godskin Stitcher",
+"passive": "Improved critical hits",
+"rarity": "Blue"
+},
+{
+"name": "Highland Axe",
+"passive": "Improved skill attack power",
+"rarity": "Blue"
+},
+{
+"name": "Urumi",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Clawmark Seal",
+"passive": "Continuous HP recovery",
+"rarity": "Blue"
+},
+{
+"name": "Golden Beast Crest Shield",
+"passive": "Improved damage negation at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Vyke's War Spear",
+"passive": "Improved skill attack power",
+"rarity": "Purple"
+}
+]
+},
+"18": {
+"special": [
+{
+"name": "Claymore",
+"passive": "Defeating enemies restores FP",
+"rarity": "Blue"
+},
+{
+"name": "Meteoric Ore Blade",
+"passive": "HP restoration upon landing attacks",
+"rarity": "Blue"
+},
+{
+"name": "Giant-Crusher",
+"passive": "Improved damage negation at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Horn Bow",
+"passive": "Improved item discovery",
+"rarity": "Blue"
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"passive": "Improved magic damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Improved item discovery",
+"rarity": "Blue"
+},
+{
+"name": "Gelmir Glintstone Staff",
+"passive": "Improved sorceries",
+"rarity": "Blue"
+},
+{
+"name": "Clawmark Seal",
+"passive": "Many periodical glintblades",
+"rarity": "Blue"
+},
+{
+"name": "Glintstone Kris",
+"passive": "Defeating enemies restores HP",
+"rarity": "Purple"
+},
+{
+"name": "Golden Halberd",
+"passive": "Improved holy attack power",
+"rarity": "Purple"
+},
+{
+"name": "Fingerprint Stone Shield",
+"passive": "Successive attacks negate damage",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Rapier",
+"passive": "Successive attacks negate damage",
+"rarity": "White"
+},
+{
+"name": "Grossmesser",
+"passive": "Holy attack follows charge attacks that land",
+"rarity": "Blue"
+},
+{
+"name": "Warhawk's Talon",
+"passive": "Improved charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Thorned Whip",
+"passive": "Improved attack power when two-handing",
+"rarity": "Blue"
+},
+{
+"name": "Iron Ball",
+"passive": "Improved magic damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Gilded Greatshield",
+"passive": "Improved lightning attack power",
+"rarity": "Blue"
+},
+{
+"name": "Onyx Lord's Greatsword",
+"passive": "Fire attack follows charge attacks that land",
+"rarity": "Purple"
+}
+]
+},
+"19": {
+"special": [
+{
+"name": "Crystal Knife",
+"passive": "Continuous HP recovery",
+"rarity": "Blue"
+},
+{
+"name": "Nagakiba",
+"passive": "Improved attack power when two-handing",
+"rarity": "Blue"
+},
+{
+"name": "Rotten Greataxe",
+"passive": "Improved charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Albinauric Bow",
+"passive": "Reduced skill FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Golem Greatbow",
+"passive": "Defeating enemies restores HP",
+"rarity": "Blue"
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"passive": "Improved damage negation at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Carian Glintblade Staff",
+"passive": "Improved attack power at low HP",
+"rarity": "Blue"
+},
+{
+"name": "Clawmark Seal",
+"passive": "Damage negation up while casting spells",
+"rarity": "Blue"
+},
+{
+"name": "Blade of Calling",
+"passive": "Improved damage negation at full HP",
+"rarity": "Purple"
+},
+{
+"name": "Commander's Standard",
+"passive": "HP restoration upon landing attacks",
+"rarity": "Purple"
+},
+{
+"name": "Dragonclaw Shield",
+"passive": "Improved holy damage negation",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Scimitar",
+"passive": "Defeating enemies restores HP",
+"rarity": "White"
+},
+{
+"name": "Lazuli Glintstone Sword",
+"passive": "Improved magic attack power",
+"rarity": "Blue"
+},
+{
+"name": "Bloodhound's Fang",
+"passive": "Improved rot resistance",
+"rarity": "Blue"
+},
+{
+"name": "Gargoyle's Twinblade",
+"passive": "Improved guard breaking",
+"rarity": "Blue"
+},
+{
+"name": "Warped Axe",
+"passive": "Improved fire damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Golden Greatshield",
+"passive": "Reduced spell FP cost",
+"rarity": "Blue"
+},
+{
+"name": "Magma Whip Candlestick",
+"passive": "Improved fire attack power",
+"rarity": "Purple"
+}
+]
+},
+"20": {
+"special": [
+{
+"name": "Meteoric Ore Blade",
+"passive": "Improved magic attack power",
+"rarity": "Blue"
+},
+{
+"name": "Rotten Battle Hammer",
+"passive": "Defeating enemies restores HP",
+"rarity": "Blue"
+},
+{
+"name": "Guardian's Swordspear",
+"passive": "Improved fire attack power",
+"rarity": "Blue"
+},
+{
+"name": "Harp Bow",
+"passive": "Improved holy damage negation",
+"rarity": "Blue"
+},
+{
+"name": "Full Moon Crossbow",
+"passive": "Magma surge sprint",
+"rarity": "Blue"
+},
+{
+"name": "Hand Ballista",
+"passive": "Improved item discovery",
+"rarity": "Blue"
+},
+{
+"name": "Albinauric Staff",
+"passive": "Improved attack power at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Gravel Stone Seal",
+"passive": "Improved spell casting speed",
+"rarity": "Blue"
+},
+{
+"name": "Reduvia",
+"passive": "Taking damage boosts damage negation",
+"rarity": "Purple"
+},
+{
+"name": "Ordovis's Greatsword",
+"passive": "Many periodical glintblades",
+"rarity": "Purple"
+},
+{
+"name": "Erdtree Greatshield",
+"passive": "Improved damage negation at full HP",
+"rarity": "Purple"
+}
+],
+"normal": [
+{
+"name": "Club",
+"passive": "Taking damage restores FP",
+"rarity": "White"
+},
+{
+"name": "Lordsworn's Straight Sword",
+"passive": "Improved charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Beastman's Curved Sword",
+"passive": "Damage negation up upon landing charged attacks",
+"rarity": "Blue"
+},
+{
+"name": "Monk's Flameblade",
+"passive": "Lightning attack follows charge attacks that land",
+"rarity": "Blue"
+},
+{
+"name": "Treespear",
+"passive": "Improved item discovery",
+"rarity": "Blue"
+},
+{
+"name": "Eclipse Crest Greatshield",
+"passive": "Improved damage negation at full HP",
+"rarity": "Blue"
+},
+{
+"name": "Cipher Pata",
+"passive": "Reduced skill FP cost",
+"rarity": "Purple"
+}
+]
+}
+}

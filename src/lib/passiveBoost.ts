@@ -14,6 +14,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 import { weaponPassives } from "@/data/weaponPassives";
 import type { Tier } from "@/lib/tiers";
+import type { ShopRarity } from "@/lib/types";
 
 const TIER_INDEX: Record<Tier, number> = { common: 0, blue: 1, purple: 2 };
 
@@ -88,6 +89,15 @@ export function passiveBoost(passive: string, tier: Tier): string | null {
 /** The full effect text for a passive name (or null if unknown). */
 export function passiveEffect(passive: string): string | null {
   return effectByName[normalize(passive)] ?? null;
+}
+
+// Buff % depends on the item's rarity tier (blue passive vs purple passive).
+const SHOP_TIER: Record<ShopRarity, Tier> = { White: "common", Blue: "blue", Purple: "purple", Red: "purple" };
+/** A passive with its concrete boost appended, at the item's rarity tier — unless it already has an inline value. */
+export function withPassiveValue(passive: string, rarity: ShopRarity): string {
+  if (passive.includes("(")) return passive;
+  const b = passiveBoost(passive, SHOP_TIER[rarity]);
+  return b ? `${passive} (${b})` : passive;
 }
 
 /**

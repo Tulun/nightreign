@@ -28,6 +28,7 @@ export function FilteredSetGrid() {
 
   const [selected, setSelected] = useState<string[]>([]);
   const [query, setQuery] = useState("");
+  const [deepOfNight, setDeepOfNight] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null);
 
@@ -153,6 +154,16 @@ export function FilteredSetGrid() {
             <CloseIcon />
             Deselect all
           </button>
+
+          <label className="frame inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-night-800 px-3 py-2 font-body text-sm text-parchment transition-colors hover:bg-night-700 sm:ml-auto sm:w-auto">
+            <input
+              type="checkbox"
+              checked={deepOfNight}
+              onChange={(e) => setDeepOfNight(e.target.checked)}
+              className="h-4 w-4 accent-red-400"
+            />
+            Deep of Night
+          </label>
         </div>
 
         {selectedOptions.length > 0 && (
@@ -183,7 +194,7 @@ export function FilteredSetGrid() {
       {visible.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {visible.map((set) => (
-            <SetCard key={set.id} set={set} />
+            <SetCard key={set.id} set={set} deepOfNight={deepOfNight} />
           ))}
         </div>
       ) : (

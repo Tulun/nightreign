@@ -1,0 +1,5525 @@
+{
+"0": {
+"special": {
+"weapons": [
+{
+"name": "Ivory Sickle",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Quickstep",
+"passives": [
+"Attacks Release Mist of Charm"
+],
+"curse": null
+},
+{
+"name": "Nagakiba",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical",
+"skill": "Double Slash",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Celebrant's Skull",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Flame of the Redmanes",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Guardian's Swordspear",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Lightning",
+"skill": "Thunderbolt",
+"passives": [
+"Improved Affinity Damage Negation (+9%)",
+"Improved Guard Counters (+20%)"
+],
+"curse": "All resistances Down (-30)"
+},
+{
+"name": "Claymore",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Giant Hunt",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Cleanrot Knight's Sword",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical",
+"skill": "Piercing Fang",
+"passives": [
+"Improved Thrusting Counterattack (+10%)",
+"Attacks Releases Mists of Charm"
+],
+"curse": "Reduced Damage Negation after Evading (-15%)"
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Holy Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Godslayer's Seal",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "",
+"skill": "Black Flame Ritual",
+"passives": [
+"Improved Fire Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Distinguished Greatshield",
+"rarity": "Blue",
+"price": 7000,
+"affinity": "Holy",
+"skill": "Vow of the Indomitable",
+"passives": [
+"Improved Lightning Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Gargoyle's Blackblade",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Corpse Wax Cutter",
+"passives": [
+"Improved Attack Power When Two-Handing (+18%)",
+"Improved Attack Power at Low HP (+17%)"
+],
+"curse": "Repeated Evasions Lower Damage Negations (-23%)"
+},
+{
+"name": "Envoy's Horn",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Oracular Bubble",
+"passives": [
+"Improved Attack Power When Two-Handing (+18%)"
+],
+"curse": null
+},
+{
+"name": "Serpent Bow",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical/Poison",
+"skill": "Mighty Shot",
+"passives": [
+"Improved Critical Hits (+24%)"
+],
+"curse": null
+},
+{
+"name": "Pulley Crossbow",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Bloodflies Upon Precision Aiming",
+"Improved Attack Power at Full HP (+14%)"
+],
+"curse": "Lower Attack Below Max HP (-7%)"
+},
+{
+"name": "Prince of Death Staff",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "",
+"skill": "Explosive Ghostflame",
+"passives": [
+"Dmg Negation Up While Casting Spells"
+],
+"curse": null
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked Tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Zweihander",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Barbaric Roar",
+"passives": [
+"Improved Damage Negation at Low HP (+23%)"
+],
+"curse": null
+},
+{
+"name": "Iron Cleaver",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Lightning",
+"skill": "Lightning Slash",
+"passives": [
+"Defeating enemies Restores FP (+4%)"
+],
+"curse": null
+},
+{
+"name": "Omen Cleaver",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Fire",
+"skill": "Eruption",
+"passives": [
+"Increased Maximum Stamina (+8%)",
+"Wraiths While Walking"
+],
+"curse": "Attacks Impaired on Occasion (1)"
+},
+{
+"name": "Partisan",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical/Poison",
+"skill": "Poisonous Mist",
+"passives": [
+"Attack Up When Wielding Two Armaments (+15%)"
+],
+"curse": null
+},
+{
+"name": "Carian Glintblade Staff",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "",
+"skill": "Glintblade Phalanx",
+"passives": [
+"Reduced FP Consumption (-9%)",
+"Improved Spell Casting Speed (+1)"
+],
+"curse": "Reduced Damage Negation After Evading (-15%)"
+},
+{
+"name": "Rift Shield",
+"rarity": "Blue",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Parry",
+"passives": [
+"Successfull Guarding Ups Poise (+18%)"
+],
+"curse": null
+},
+{
+"name": "Siluria's Tree",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Siluria's Woe",
+"passives": [
+"Multiple Periodical Glintblades"
+],
+"curse": null
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatic",
+"Uplifting Aromatic"
+]
+}
+},
+"1": {
+"special": {
+"weapons": [
+{
+"name": "Ivory Sickle",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Poison Moth Flight",
+"passives": [
+"Improved Guard Breaking (+45%)"
+],
+"curse": null
+},
+{
+"name": "Forked Greatsword",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Physical",
+"skill": "Vacuum Slice",
+"passives": [
+"Improved Stamina Recovery (+3%)",
+"Attack Up When Wielding Two Armaments (+15%)"
+],
+"curse": "Damage Increased by Night's Encroachment (1)"
+},
+{
+"name": "Rusted Anchor",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Flame of the Redmanes",
+"passives": [
+"Attacks Call Vengefull Spirits"
+],
+"curse": null
+},
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic/Bleed",
+"skill": "Gravitas",
+"passives": [
+"Attacks Generate Lava"
+],
+"curse": null
+},
+{
+"name": "Warpick",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Fire",
+"skill": "Flame of the Redmanes",
+"passives": [
+"Taking Damage Improves Damage Negation (+28%)"
+],
+"curse": null
+},
+{
+"name": "Harp Bow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Barrage",
+"passives": [
+"Successful Guarding Ups Dmg Negation (+19%)"
+],
+"curse": null
+},
+{
+"name": "Golem Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Chain Attack Finishers (+26%)"
+],
+"curse": null
+},
+{
+"name": "Full Moon Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Kick",
+"passives": [
+"Improved Attack Power at Low HP (+17%)"
+],
+"curse": null
+},
+{
+"name": "Giant's Seal",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Flame of The Fell God",
+"passives": [
+"Less Likely To Be Targeted (9)"
+],
+"curse": null
+},
+{
+"name": "Golden Beast Crest Shield",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical",
+"skill": "Shield Crash",
+"passives": [
+"Improved Lightning Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Rivers of Blood",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical/Fire/Bleed",
+"skill": "Corpse Piler",
+"passives": [
+"Flask Healing Also Restores FP (+20%)",
+"Improved Skill Attack Power (+21%)"
+],
+"curse": "Impaired Physical Affinity Damage Negation (-8%)"
+},
+{
+"name": "Golden Halberd",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Golden Vow",
+"passives": [
+"Improved Guard Breaking (+60%)"
+],
+"curse": null
+},
+{
+"name": "Anspur Rapier",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical/Rot/Bleed",
+"skill": "Blood Tax",
+"passives": [
+"Increased Maximum HP (+12%)",
+"HP Restoration upon landing attacks (+8)"
+],
+"curse": "All Resistances Down (-45)"
+},
+{
+"name": "Azur's Glinstone staff",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "",
+"skill": "Comet",
+"passives": [
+"Reduced FP Consumption (-9%)",
+"Improved Spell Casting Speed (2)"
+],
+"curse": "Reduced damage Negation After Evading (-15%)"
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked Tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Zweihander",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Stamp (Upward Cut)",
+"passives": [
+"Improved Damage Negation at Full HP (+24%)"
+],
+"curse": null
+},
+{
+"name": "Nightrider Flail",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic/Frost/Bleed",
+"skill": "Chilling Mist",
+"passives": [
+"Improved Guard Breaking (+45%)"
+],
+"curse": null
+},
+{
+"name": "Highland Axe",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Fire",
+"skill": "Flaming Strike",
+"passives": [
+"HP Restoration Upon Landing Attacks (+6)"
+],
+"curse": null
+},
+{
+"name": "Iron Ball",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Lightning",
+"skill": "Lightning Ram",
+"passives": [
+"Improved Jump Attacks (+17%)",
+"HP Restoration Upon Landing Attacks (+6)"
+],
+"curse": "Poison Buildup When Below Max HP (1)"
+},
+{
+"name": "Staff of the Guilty",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "",
+"skill": "Briars of Sin",
+"passives": [
+"Improved Holy Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Iron Roundshield",
+"rarity": "Blue",
+"price": 4000,
+"affinity": "Magic",
+"skill": "Thops's Barrier",
+"passives": [
+"Improved Sorceries (+8%)"
+],
+"curse": null
+},
+{
+"name": "Siluria's Tree",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Siluria's Woe",
+"passives": [
+"Improved Flask HP Restoration (+13%)",
+"Improved Guard Counters (+23%)"
+],
+"curse": "Near Death Reduces Max HP (-15%)"
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatic",
+"Uplifting Aromatic"
+]
+}
+},
+"2": {
+"special": {
+"weapons": [
+{
+"name": "Claymore",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Giant Hunt",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic/Bleed",
+"skill": "Gravitas",
+"passives": [
+"Attacks Generate Lava"
+],
+"curse": null
+},
+{
+"name": "Night Raider's Glaive",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Phantom Slash",
+"passives": [
+"Attack Up When Wielding Two Armaments (+15%)"
+],
+"curse": null
+},
+{
+"name": "Monk's Flamemace",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Cleanrot Knight's Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Holy",
+"skill": "Sacred Order",
+"passives": [
+"Improved Jump Attacks (+17%)"
+],
+"curse": null
+},
+{
+"name": "Composite Bow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Mighty Shot",
+"passives": [
+"More Runes From Defeated Enemies (+6%)",
+"Improved Ranged Weapon Attacks (+10%)"
+],
+"curse": "Reduced Maximum HP (-4%)"
+},
+{
+"name": "Golem's Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Magic Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Item Discovery (+30)"
+],
+"curse": null
+},
+{
+"name": "Gravel Stone Seal",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Lanseax's Glaive",
+"passives": [
+"Improved Lightning Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Icon Shield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Improved Holy Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Scorpion's Stinger",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical/Rot",
+"skill": "Repeating Thrust",
+"passives": [
+"Improved Stamina Recovery (+3)",
+"Improved Critical Hits (+24%)"
+],
+"curse": "Near Death Reduces Max HP (-15%)"
+},
+{
+"name": "Prelate's Inferno Crozier",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Fire",
+"skill": "Prelate's Charge",
+"passives": [
+"Improved Skill Attack Power (+21%)"
+],
+"curse": null
+},
+{
+"name": "Scepter of the All Knowing",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic",
+"skill": "Knowledge Above All",
+"passives": [
+"Improved Affinity Attack Power (+6%)",
+"Magic Attack Follow Charge Attack that Lands"
+],
+"curse": "Night's Tide Damage Increased (+100%)"
+},
+{
+"name": "Lusat's Glinstone Staff",
+"rarity": "Red",
+"price": 50000,
+"affinity": "",
+"skill": "Gravel of Haima",
+"passives": [
+"Continued Guarding Boosts Spell Damage and Casting Speed",
+"Improved Sorceries (+11%)"
+],
+"curse": "Reduced Maximum HP (-9%)"
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked Tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Lance",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Charge Forth",
+"passives": [
+"Improved Attack Power When Two-Handing (+12%)"
+],
+"curse": null
+},
+{
+"name": "Troll's Golden Sword",
+"rarity": "Blue",
+"price": 16000,
+"affinity": "Holy",
+"skill": "Golden Slam",
+"passives": [
+"Increased Maximum HP (+8%)",
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": "Ailments Cause Increased Damage (+25%)"
+},
+{
+"name": "Godskin Stitcher",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Lightning",
+"skill": "Thunderbolt",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Shamrir",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical/Poison",
+"skill": "Poison Moth Flight",
+"passives": [
+"Improved Jump Attacks (+17%)"
+],
+"curse": null
+},
+{
+"name": "Staff of Loss",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Ambush Shard",
+"passives": [
+"Improved Item Discovery (+30)"
+],
+"curse": null
+},
+{
+"name": "Gilded Iron Shield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "Parry",
+"passives": [
+"Improved Critical Hits (+18%)",
+"Improved Holy Damage Negation (+16%)"
+],
+"curse": "Damage Increased By Night's Encroashment (+1)"
+},
+{
+"name": "Magma Blade",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Fire",
+"skill": "Magma Shower",
+"passives": [
+"Improved Lightning Damage Negation (+20%)"
+],
+"curse": null
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatic",
+"Uplifting Aromatic"
+]
+}
+},
+"3": {
+"special": {
+"weapons": [
+{
+"name": "Miséricorde",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical",
+"skill": "Parry",
+"passives": [
+"Improved Guard Breaking (+45%)"
+],
+"curse": null
+},
+{
+"name": "Flameberge",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Fire/Bleed",
+"skill": "Flame of The Redmanes",
+"passives": [
+"Improved Critical Hits (+18%)"
+],
+"curse": null
+},
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic/bleed",
+"skill": "Sword Dance",
+"passives": [
+"Attacks Summons Whraits"
+],
+"curse": null
+},
+{
+"name": "Pest's Glaive",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Spinning Weapon",
+"passives": [
+"Successfull Guarding Ups Dmg Negation (+19%)"
+],
+"curse": null
+},
+{
+"name": "Cleanrot Knight's Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Royal Knight's Resolve",
+"passives": [
+"Attack Up When Wielding Two Armaments (+15%)"
+],
+"curse": null
+},
+{
+"name": "Spiked Club",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical/Bleed",
+"skill": "Stormcaller",
+"passives": [
+"Improved Charge Attacks (+19%)"
+],
+"curse": null
+},
+{
+"name": "Golem Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Jump Attacks (+17)"
+],
+"curse": null
+},
+{
+"name": "Clawmark Seal",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "",
+"skill": "Stone of Gurranq",
+"passives": [
+"Physical Attack Up (+8%)",
+"Improved Frost Resistance (+75)"
+],
+"curse": "Near Death Reduces Art Gauge (-30%)"
+},
+{
+"name": "Spiked Palisade Shield",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical/Bleed",
+"skill": "Shield Bash",
+"passives": [
+"Improved Magic Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Butchering Knife",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Holy",
+"skill": "Prayerful Strike",
+"passives": [
+"Holy Shockwave upon Charge Attacks",
+"HP Restoration Upon Landing Attacks (+8%)"
+],
+"curse": "Slower Art Gauge Below Max HP (-15%)"
+},
+{
+"name": "Frozen Needle",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Magic/Frost",
+"skill": "Royal Knight's Resolve",
+"passives": [
+"Ice Storm upon Charge Attacks",
+"Attack Up When Wielding Two Armaments (+18%)"
+],
+"curse": "Night's Tide Damage Increased (+150%)"
+},
+{
+"name": "Eerdtree Bow",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Mighty Shot",
+"passives": [
+"Improved Ranged Weapon Attacks (+10%)"
+],
+"curse": null
+},
+{
+"name": "Pulley Crossbow",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Charge Attacks (+23%)"
+],
+"curse": null
+},
+{
+"name": "Meteorite Staff",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "",
+"skill": "Collapsing Stars",
+"passives": [
+"Improved Sorceries & Incantations (+6%)",
+"Reduced Spell FP Cost (-20%)"
+],
+"curse": "Lower Stamina Impairs Damage Negation (-10%)"
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked Tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Longsword",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Square Off",
+"passives": [
+"Improved Holy Damage Negation (+12%)"
+],
+"curse": null
+},
+{
+"name": "Chainlink Flail",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic/Frost/Bleed",
+"skill": "Hoarfrost Stomp",
+"passives": [
+"Improved Guard Breaking (+30%)"
+],
+"curse": null
+},
+{
+"name": "Grossmesser",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Holy",
+"skill": "Sacred Order",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Bloodhound Claws",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Lightning/Bleed",
+"skill": "Lightning Ram",
+"passives": [
+"Improved Jump Attacks (+17%)",
+"Successive Attacks Negates Damage (+48%)"
+],
+"curse": "Impaired Physical Damage Negation (-6%)"
+},
+{
+"name": "Godslayer's Seal",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "",
+"skill": "Black Flame Blade",
+"passives": [
+"Improved Spell Casting Speed (+1)"
+],
+"curse": null
+},
+{
+"name": "Ice Crest Shield",
+"rarity": "Blue",
+"price": 5000,
+"affinity": "Physical",
+"skill": "Storm Wall",
+"passives": [
+"Successfull Guarding Ups Damage Negation (+19%)"
+],
+"curse": null
+},
+{
+"name": "Royal Greatsword",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic",
+"skill": "Wolf's Assault",
+"passives": [
+"Improved Affinity Attack Power (+6%)",
+"FP Restoration Upon Landing Attacks (+3)"
+],
+"curse": "Lower Stamina Impairs Damage Negation (-10%)"
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatic",
+"Uplifting Aromatic"
+]
+}
+},
+"4": {
+"special": {
+"weapons": [
+{
+"name": "Erdsteel Dagger",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Physical/Bleed",
+"skill": "Blood Blade",
+"passives": [
+"Improved Holy Damage Negation (+16%)",
+"Successive Attacks Negates Damage (+48%)"
+],
+"curse": "Reduced Damage Negation After Evading (-15%)"
+},
+{
+"name": "Serpentbone Blade",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Lightning/Poison",
+"skill": "Lightning Slash",
+"passives": [
+"Improved Lightning Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Giant Crusher",
+"rarity": "Blue",
+"price": 16000,
+"affinity": "Physical",
+"skill": "Endure",
+"passives": [
+"Improved Fire Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Nightriider's Glaive",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Storm Assault",
+"passives": [
+"Attacks Release a Mist of Frost"
+],
+"curse": null
+},
+{
+"name": "Rogier's Rapier",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Magic",
+"skill": "Glintblade Phalanx",
+"passives": [
+"Reduced FP Consumption (-9%)",
+"Improved Magic Attack power (+9%)"
+],
+"curse": "All Resistances Down (-30)"
+},
+{
+"name": "Horn Bow",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Magic",
+"skill": "Enchanted Shot",
+"passives": [
+"Successfull Guarding Ups Poise (+18%)"
+],
+"curse": null
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Lightning Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Clawmark Seal",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "",
+"skill": "Gurranq's Beast Claw",
+"passives": [
+"Improved Damage Negation at Low HP (+30%)"
+],
+"curse": null
+},
+{
+"name": "Redmane Greatshield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Improved Madness Resistance (+75)"
+],
+"curse": null
+},
+{
+"name": "Death's Poker",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic/Frostbite",
+"skill": "Ghostflame Ignition",
+"passives": [
+"Improved Jump Attacks (+20%)",
+"Improved Attack Power at Low HP (+21%)"
+],
+"curse": "Reduced Max HP (-4%)"
+},
+{
+"name": "Dragon halberd",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Spinning Slash",
+"passives": [
+"Improved Jump Attacks (+20%)"
+],
+"curse": null
+},
+{
+"name": "Ringed Finger",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Claw Flick",
+"passives": [
+"Taking Damage Improves Damage Negation (+36%)"
+],
+"curse": null
+},
+{
+"name": "Lusat's Glinstone Staff",
+"rarity": "Red",
+"price": 50000,
+"affinity": "",
+"skill": "Cannon of Haima",
+"passives": [
+"Improved Sorceries & Incantation (+8%)",
+"Improved Spell Casting Speed (+2)"
+],
+"curse": "Reduced Maximum FP (-9%)"
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked Tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Falchion",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Spinning Slash",
+"passives": [
+"Improved Lightning Damage Negation (+12%)"
+],
+"curse": null
+},
+{
+"name": "Beastman's Cleaver",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Beast's Roar",
+"passives": [
+"Improved Magic Attack power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Iron Cleaver",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Fire",
+"skill": "Flame of the Redmanes",
+"passives": [
+"Improved Rot Resistance (+75)"
+],
+"curse": null
+},
+{
+"name": "Pike",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Holy",
+"skill": "Sacred Ring of Light",
+"passives": [
+"Improved Physical Damage Negation (+9%)",
+"Improved Attack power at Full HP (+10%)"
+],
+"curse": "Reduced Maximum Stamina (-5%)"
+},
+{
+"name": "Gravel Stone Seal",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "",
+"skill": "Electrify Armament",
+"passives": [
+"Increased Sorcery & Incantation Duration (+45%)",
+"Dmg Negation While Casting Spells (+24%)"
+],
+"curse": "Repeated Evasions Lower Damage Negation (-23%)"
+},
+{
+"name": "Man-Serpent's Shield",
+"rarity": "Blue",
+"price": 6000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Improved Holy Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Sword of St. Trina",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Magic/Sleep",
+"skill": "Mist of Slumber",
+"passives": [
+"Reduced Skill FP Cost (-24%)"
+],
+"curse": null
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatic",
+"Uplifting Aromatic"
+]
+}
+},
+"5": {
+"special": {
+"weapons": [
+{
+"name": "Forked Greatsword",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical/Bleed",
+"skill": "Beast's Roar",
+"passives": [
+"Dmg Negation Up upon Landing Charge Attacks (+24%)"
+],
+"curse": null
+},
+{
+"name": "Fire Nagakiba",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Fire/Bleed",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Charge Attacks (+19%)"
+],
+"curse": null
+},
+{
+"name": "Nightrider's Glaive",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Storm Assault",
+"passives": [
+"Attacks Release Mist of Frost"
+],
+"curse": null
+},
+{
+"name": "Erdsteel Dagger",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical",
+"skill": "Quickstep",
+"passives": [
+"Fire Attack Follows Charge Attacks that Lands"
+],
+"curse": null
+},
+{
+"name": "Monk Flamemace",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Fire",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Composite Bow",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical",
+"skill": "Mighty shot",
+"passives": [
+"Successfull Guarding Ups Damage Negation (+19%)"
+],
+"curse": null
+},
+{
+"name": "Golem Greatbow",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Physical Damage Negation (+9%)",
+"Improved Ranged Weapon Attacks (+10%)"
+],
+"curse": "All Resistances Down (-30)"
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Taking Damage Improves Damage Negation (+28%)"
+],
+"curse": null
+},
+{
+"name": "Giant's Seal",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Flame Sling",
+"passives": [
+"Improved Fire Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Eclipse Crest Greatshield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Improved Fire Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Glinstone kris",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Magic",
+"skill": "Glinstone Dart",
+"passives": [
+"Increased Maximum FP (+13%)",
+"Improved Sorceries (+11%)"
+],
+"curse": "Reduced Damage Negation After Evading (-20%)"
+},
+{
+"name": "Beastclaw Greathammer",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Regal Beastclaw",
+"passives": [
+"Improved Stance-Breaking (+8%)",
+"Improved Skill Attack Power (+21%)"
+],
+"curse": "Damage Increased by Night's Encroachment (1)"
+},
+{
+"name": "Anspur Rapier",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Lightning/Rot",
+"skill": "Lightning Slash",
+"passives": [
+"Increased Maximum HP (+8%)",
+"Improved Skill Attack Power (+21%)"
+],
+"curse": "Near Death Reduces Art Gauge (-30%)"
+},
+{
+"name": "Prince of Death's Staff",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "",
+"skill": "Ancient Death Rancor",
+"passives": [
+"Continuos HP Recovery (+1)"
+],
+"curse": null
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked Tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "twinblade",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Spinning Slash",
+"passives": [
+"Improved Magic Damage Negation (+12%)"
+],
+"curse": null
+},
+{
+"name": "Caestus",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Endure",
+"passives": [
+"Improved Damage Negation At Low HP (+23%)"
+],
+"curse": null
+},
+{
+"name": "Celebrant's Cleaver",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Lightning",
+"skill": "Lightning Slash",
+"passives": [
+"Improved Charge Attacks (+19%)"
+],
+"curse": null
+},
+{
+"name": "Grave Scythe",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire/Bleed",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Fire Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Venomous Fang",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical/Poison",
+"skill": "Quickstep",
+"passives": [
+"Improved Critical Hits (+18%)",
+"Improved Poison Resistance (+75)"
+],
+"curse": "Poison Buildup When Below Max HP (1)"
+},
+{
+"name": "Iron Roundshield",
+"rarity": "Blue",
+"price": 4000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Improved Fire Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Ornamental Straight Sword",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical",
+"skill": "Golden Tempering",
+"passives": [
+"Improved Thrusting Counterattack (+10%)",
+"Successive Attacks Negate Damage (60%)"
+],
+"curse": "Reduced Damage Negation After Evading (-15%)"
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatic",
+"Uplifting Aromatic"
+]
+}
+},
+"6": {
+"special": {
+"weapons": [
+{
+"name": "Erdsteel Dagger",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical",
+"skill": "Quickstep",
+"passives": [
+"Fire Attack Follows Charge Attack That Land"
+],
+"curse": null
+},
+{
+"name": "Gargoyle's Greatsword",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical",
+"skill": "Vacuum Slice",
+"passives": [
+"Reduced Skill FP Cost (-18%)"
+],
+"curse": null
+},
+{
+"name": "Great Omenkiller Cleaver",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical/Bleed",
+"skill": "Raptor of the Mists",
+"passives": [
+"Improved Fire Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Ripple Crescent Halberd",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Lightning",
+"skill": "Thunderbolt",
+"passives": [
+"All resistances Up (+52)",
+"Improved Item Discovery (+30)"
+],
+"curse": "Reduced Flask HP Restoration (-6%)"
+},
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic/Bleed",
+"skill": "Double Slash",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Cleanrot Knight's Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Royal Knight's Resolve",
+"passives": [
+"Attack Up When Wielding Two Armaments (+15%)"
+],
+"curse": null
+},
+{
+"name": "Full Moon Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Kick",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved holy Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Godslayer seal",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "",
+"skill": "Black Flame Protection",
+"passives": [
+"Defeating Enemies Restores HP (+20)"
+],
+"curse": null
+},
+{
+"name": "Cuckoo Greatshield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Magma Surge Sprint"
+],
+"curse": null
+},
+{
+"name": "Moonveil",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Magic/Bleed",
+"skill": "Transient Moonlight",
+"passives": [
+"Improved Affinity Attack Power (+8%)",
+"Reduced Skill FP Cost (-24%)"
+],
+"curse": "Lower Stamina Impairs Damage Negation (-15%)"
+},
+{
+"name": "Envoy's Horn",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Holy",
+"skill": "Oracular Bubble",
+"passives": [
+"Reduced FP Consumption (-13%)",
+"Holy Attack Follows Charge Attack That land"
+],
+"curse": "Reduced Damage Negation After Evading (-20%)"
+},
+{
+"name": "Black Bow",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical",
+"skill": "Barrage",
+"passives": [
+"Improved Thrusting Counterattack (+10%)",
+"Less Likely To Be Targeted (12)"
+],
+"curse": "Damage Increased By Night's Encroachment (+2)"
+},
+{
+"name": "Azur's Glinstone Staff",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "",
+"skill": "Terra Magica",
+"passives": [
+"Improved Magic Attack Power +12%"
+],
+"curse": null
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked Tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Dismounter",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Spinning Slash",
+"passives": [
+"Improved Fire Damage Negation (+12%)"
+],
+"curse": null
+},
+{
+"name": "Lordsworn Straight Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic/Frost",
+"skill": "Chilling Mist",
+"passives": [
+"Improved Holy Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Chainlink Flail",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire/Bleed",
+"skill": "Flame of the Redmanes",
+"passives": [
+"Improved Poison Resistance (+75)"
+],
+"curse": null
+},
+{
+"name": "Warped Axe",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Ligtning",
+"skill": "Lightning Slash",
+"passives": [
+"Increased Maximum HP (+8%)",
+"Improved Charge Attacks (+19%)"
+],
+"curse": "Attack Impaired on Occasion (1)"
+},
+{
+"name": "Treespear",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Holy",
+"skill": "Sacred Order",
+"passives": [
+"More Runes From Defeating Enemies (+6%)",
+"Improved Holy Attack Power (+9%)"
+],
+"curse": "Night's Tide Damage Increased (+100%)"
+},
+{
+"name": "Gilded Iron Shield",
+"rarity": "Blue",
+"price": 5000,
+"affinity": "Holy",
+"skill": "Golden Parry",
+"passives": [
+"Multiple Periodical Glintblades"
+],
+"curse": null
+},
+{
+"name": "Bloody Helice",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical/Bleed",
+"skill": "Dynast's Finesse",
+"passives": [
+"Lightning Follows Charge Attack That Lands"
+],
+"curse": null
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatic",
+"Uplifting Aromatic"
+]
+}
+},
+"7": {
+"special": {
+"weapons": [
+{
+"name": "Miséricorde",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Magic",
+"skill": "Glintblade Phalanx",
+"passives": [
+"Improved Critical Hits (+8%)"
+],
+"curse": null
+},
+{
+"name": "Banished Knight Greatsword",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Stamp (Upward Cut)",
+"passives": [
+"Improved Damage Negation at Low HP (+30%)"
+],
+"curse": null
+},
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic/Bleed",
+"skill": "Double Slash",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Pest's Glaive",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Phantom Slash",
+"passives": [
+"Continuos HP Recovery (+1)"
+],
+"curse": null
+},
+{
+"name": "Troll's Hammer",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Troll's Roar",
+"passives": [
+"Improved Fire Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Hammer",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Lightning",
+"skill": "Lightning Slash",
+"passives": [
+"Improved Attack Power at Low HP (+17%)"
+],
+"curse": null
+},
+{
+"name": "Full Moon Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Kick",
+"passives": [
+"Reduced Skill FP Cost (-18%)"
+],
+"curse": null
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Multiple Periodical Glintblades"
+],
+"curse": null
+},
+{
+"name": "Crystal Staff",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "",
+"skill": "Crystal Release",
+"passives": [
+"Improved Affinity Attack Power (+6%)",
+"Improved Charged Sorceries (+13%)"
+],
+"curse": "Impaired Physical Damage Negation (-6%)"
+},
+{
+"name": "Golden Greatshield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "Shield Crash",
+"passives": [
+"Savage Pillars of Flame Rise While Walking"
+],
+"curse": null
+},
+{
+"name": "Gargoyle's Black Axe",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "War Cry",
+"passives": [
+"Physical Attack Up (+8%)",
+"Improved Charge Attack (+22%)"
+],
+"curse": "Continuos HP Loss (-1)"
+},
+{
+"name": "Cold Needle",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic/Frost",
+"skill": "Chilling Mist",
+"passives": [
+"Improved Stance-Breaking (+8%)",
+"Improved Charge Attack (+22%)"
+],
+"curse": "Reduced Damage Negation for Flask Usages (-33%)"
+},
+{
+"name": "Pulley Bow",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Rain of Arrows",
+"passives": [
+"Reduced Skill FP Cost (-24%)"
+],
+"curse": null
+},
+{
+"name": "Golden Order Seal",
+"rarity": "Red",
+"price": 50000,
+"affinity": "",
+"skill": "Radagon's Ring of Light",
+"passives": [
+"Improved Affinity Attack Power (+8%)",
+"Dmg Negation Up While Casting Spells (+30%)"
+],
+"curse": "Damage Increased by Night's Encroachment (+2)"
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"Ironjar Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Bandit's Curved Sword",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Spinning Slash",
+"passives": [
+"Improved Poison Resistance (+57)"
+],
+"curse": null
+},
+{
+"name": "Torchpole",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Charge Forth",
+"passives": [
+"Frostbite Produces a Mist of Frost"
+],
+"curse": null
+},
+{
+"name": "Watchdog's Greatsword",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Holy",
+"skill": "Golden Vow",
+"passives": [
+"Defeating Enemies Restore FP (+4%)"
+],
+"curse": null
+},
+{
+"name": "Spiked Caestus",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Lightning/Bleed",
+"skill": "Lightning Ram",
+"passives": [
+"Improved Guard Breaking (+45%)"
+],
+"curse": null
+},
+{
+"name": "Carian Glinstone Staff",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "",
+"skill": "Carian Piercer",
+"passives": [
+"Improved Affinity Attack Power (+6%)",
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": "Impaired Physical Damage Negation (-6%)"
+},
+{
+"name": "Kite Shield",
+"rarity": "Blue",
+"price": 5000,
+"affinity": "Magic",
+"skill": "Carian Retaliation",
+"passives": [
+"Improved Guarding Ability (+15%)"
+],
+"curse": null
+},
+{
+"name": "Icerind Hatchet",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic/Frost",
+"skill": "Hoarfrost Stomp",
+"passives": [
+"Improved Skill Attack Power (+21%)",
+"Attacks Release a Mist of Frost"
+],
+"curse": "Ailments Cause Increased Damage (+25%)"
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil aromatic"
+]
+}
+},
+"8": {
+"special": {
+"weapons": [
+{
+"name": "Wakizashi",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Fire/Bleed",
+"skill": "Flame of The Redmanes",
+"passives": [
+"Less Likely To Be Targeted (9)"
+],
+"curse": null
+},
+{
+"name": "Forked Greatsword",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical/Bleed",
+"skill": "Bloodhound's Step",
+"passives": [
+"Attack Up When Wielding Two Armaments (+15%)"
+],
+"curse": null
+},
+{
+"name": "Ripple Crescent Halberd",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical",
+"skill": "Thunderbolt",
+"passives": [
+"Taking Damage Restores FP (4)"
+],
+"curse": null
+},
+{
+"name": "Monk's Flamemace",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Fire",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Rogier's Rapier",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Storm Blade",
+"passives": [
+"Reduced Skill FP Cost (-18%)"
+],
+"curse": null
+},
+{
+"name": "Harp Bow",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical",
+"skill": "Barrage",
+"passives": [
+"Improved Skill Attack Power (+18%)",
+"Defeating Enemies Restores FP (+6)"
+],
+"curse": "Reduced Maximum Stamina (-5%)"
+},
+{
+"name": "Golem's Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Full Moon Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Kick",
+"passives": [
+"Improved Ranged Weapon Attacks (+10%)"
+],
+"curse": null
+},
+{
+"name": "Gelmir Glinstone Staff",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "",
+"skill": "Rykard's Rancor",
+"passives": [
+"Magma Surge Sprint"
+],
+"curse": null
+},
+{
+"name": "Gilded Greatshield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "Barricade Shield",
+"passives": [
+"Improved Blood Loss Resistance (+75)"
+],
+"curse": null
+},
+{
+"name": "Dragonscale Blade",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical",
+"skill": "Ice Lightning Sword",
+"passives": [
+"Reduced FP Consumption (-9%)",
+"Improved Skill Attack Power (+21%)"
+],
+"curse": "Ailments Cause Increased Damage (+25%)"
+},
+{
+"name": "Staff of the Avatar",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Erdtree Slam",
+"passives": [
+"Defeating Enemies Restores HP (+20)"
+],
+"curse": null
+},
+{
+"name": "Ringed Finger",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical",
+"skill": "Claw's Flick",
+"passives": [
+"Magma on Charged Attacks",
+"Magma Surge Sprint"
+],
+"curse": "Near Death Reduces Ult Gauge (-30%)"
+},
+{
+"name": "Frenzied Flame Seal",
+"rarity": "Red",
+"price": 50000,
+"affinity": "",
+"skill": "Frenzied Burst",
+"passives": [
+"Improved Sorceries & Incantations (+8%)",
+"Taking Damage Restores FP (+6)"
+],
+"curse": "All Resistances Down (45)"
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"Ironjar Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Hand Axe",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Quickstep",
+"passives": [
+"Improved Sleep Resistance (+57)"
+],
+"curse": null
+},
+{
+"name": "Scavenger's Curved Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic/Frost/Bleed",
+"skill": "Chilling Mist",
+"passives": [
+"Rot Produces a Mist of Scarlet Rot"
+],
+"curse": null
+},
+{
+"name": "Iron Ball",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Lightning",
+"skill": "Thunderbolt",
+"passives": [
+"Improved Critical Hits (+18%)"
+],
+"curse": null
+},
+{
+"name": "Torchpole",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Fire",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Fire Attack Power (+9%)",
+"Improved Frost Resistance (+75)"
+],
+"curse": "Lower Stamina Impairs Damage Negation (10%)"
+},
+{
+"name": "Albinauric Staff",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "",
+"skill": "Glinstone Arc",
+"passives": [
+"Improved Magic Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Sun Realm Shield",
+"rarity": "Blue",
+"price": 5000,
+"affinity": "Physical",
+"skill": "Parry",
+"passives": [
+"Improved Damage Negation at Full HP (+32%)"
+],
+"curse": null
+},
+{
+"name": "Winged Scythe",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy/Bleed",
+"skill": "Angel's Wings",
+"passives": [
+"Continuos HP Recovery (+1)",
+"Attacks Generate Golden Shockwave"
+],
+"curse": "Reduced Damage Negation for Flask Usages (-33%)"
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil aromatic"
+]
+}
+},
+"9": {
+"special": {
+"weapons": [
+{
+"name": "Knight's Greatsword",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Eruption",
+"passives": [
+"Reduced Skill FP Cost (-18%)"
+],
+"curse": null
+},
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic/Bleed",
+"skill": "Piercing fang",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Troll's Hammer",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Troll's Roar",
+"passives": [
+"Improved Fire Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Pest's Glaive",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Phantom Slash",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Rogier's Rapier",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Storm Blade",
+"passives": [
+"Reduced Skill FP Cost (-18%)"
+],
+"curse": null
+},
+{
+"name": "Varre's Bouquet",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Bleed",
+"skill": "Blood tax",
+"passives": [
+"Improved thrusting Counterattack (+10%)",
+"Continuos HP Recovery (+1)"
+],
+"curse": "Lower Attack Below Max HP (-5%)"
+},
+{
+"name": "Golem's Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Damage Negation at Low HP (+30%)"
+],
+"curse": null
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Less Likely to Be Targeted (9)"
+],
+"curse": null
+},
+{
+"name": "Carian Glintblade Staff",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "",
+"skill": "Loretta's Greabow",
+"passives": [
+"Improved Sorceries (+8%)",
+"Defeating Enemies Restores FP (+6%)"
+],
+"curse": "Near Death Reduces Art Gauge (-30%)"
+},
+{
+"name": "Haligtree Crest Shield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Storm of Red Lightning While Walking"
+],
+"curse": null
+},
+{
+"name": "Cinquedea",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical",
+"skill": "Quickstep",
+"passives": [
+"Physical Attack Up (+8%)",
+"Improved Incantations (+11%)"
+],
+"curse": "Impaired Affinity Damage Negation (-6%)"
+},
+{
+"name": "Anspur Rapier",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical/Rot/Bleed",
+"skill": "Blood Blade",
+"passives": [
+"Improved Skill Attack Power (+21%)"
+],
+"curse": null
+},
+{
+"name": "Serpent Bow",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical/Poison",
+"skill": "Mighty Shot",
+"passives": [
+"Poison Mist Upon Precision Aiming",
+"Improved Item Discovery (+40)"
+],
+"curse": "Poison Buildup When Below Max HP (2)"
+},
+{
+"name": "Dragon Communion Seal",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "",
+"skill": "Dragonmaw",
+"passives": [
+"Improved Attack Power at Full HP (+14%)"
+],
+"curse": null
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"Ironjar Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Great épée",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Determination",
+"passives": [
+"Improved Blood Loss Resistance (+57)"
+],
+"curse": null
+},
+{
+"name": "Omen Cleaver",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Eruption",
+"passives": [
+"Improved Charge Attacks (+16%)"
+],
+"curse": null
+},
+{
+"name": "Godskin Peeler",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Lightning",
+"skill": "Lightning Slash",
+"passives": [
+"Dmg Negation Upon Landing Charge Attacks (+24)"
+],
+"curse": null
+},
+{
+"name": "Urumi",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Magic/Frost",
+"skill": "Hoarfrost Stomp",
+"passives": [
+"Improved Thrusting Counterattack (+10%)",
+"FP Restoration upon Landing Attacks (2)"
+],
+"curse": "Reduced Maximum HP (-4%)"
+},
+{
+"name": "Clawmark Seal",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "",
+"skill": "Beast Claw",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Scorpion Kite Shield",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical",
+"skill": "Parry",
+"passives": [
+"Successfull Guarding Ups Damage Negation (+19%)",
+"Poison Produces a Mist of Poison"
+],
+"curse": "Reduced Maximum FP (-6%)"
+},
+{
+"name": "Halo Scythe",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy/Bleed",
+"skill": "Miquella's Ring of Light",
+"passives": [
+"Improved Attack Power When Two-Handing (+18%)"
+],
+"curse": null
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil aromatic"
+]
+}
+},
+"10": {
+"special": {
+"weapons": [
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic",
+"skill": "Double slash",
+"passives": [
+"Improved Magic Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Rotten Battle Hammer",
+"rarity": "Blue",
+"price": 17000,
+"affinity": "Physical/Rot",
+"skill": "Cragblade",
+"passives": [
+"Improved Stance Breaking (+8%)",
+"Taking Damage Boosts Damage Negation (+28%)"
+],
+"curse": "Rot Buildup Below Max Hp (1)"
+},
+{
+"name": "Guardian's Swordspear",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Black Flame Tornado",
+"passives": [
+"Attacks Unleash Lightning"
+],
+"curse": null
+},
+{
+"name": "Claymore",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Lion's Claw",
+"passives": [
+"Improved Attack power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Rogier's Rapier",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Magic",
+"skill": "Carian Grandeur",
+"passives": [
+"Improved Affinity Attack Power (+6%)",
+"Improved Skill Attack Power(+18%)"
+],
+"curse": "Slower Art Gauge below Max Hp (-10%)"
+},
+{
+"name": "Harp Bow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Barrage",
+"passives": [
+"Improved Attack power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Golem's Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Ranged Weapon attacks (+10%)"
+],
+"curse": null
+},
+{
+"name": "Albinauric Staff",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "",
+"skill": "Magic Downpour",
+"passives": [
+"Defeating Enemies Restores HP (+20)"
+],
+"curse": null
+},
+{
+"name": "Briar Greatshield",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical",
+"skill": "Shield Bash",
+"passives": [
+"Improved Sorceries (+8%)"
+],
+"curse": null
+},
+{
+"name": "Black Knife",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Blade of Death",
+"passives": [
+"Improved Charge Attacks (+22%)"
+],
+"curse": null
+},
+{
+"name": "Alabaster Lord's Sword",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Magic",
+"skill": "Alabaster Lord's Pull",
+"passives": [
+"Luring Enemies on Charged Attacks",
+"Many periodical Glintblades"
+],
+"curse": "Near Death Reduces Art Gauge (-45%)"
+},
+{
+"name": "Ringed Finger",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Claw Flick",
+"passives": [
+"Defeating Enemies Restores HP (+40)"
+],
+"curse": null
+},
+{
+"name": "Jar Cannon",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Ranged Weapon attacks (+14%)"
+],
+"curse": null
+},
+{
+"name": "Golden Order seal",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "",
+"skill": "Triple Discuss of Light",
+"passives": [
+"Improved Sorceries and Incantations (+6%)",
+"Attack Generates Golden Shockwaves"
+],
+"curse": "Impaired Affinity Damage Negation (-6%)"
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"Ironjar Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Caestus",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Endure",
+"passives": [
+"Improved Rot Resistance (+45)"
+],
+"curse": null
+},
+{
+"name": "Beastman's Cleaver",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Ground Slam",
+"passives": [
+"Improved attack power at low hp (+13%)"
+],
+"curse": null
+},
+{
+"name": "Twinned Knight Swords",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Lightning",
+"skill": "Thunderbolt",
+"passives": [
+"Reduced Fp Cost (-18%)"
+],
+"curse": null
+},
+{
+"name": "Star Fists",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical/Bleed",
+"skill": "Barbaric Roar",
+"passives": [
+"Taking Damage Boost Damage Negation (+28%)"
+],
+"curse": null
+},
+{
+"name": "Giant's Seal",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "",
+"skill": "O, Flame!",
+"passives": [
+"Increased Maximum FP (+9%)",
+"Improved Fire Attack Power (+9%)"
+],
+"curse": "Reduced Flask HP Restoration (-6%)"
+},
+{
+"name": "Twinblade Kite Shield",
+"rarity": "Blue",
+"price": 7000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Improved Holy Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Royal Greatsword",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic",
+"skill": "Wolf's Assault",
+"passives": [
+"Improved Poise (+20%)",
+"Attacks Releases Mist of Frost"
+],
+"curse": "Damage Increased By Night's Encroachment (-1)"
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil aromatic"
+]
+}
+},
+"11": {
+"special": {
+"weapons": [
+{
+"name": "Erdsteel Dagger",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical",
+"skill": "Quickstep",
+"passives": [
+"Improved Holy Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Forked Greatsword",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical/Bleed",
+"skill": "Thunderbolt",
+"passives": [
+"Improved Rot Resistance (+75)"
+],
+"curse": null
+},
+{
+"name": "Executioner's Greataxe",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Holy",
+"skill": "Prayerfull Strike",
+"passives": [
+"Improved Guard Breaking (+45%)"
+],
+"curse": null
+},
+{
+"name": "Pest's Glaive",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Phantom Slash",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Morning Star",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Holy/Bleed",
+"skill": "Prayerfull Strike",
+"passives": [
+"Improved Damage Negation at Full HP (+32%)"
+],
+"curse": null
+},
+{
+"name": "Red Branch Shortbow",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical",
+"skill": "Barrage",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Golem's Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Wraiths While Walking",
+"Improved Item Discovery (+30%)"
+],
+"curse": "Reduced Damage Negation After Evading (-15%)"
+},
+{
+"name": "Carian Glinstone Staff",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Adula's Moonblade",
+"passives": [
+"Many Periodical Glintblades"
+],
+"curse": null
+},
+{
+"name": "Distingiushed Greatshield",
+"rarity": "Blue",
+"price": 7000,
+"affinity": "Physical",
+"skill": "Barricade Shield",
+"passives": [
+"Continuos HP Recovery (+1)"
+],
+"curse": null
+},
+{
+"name": "Rivers of Blood",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical/Fire/Bleed",
+"skill": "Corpse Piler",
+"passives": [
+"Improved Fire Attack Power (+12%)"
+],
+"curse": null
+},
+{
+"name": "Commander's Standard",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical",
+"skill": "Rallying Standard",
+"passives": [
+"Phantom Attack Upon Charge Attacks",
+"Successive Attacks Negates Damage (+60%)"
+],
+"curse": "Near Death Reduces Max HP (-20%)"
+},
+{
+"name": "Anspur Rapier",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical/Rot",
+"skill": "Parry",
+"passives": [
+"Phantom Attack Upon Charge Attacks",
+"Improved Critical Hits (+24%)"
+],
+"curse": "Damage Increased By Night's Encroachment (2)"
+},
+{
+"name": "Eerdtree Seal",
+"rarity": "Red",
+"price": 50000,
+"affinity": "",
+"skill": "Eerdtree Heal",
+"passives": [
+"Reduced FP Consumption (-9%)",
+"Dmg Negation Up While Casting Spells (+30%)"
+],
+"curse": "Near Death Reduces Art Gauge (-30%)"
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"Ironjar Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Scythe",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical/Bleed",
+"skill": "Sword Dance",
+"passives": [
+"Improved Madness Resistance (+57)"
+],
+"curse": null
+},
+{
+"name": "Troll Knight's Sword",
+"rarity": "Blue",
+"price": 17000,
+"affinity": "Magic",
+"skill": "Troll's Roar",
+"passives": [
+"Increased Maximum HP (+8%)",
+"Improved Skill Attack Power (+18%)"
+],
+"curse": "Rot Buildup Below Max HP (1)"
+},
+{
+"name": "Celebrant's Cleaver",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Magic/Frost",
+"skill": "Hoarfrost Stomp",
+"passives": [
+"Improved Madness Resistance (+75)"
+],
+"curse": null
+},
+{
+"name": "Star Fist",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Fire/Bleed",
+"skill": "Flaming Strike",
+"passives": [
+"Successive Attacks Negates Damage (+48%)",
+"Attacks Generate Lava"
+],
+"curse": "Impaired Affinity Damage Negation (-6%)"
+},
+{
+"name": "Grave Stone Fist",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Frozen Lightning spear",
+"passives": [
+"Improved Item Discovery (+30)"
+],
+"curse": null
+},
+{
+"name": "Blue-Gold Kite Shield",
+"rarity": "Blue",
+"price": 7000,
+"affinity": "Holy",
+"skill": "Holy Ground",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Cleanrot Spear",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Sacred Phalanx",
+"passives": [
+"Taking Damage Restores FP (+6)"
+],
+"curse": null
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil aromatic"
+]
+}
+},
+"12": {
+"special": {
+"weapons": [
+{
+"name": "Wakizashi",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Magic/Bleed",
+"skill": "Carian Grandeur",
+"passives": [
+"Reduced Skill FP Cost (-18%)"
+],
+"curse": null
+},
+{
+"name": "Inseparable Sword",
+"rarity": "Blue",
+"price": 16000,
+"affinity": "Holy",
+"skill": "Sacred Blade",
+"passives": [
+"Improved Holy Attack Power (+9%)",
+"Reduced Skill FP Cost (-18%)"
+],
+"curse": "Repeated Evasions Lower Damage Negation (-23%)"
+},
+{
+"name": "Gargoyle's Great Axe",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical",
+"skill": "Wild Strikes",
+"passives": [
+"Improved Fire Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Morning Star",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Holy/Bleed",
+"skill": "Prayerfull Strike",
+"passives": [
+"Improved Damage Negation at Full HP (+32%)"
+],
+"curse": null
+},
+{
+"name": "Rogier's Rapier",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Gravitas",
+"passives": [
+"Defeating Enemies Restores HP (+30)"
+],
+"curse": null
+},
+{
+"name": "Albinauric Bow",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical",
+"skill": "Mighty shot",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Golem's Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Attack Power at Full HP(+10%)"
+],
+"curse": null
+},
+{
+"name": "Crepus Black-Key Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Savage Pillars of Flame Rise While Walking"
+],
+"curse": null
+},
+{
+"name": "Staff of The Guilty",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "",
+"skill": "Briars of Sin",
+"passives": [
+"Continuos HP Recovery (+1)"
+],
+"curse": null
+},
+{
+"name": "Golden Beast Crest Shield",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Shield Crash",
+"passives": [
+"Improved Stamina Recovery (+3)",
+"Improved Guard Counters (+20%)"
+],
+"curse": "Reduced Damage Negation for Flask Usages (-33%)"
+},
+{
+"name": "Dragonscale Blade",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical",
+"skill": "Ice Lightning Sword",
+"passives": [
+"Ice Storm Upon Charge Attacks",
+"Improved frost Resistance (+112)"
+],
+"curse": "Repeated Evasions Lower Damage Negation (-30%)"
+},
+{
+"name": "Gargoyle's Black halberd",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Stormcaller",
+"passives": [
+"Taking Damage Restores FP (+6)"
+],
+"curse": null
+},
+{
+"name": "Nox Flowing Hammer",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical",
+"skill": "Flowing Form",
+"passives": [
+"Improved Affinity Damage Negation (+9%)",
+"Improved Skill Attack Power (+21%)"
+],
+"curse": "Reduced Maximum Fp (-6%)"
+},
+{
+"name": "Dragon Communion Seal",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "",
+"skill": "Greyorll's Roar",
+"passives": [
+"Improved Chain Attack Finishers (+31%)"
+],
+"curse": null
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"Ironjar Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Zweihander",
+"rarity": "White",
+"price": 4000,
+"affinity": "Fire",
+"skill": "Flame of The Redmanes",
+"passives": [
+"Improved Deathblight Resistance (+57)"
+],
+"curse": null
+},
+{
+"name": "Flail",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical/Bleed",
+"skill": "Storm Stomp",
+"passives": [
+"Madness Produces a Frenzied Burst"
+],
+"curse": null
+},
+{
+"name": "Godskin Stitcher",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Impailing Thrust",
+"passives": [
+"Improved Critical Hits (+18%)"
+],
+"curse": null
+},
+{
+"name": "Gargoyle's Twinblade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical/Poison",
+"skill": "Poisonous Mist",
+"passives": [
+"Improved Item Discovery (+30)"
+],
+"curse": null
+},
+{
+"name": "Star Fist",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Lightning/Bleed",
+"skill": "Thunderbolt",
+"passives": [
+"Attack Up When Wielding Two Armaments (+15%)",
+"Storm of Red Lightning While Walking"
+],
+"curse": "All Resistances Down (-30)"
+},
+{
+"name": "Large Leather Shield",
+"rarity": "Blue",
+"price": 5000,
+"affinity": "Physical",
+"skill": "Parry",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Siluria's Tree",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Siluria's Woe",
+"passives": [
+"Improved Affinity Attack Power (+6%)",
+"Holy Attack Follows Charge Attack that Lands"
+],
+"curse": "Slower Art Gauge Below Max HP (-10%)"
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil aromatic"
+]
+}
+},
+"13": {
+"special": {
+"weapons": [
+{
+"name": "Miséricorde",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Impailing Thrust",
+"passives": [
+"Improved Critical Hits (+18%)",
+"Defeating Enemies Restore FP (+6%)"
+],
+"curse": "Near Death Reduces Max HP (-15%)"
+},
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic/Bleed",
+"skill": "Seppuku",
+"passives": [
+"Magic Attack Follows Charge Attack That Land"
+],
+"curse": null
+},
+{
+"name": "Rotten Battle Hammer",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Physical/Rot",
+"skill": "Earthshaker",
+"passives": [
+"Improved Guard Breaking (+45%)"
+],
+"curse": null
+},
+{
+"name": "Guardian's Swordspear",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Ground Slam",
+"passives": [
+"Improved Guarding Ability (+15%)"
+],
+"curse": null
+},
+{
+"name": "Spiked Club",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical/Poison/Bleed",
+"skill": "Poisonous Mist",
+"passives": [
+"Dmg Negation Upon Landing Charge Attacks (+24%)"
+],
+"curse": null
+},
+{
+"name": "Albinauric Bow",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical",
+"skill": "Mighty Shot",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Less Likely To Be Targeted (9)"
+],
+"curse": null
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Multiple Periodical Glintblades"
+],
+"curse": null
+},
+{
+"name": "Staff of Lost",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Ambush Shard",
+"passives": [
+"Improved Magic Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Icon Shield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "Vow of the Indomitable",
+"passives": [
+"Improved Lightning Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Sword of Milos",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical/Bleed",
+"skill": "Shriek of Sorrow",
+"passives": [
+"Physical Attack Up (+8%)",
+"Wraiths While Walking"
+],
+"curse": "Slower Art Gauge Below Max HP (-10%)"
+},
+{
+"name": "Anspur Rapier",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical/Rot",
+"skill": "Assassin's Gambit",
+"passives": [
+"Improved Critical Hits (+24%)",
+"Defeating Enemies Restore FP (+8%)"
+],
+"curse": "Damage Increased By Night's Encroachment (+1)"
+},
+{
+"name": "Eerdtree Bow",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Rain of Arrows",
+"passives": [
+"Improved Ranged Weapon Attacks (+14%)"
+],
+"curse": null
+},
+{
+"name": "Eerdtree Seal",
+"rarity": "Red",
+"price": 50000,
+"affinity": "",
+"skill": "Black Blade",
+"passives": [
+"Failing to Cast Restores FP (+13%)",
+"Improved Holy Attack Power (+12%)"
+],
+"curse": "Reduced Maximum FP (-9%)"
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"Ironjar Aromatic"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Broadsword",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Square Off",
+"passives": [
+"Improved Frost Resistance (+57)"
+],
+"curse": null
+},
+{
+"name": "Serpent God's Curved Sword",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Lightning",
+"skill": "Lightning Ram",
+"passives": [
+"Poison Produces a Mist of Poison"
+],
+"curse": null
+},
+{
+"name": "Star Fist",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Fire/Bleed",
+"skill": "Flame of The Redmanes",
+"passives": [
+"Improved Fire Attack Power (+9%)",
+"Improved Fire Damage Negation (+16%)"
+],
+"curse": "Ailments Cause Increased Damage (+25%)"
+},
+{
+"name": "Serpent-Hunter",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical",
+"skill": "Great-Serpent-Hunt",
+"passives": [
+"Frostbite Produces a Mist of Frost"
+],
+"curse": null
+},
+{
+"name": "Grave Scythe",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical/Poison/Bleed",
+"skill": "Poisonous Mist",
+"passives": [
+"Improved Critical Hits (+18%)"
+],
+"curse": null
+},
+{
+"name": "Black Leather Shield",
+"rarity": "Blue",
+"price": 5000,
+"affinity": "Physical",
+"skill": "Barricade Shield",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Gargoyle's Black Blades",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Spinning Slash",
+"passives": [
+"Improved Poise (+20%)",
+"Improved Chain Attack Finishers (+31%)"
+],
+"curse": "Near Death Reduces Max HP (-15%)"
+}
+],
+"tears": [
+"Greenspill Crystal Tear",
+"Thorny Cracked tear"
+],
+"aromatics": [
+"Poison Spraymist",
+"Bloodboil aromatic"
+]
+}
+},
+"14": {
+"special": {
+"weapons": [
+{
+"name": "Blodstained Dagger",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical/Bleed",
+"skill": "Blood Blade",
+"passives": [
+"Improved Critical Hits (+18%)"
+],
+"curse": null
+},
+{
+"name": "Claymore",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Lion's Claw",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Gargoyle's Great Axe",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical",
+"skill": "War Cry",
+"passives": [
+"Improved Charged Attacks (+19%)"
+],
+"curse": null
+},
+{
+"name": "Pest's Glaive",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Sword Dance",
+"passives": [
+"Reduced Skill FP Cost (-18%)"
+],
+"curse": null
+},
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic/Bleed",
+"skill": "Seppuku",
+"passives": [
+"Magic Attack Follows Charge Attack that Lands"
+],
+"curse": null
+},
+{
+"name": "Cleanrot Knight's Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical/Bleed",
+"skill": "Blood Tax",
+"passives": [
+"Improved Death Blight Resistance (+75)"
+],
+"curse": null
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Magma Surge Sprint"
+],
+"curse": null
+},
+{
+"name": "Carian Glinstone Staff",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Carian Greatsword",
+"passives": [
+"Less Likely To Be Targeted (9)"
+],
+"curse": null
+},
+{
+"name": "Giant's Seal",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "",
+"skill": "Burn, O Flame!",
+"passives": [
+"Increased Maximum FP (+9%)",
+"Improved Charged Incantations (+13%)"
+],
+"curse": "Damage Increased By Night's Encroachment (+1)"
+},
+{
+"name": "Moonveil",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic/Bleed",
+"skill": "Transient Moonlight",
+"passives": [
+"Improved Skill Attack Power (+21%)",
+"Multiple Periodical Glintblades"
+],
+"curse": "Lower Stamina Impairs Damage Negation (+10%)"
+},
+{
+"name": "Nox Flowing Hammer",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical",
+"skill": "Flowing Form",
+"passives": [
+"Physical Attack Up (+10%)",
+"FR Restoration upon Landing Attacks (+3)"
+],
+"curse": "Repeated Evasions Lower Damage Negation (-30%)"
+},
+{
+"name": "Pulley Bow",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical",
+"skill": "Mighty Shot",
+"passives": [
+"Projectiles Launced Upon Charge Attacks",
+"Improved Ranged Weapon Attacks (+14%)"
+],
+"curse": "Lower Attack Below Max HP (-7%)"
+},
+{
+"name": "Erdtree's Greatbow",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Through and Through",
+"passives": [
+"Improved Holy Attack Power (+12%)"
+],
+"curse": null
+},
+{
+"name": "Jellyfish Shield",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Contagius Fury",
+"passives": [
+"Improved Incantations (+11%)"
+],
+"curse": null
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatics",
+"Uplifting Aromatics"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Hookclaws",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical/Bleed",
+"skill": "Quickstep",
+"passives": [
+"Improved Chain Attack Finishers (+21%)"
+],
+"curse": null
+},
+{
+"name": "Warhawk Talon",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Storm Blade",
+"passives": [
+"Improved Guard Counters (+20%)"
+],
+"curse": null
+},
+{
+"name": "Treespear",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Holy",
+"skill": "Golden Vow",
+"passives": [
+"Improved Critical Hits (+18%)"
+],
+"curse": null
+},
+{
+"name": "Cross-Naginata",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Lightning/Bleed",
+"skill": "Thunderbolt",
+"passives": [
+"Improved Stamina Recovery (+3)",
+"Improved Attack Power When Two-Handing (+18%)"
+],
+"curse": "Reduced Maximum HP (-4%)"
+},
+{
+"name": "Gelmir's Staff",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "",
+"skill": "Roiling Magma",
+"passives": [
+"Improved Poison Resistance (+75)"
+],
+"curse": null
+},
+{
+"name": "Distinguished Greatshield",
+"rarity": "Blue",
+"price": 7000,
+"affinity": "Holy",
+"skill": "Vow of the Indomitable",
+"passives": [
+"Improved Lightning Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Raptor Talons",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic/Frost/Bleed",
+"skill": "Hoarfrost Stomp",
+"passives": [
+"Improved Thrusting Counterattack (+10%)",
+"Improved Charge Attacks (+22%)"
+],
+"curse": "Reduced Maximum HP (-6%)"
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"ironjar Aromatic"
+]
+}
+},
+"15": {
+"special": {
+"weapons": [
+{
+"name": "Erdstreel Dagger",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical/Bleed",
+"skill": "Blood Tax",
+"passives": [
+"Attack Up When Wielding Two Armaments (+15%)"
+],
+"curse": null
+},
+{
+"name": "Knight's Greatsword",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Lion's Claw",
+"passives": [
+"Improved Chain Attack Finisher (+26%)"
+],
+"curse": null
+},
+{
+"name": "Guardian's Swordspear",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Piercing Fang",
+"passives": [
+"Improved Charge Attacks (+19%)"
+],
+"curse": null
+},
+{
+"name": "Celebrant's Skull",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Flame of The Redmanes",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Rogier's Rapier",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Glinstone Pebble",
+"passives": [
+"Multiple Periodical Glintblades"
+],
+"curse": null
+},
+{
+"name": "Composite Bow",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical",
+"skill": "Mighty Shot",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Full Moon Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Kick",
+"passives": [
+"Less Likely To Be Targeted (9)"
+],
+"curse": null
+},
+{
+"name": "Staff of The Guilty",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "",
+"skill": "Briars of Sin",
+"passives": [
+"Defeating Enemies Restores HP (+20)"
+],
+"curse": null
+},
+{
+"name": "Godslayer Seal",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "",
+"skill": "Black Flame Blade",
+"passives": [
+"Improved Physical Damage Negation (+9%)",
+"Improved Spell Casting Speed (+2)"
+],
+"curse": "Reduced Maximum FP (-6%)"
+},
+{
+"name": "Dragonscale Blade",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Ice Lightning Sword",
+"passives": [
+"Wraiths While Walking"
+],
+"curse": null
+},
+{
+"name": "Gargoyle's Black Axe",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Royal Knight's Resolve",
+"passives": [
+"Increased Maximum HP (+8%)",
+"Improved Charge Attacks (+22%)"
+],
+"curse": "Slower Art Gauge Below Max HP (-30%)"
+},
+{
+"name": "Envoy's Horn",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Oracular Bubble",
+"passives": [
+"Improved Skill Attack Power (+21%)",
+"Continuos HP Recovery (+1)"
+],
+"curse": "Poison Buildup Below When Below Max HP (+1)"
+},
+{
+"name": "Jar Cannon",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Continuos HP Recovery (+1)"
+],
+"curse": null
+},
+{
+"name": "One-Eyed Shield",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical",
+"skill": "Flame Spit",
+"passives": [
+"Broken Stance Activates Endure",
+"Improved Guarding Ability (+20%)"
+],
+"curse": "All Resistances Down (-45)"
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatics",
+"Uplifting Aromatics"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Weathered Straigh Sword",
+"rarity": "White",
+"price": 4000,
+"affinity": "Lightning",
+"skill": "Lightning Slash",
+"passives": [
+"HP Restoration Upon Landing Attacks (+4)"
+],
+"curse": null
+},
+{
+"name": "Cane Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical/Poison",
+"skill": "Poison Moth Flight",
+"passives": [
+"Taking Damage restores FP (+4)"
+],
+"curse": null
+},
+{
+"name": "Nightrider Flail",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Holy/Bleed",
+"skill": "Shared Order",
+"passives": [
+"Improved Affinity Attack Power (+6%)",
+"Improved Charge Attacks (+19%)"
+],
+"curse": "Impaired Physical Damage Negation (-6%)"
+},
+{
+"name": "Claymen's Arpoon",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Fire/Magic",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Fire Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Crystal Staff",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Crystal Release",
+"passives": [
+"Improved Death Blight Resistance (+75)"
+],
+"curse": null
+},
+{
+"name": "Icon Shield",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Improved Holy Damage Negation (+16%)",
+"Continuos HP Recovery (+1)"
+],
+"curse": "Near Death Reduces Art Gauge (-30%)"
+},
+{
+"name": "Clinging Bone",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Magic",
+"skill": "Lifesteal Fist",
+"passives": [
+"Improved Frost Resistance (+112)"
+],
+"curse": null
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"ironjar Aromatic"
+]
+}
+},
+"16": {
+"special": {
+"weapons": [
+{
+"name": "Cristal Knife",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Glinstone Pebble",
+"passives": [
+"HP Restoration upon Landing Attacks (+6)"
+],
+"curse": null
+},
+{
+"name": "Nagakiba",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Physical/Bleed",
+"skill": "Sword Dance",
+"passives": [
+"Physical Attack Up (+8%)",
+"Successive Attacks Negates Damage (+48%)"
+],
+"curse": "Reduced Maximum Stamina (-5%)"
+},
+{
+"name": "Celebrant's Skull",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Flame of the Redmanes",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Pest's Glaive",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic/Frost",
+"skill": "Ice Spear",
+"passives": [
+"Successfull Guarding Ups Dmg Negation (+19%)"
+],
+"curse": null
+},
+{
+"name": "Claymore",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical/Bleed",
+"skill": "Bloody Slash",
+"passives": [
+"Defeating Enemies Restores FP (+6%)"
+],
+"curse": null
+},
+{
+"name": "Cleanrot Knight's Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Holy",
+"skill": "Sacred Blade",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Golem's Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Ranged Weapon Attacks (+10%)"
+],
+"curse": null
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Staff of Loss",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Night Maiden's Mist",
+"passives": [
+"Improved Magic Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Giant's Seal",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Flame, Grant Me Strenght",
+"passives": [
+"Improved Damage Negation at Full HP (+32%)"
+],
+"curse": null
+},
+{
+"name": "Helphen's Steeple",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Magic",
+"skill": "Ruinous Ghostflame",
+"passives": [
+"Improved Affinity Attack Power (+8%)",
+"Improved Attack Power When Two-Handing (+18%)"
+],
+"curse": "Reduced Damage Negation for Flask Usage (-46%)"
+},
+{
+"name": "Scepter of the All-Knowing",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Magic",
+"skill": "Knowledge Above All",
+"passives": [
+"Flask Healing Also Restores FP",
+"Improved Holy Damage Negation (+20%)"
+],
+"curse": "Reduced Damage Negation for Flask Usage (-46%)"
+},
+{
+"name": "Black Bow",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Rain of Arrows",
+"passives": [
+"Improved Chain Attack Finishers (+31%)"
+],
+"curse": null
+},
+{
+"name": "Visage Shield",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical",
+"skill": "Tongues of Fire",
+"passives": [
+"Improved Fire Attack Power (+12%)",
+"Reduced Skill FP Cost (-24%)"
+],
+"curse": "Ailments Cause Increased Damage (+25%)"
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatics",
+"Uplifting Aromatics"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Forked Hatchet",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical/Bleed",
+"skill": "Quickstep",
+"passives": [
+"FP Restoration Upon Landing Attacks (+1)"
+],
+"curse": null
+},
+{
+"name": "Thorned Whip",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Lightning/Bleed",
+"skill": "Lightning Ram",
+"passives": [
+"Lightning Attack Power Up (+6%)"
+],
+"curse": null
+},
+{
+"name": "Watchdog's Greatsword",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Physical/Poison",
+"skill": "Poisonous Mist",
+"passives": [
+"Dmg Negation Up upon Landing Charge Attack (+24%)"
+],
+"curse": null
+},
+{
+"name": "Crystal Spear",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Magic",
+"skill": "Spinning Slash",
+"passives": [
+"Improved Magic Damage Negation (+16%)",
+"Improved Jump Attacks (+17%)"
+],
+"curse": "Reduced Flask HP Restoration (-6%)"
+},
+{
+"name": "Godslayer Seal",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "",
+"skill": "Black Flame Ritual",
+"passives": [
+"Improved Spell Casting Speed (+1)"
+],
+"curse": null
+},
+{
+"name": "Spiked Palisade Shield",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical/Bleed",
+"skill": "Shield Bash",
+"passives": [
+"Improved Guarding ability (+15%)"
+],
+"curse": null
+},
+{
+"name": "Coded Sword",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Unblockable Blade",
+"passives": [
+"Improved Holy Attack Power (+12%)",
+"Dmg Negation Up While Casting Spells (+30%)"
+],
+"curse": "Reduced Damage Negation After Evading (-15%)"
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"ironjar Aromatic"
+]
+}
+},
+"17": {
+"special": {
+"weapons": [
+{
+"name": "Miséricorde",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Lightning",
+"skill": "Lightning Ram",
+"passives": [
+"Successive Attacks Negates Damage (+48%)"
+],
+"curse": null
+},
+{
+"name": "Flameberge",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Fire/Bleed",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Holy Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Serpentbone Blade",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Poison",
+"skill": "Double Slash",
+"passives": [
+"Physical Attack Up (+8%)",
+"Improved Critical Hits (+18%)"
+],
+"curse": "Impaired Physical Damage Negation (-6%)"
+},
+{
+"name": "Gargoyle's Halberd",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Lightning",
+"skill": "Thunderbolt",
+"passives": [
+"Continuos HP Recovery (+1)"
+],
+"curse": null
+},
+{
+"name": "Rogier's Rapier",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Impailing Thrust",
+"passives": [
+"Improved Critical Hits (+18%)"
+],
+"curse": null
+},
+{
+"name": "Varre's Bouquet",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical/Bleed",
+"skill": "Bloodhound's Step",
+"passives": [
+"Improved Holy Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Golem's Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Improved Chain Attack Finisher (+26%)"
+],
+"curse": null
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Less Likely To Be Targeted"
+],
+"curse": null
+},
+{
+"name": "Crystal Staff",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Crystal Release",
+"passives": [
+"Defeating Enemies Restores HP (+20)"
+],
+"curse": null
+},
+{
+"name": "Gravelstone Seal",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Fortisax's Lightning Spear",
+"passives": [
+"Defeating Enemies Restores FP (+4%)"
+],
+"curse": null
+},
+{
+"name": "Cranial Vessel Candlestand",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical/Fire",
+"skill": "Surge of Faith",
+"passives": [
+"Improved Poise (+33%)",
+"Taking Damage Boosts Damage Negation (+36%)"
+],
+"curse": "Attacks Impaired on Occasion (2)"
+},
+{
+"name": "Frozen Needle",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic/Frost",
+"skill": "Hoarfrost Stomp",
+"passives": [
+"Improved Charge Attacks (+22%)",
+"Multiple Periodical Glintblades"
+],
+"curse": "Ailments Cause Increased Damage (+25%)"
+},
+{
+"name": "Eerdtree Bow",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Mighty Shot",
+"passives": [
+"Improved Affinity Damage negation (+9%)",
+"Improved Ranged Weapon Attacks (+14%)"
+],
+"curse": "Repeated Evasions Lower Damage Negation (+23%)"
+},
+{
+"name": "Ant's Skull Plate",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Shield Bash",
+"passives": [
+"Taking Damage Restores FP (+6)"
+],
+"curse": null
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatics",
+"Uplifting Aromatics"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Greatsword",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Stamp (Sweep)",
+"passives": [
+"Improved Holy Attack Power (+6%)"
+],
+"curse": null
+},
+{
+"name": "Godskin Stitcher",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Holy",
+"skill": "Golden Vow",
+"passives": [
+"Improved Physical damage Negation (+9%)",
+"Improved Incantations (+8%)"
+],
+"curse": "All Resistances Down (-30)"
+},
+{
+"name": "Highland Axe",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Lightning",
+"skill": "Lightning Slash",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Urumi",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Magic/Frost",
+"skill": "Hoarfrost Stomp",
+"passives": [
+"improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Clawmark Seal",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "",
+"skill": "Bestial Vitality",
+"passives": [
+"Physical Attack Up (+8%)",
+"Improved Blood Loss resistance (+75)"
+],
+"curse": "Lower Stamina Impairs Damage Negation (-10%)"
+},
+{
+"name": "Golden Beast Crest Shield",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "Physical",
+"skill": "Shield Bash",
+"passives": [
+"Improved Damage Negation at Full HP (+32%)"
+],
+"curse": null
+},
+{
+"name": "Vyke's War Spear",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Fire/Frenzy",
+"skill": "FrenzyFlame Thrust",
+"passives": [
+"Improved Skill Attack Power (+21%)"
+],
+"curse": null
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"ironjar Aromatic"
+]
+}
+},
+"18": {
+"special": {
+"weapons": [
+{
+"name": "Claymore",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical/Bleed",
+"skill": "Bloody Slash",
+"passives": [
+"Defeating Enemies Restores FP (+4%)"
+],
+"curse": null
+},
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Magic/Bleed",
+"skill": "Sword Dance",
+"passives": [
+"Improved Stance Breaking (+8%)",
+"Improved Charge Attacks (+19%)"
+],
+"curse": "Lowe Attack Below Max HP (-5%)"
+},
+{
+"name": "Giant Crusher",
+"rarity": "Blue",
+"price": 16000,
+"affinity": "Holy",
+"skill": "Golden Land",
+"passives": [
+"Improved Damage Negation at Low HP (+30%)"
+],
+"curse": null
+},
+{
+"name": "Crystal Knife",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Carian Grandeur",
+"passives": [
+"Continuos HP Recovery (+1)"
+],
+"curse": null
+},
+{
+"name": "Rogier's Rapier",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Repeating Thrust",
+"passives": [
+"Improved Critical Hits (+18%)"
+],
+"curse": null
+},
+{
+"name": "Horn Bow",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Magic",
+"skill": "Enchanted Shot",
+"passives": [
+"Improved Item Discovery (+30)"
+],
+"curse": null
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Magic Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Item Discovery (+30)"
+],
+"curse": null
+},
+{
+"name": "Gelmir Staff",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "",
+"skill": "Gelmir's Fury",
+"passives": [
+"Improved Sorceries and Incantations (+6%)",
+"Magma Surge Sprint"
+],
+"curse": "Near Death Reduces Max HP (-15%)"
+},
+{
+"name": "Clawmark Seal",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "",
+"skill": "Bestial Vitality",
+"passives": [
+"Multiple Periodical Glintblades"
+],
+"curse": null
+},
+{
+"name": "Glinstione Kris",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Magic",
+"skill": "Glinstone Dart",
+"passives": [
+"Defeating Enemies Restores HP (+20)"
+],
+"curse": null
+},
+{
+"name": "Golden Halberd",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Holy",
+"skill": "Golden Vow",
+"passives": [
+"Improved Holy Attack Power (+12%)"
+],
+"curse": null
+},
+{
+"name": "Nox Flowing Hammer",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical",
+"skill": "Flowing Form",
+"passives": [
+"Improved Guard Counters (+23%)",
+"Successfull Guarding Ups Dmg Negation (+24%)"
+],
+"curse": "Repeated Evasions Lower Damage Negation (-23%)"
+},
+{
+"name": "Fingerprint Shield",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical/Madness",
+"skill": "Shield Crash",
+"passives": [
+"Improved Physical Damage Negation (+13%)",
+"Improved Guarding Ability (+20%)"
+],
+"curse": "Ailments Cause Increased Damage (+35%)"
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatics",
+"Uplifting Aromatics"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Hookclaws",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical/Bleed",
+"skill": "Impailing Thrust",
+"passives": [
+"Successive Attacks Negates Damage (+38%)"
+],
+"curse": null
+},
+{
+"name": "Grossmesser",
+"rarity": "Blue",
+"price": 13000,
+"affinity": "Fire",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Fire Attack Power (+9%)",
+"Improved Guard Counters (+20%)"
+],
+"curse": "Reduced Flask HP Restoration (-6%)"
+},
+{
+"name": "Warhawk Talon",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Lightning",
+"skill": "Lightning Slash",
+"passives": [
+"Improved Charge Attacks (+19%)"
+],
+"curse": null
+},
+{
+"name": "Thorned Whip",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic/Frost/Bleed",
+"skill": "Hoarfrost Stomp",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Iron Ball",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Braggart's Roar",
+"passives": [
+"Improved Magic Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Gilded Greatshield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "Barricade Shield",
+"passives": [
+"Improved Lightning Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Onyx Lord's Greatsword",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic",
+"skill": "Onyx Lord'Repulsion",
+"passives": [
+"Improved Physical Damage Negation (+9%)",
+"Improved Attack Power When Two-Handing (+18%)"
+],
+"curse": "Ailments Cause Increased Damage (+25%)"
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"ironjar Aromatic"
+]
+}
+},
+"19": {
+"special": {
+"weapons": [
+{
+"name": "Crystal Knife",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Carian Grandeur",
+"passives": [
+"Continuos HP Recovery (+1)"
+],
+"curse": null
+},
+{
+"name": "Nagakiba",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical/Bleed",
+"skill": "Piercing Fang",
+"passives": [
+"Improved Attack Power When Two-Handing (+15%)"
+],
+"curse": null
+},
+{
+"name": "Rotten Greataxe",
+"rarity": "Blue",
+"price": 18000,
+"affinity": "Physical/Rot",
+"skill": "Ground Slam",
+"passives": [
+"Physical Attack Up (+8%)",
+"Dmg Negation Up Upon Landing Charge Attacks (+40%)"
+],
+"curse": "Rot Buildup When Below Max HP (1)"
+},
+{
+"name": "Cleanrot Knight's Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Bloodhound's Step",
+"passives": [
+"Improved Fire Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Morning Star",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Magic/Frost/Bleed",
+"skill": "Chilling Mist",
+"passives": [
+"Improved Damage Negation at Low HP (+23%)"
+],
+"curse": null
+},
+{
+"name": "Albinauric Bow",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Physical",
+"skill": "Rain of Arrows",
+"passives": [
+"Improved Skill Attack Power (+18%)"
+],
+"curse": null
+},
+{
+"name": "Golem's Greatbow",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical",
+"skill": "Through and Through",
+"passives": [
+"Defeating Enemies Restores HP (+20)"
+],
+"curse": null
+},
+{
+"name": "Crepus's Black-Key Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Damage Negation at Low HP (+23%)"
+],
+"curse": null
+},
+{
+"name": "Carian Glintblade Staff",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Greatblade Phalanx",
+"passives": [
+"Improved Attack Power at Low HP (+17%)"
+],
+"curse": null
+},
+{
+"name": "Clawmark Seal",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "",
+"skill": "Beast Claw",
+"passives": [
+"Dmg Negation Up While Casting Spells"
+],
+"curse": null
+},
+{
+"name": "Blade of Calling",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Holy",
+"skill": "Blade of Gold",
+"passives": [
+"Black Flame Upon Charged Attacks",
+"FP Restoration Upon Landing Attacks (+3)"
+],
+"curse": "Reduced Maximum Hp (-6%)"
+},
+{
+"name": "Commander Standard",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Rallying Standard",
+"passives": [
+"HP Restoration Upon Landing Attacks (+8)"
+],
+"curse": null
+},
+{
+"name": "Frozen Needle",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Magic/Frost",
+"skill": "Hoarfrost Stomp",
+"passives": [
+"Improved Thrusting Counterattack (+15%)",
+"Improved Damage Negation at Full HP (+40%)"
+],
+"curse": "Ailments Cause Increased Damage (+35%)"
+},
+{
+"name": "Dragonclaw Shield",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Physical",
+"skill": "Shield Bash",
+"passives": [
+"Improved Affinity Damage Negation (+9%)",
+"Improved Lightning Attack Power (+12%)"
+],
+"curse": "Reduced Damage Negation After Evading (-15%)"
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatics",
+"Uplifting Aromatics"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Scimitar",
+"rarity": "White",
+"price": 4000,
+"affinity": "Lightning",
+"skill": "Thunderbolt",
+"passives": [
+"Defeating Enemies Restores HP (+20)"
+],
+"curse": null
+},
+{
+"name": "Lazuli Glinstone Sword",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Magic",
+"skill": "Glinstone Pebble",
+"passives": [
+"Improved Magic Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Bloodhound's Fang",
+"rarity": "Blue",
+"price": 16000,
+"affinity": "Physical/Bleed",
+"skill": "Bloodhound's Finesse",
+"passives": [
+"Physical Attack Up (+8%)",
+"Improved Jump Attacks (+17%)"
+],
+"curse": "Reduced Damage Negation After Evading (+15%)"
+},
+{
+"name": "Gargoyle's Twinblade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Physical/Poison",
+"skill": "Poisonous Mist",
+"passives": [
+"Improved Guard Breaking (+45%)"
+],
+"curse": null
+},
+{
+"name": "Warped Axe",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Holy",
+"skill": "Golden Slam",
+"passives": [
+"Attack Summons Wraiths",
+"Improved Damage Negation at Full HP (+32%)"
+],
+"curse": "Reduced Flask HP Restoration (-6%)"
+},
+{
+"name": "Golden Greatshield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Reduced Spell FP Cost (-15%)"
+],
+"curse": null
+},
+{
+"name": "Magma Whip Candlestick",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Fire",
+"skill": "Sea of Magma",
+"passives": [
+"Improved Fire Attack Power (+12%)"
+],
+"curse": null
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"ironjar Aromatic"
+]
+}
+},
+"20": {
+"special": {
+"weapons": [
+{
+"name": "Meteoric Ore Blade",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Magic",
+"skill": "Lightning Slash",
+"passives": [
+"Improved Magic Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Rotten Battle Hammer",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Physical/Rot",
+"skill": "Braggart's Roar",
+"passives": [
+"Defeating Enemies Restores HP (+20)"
+],
+"curse": null
+},
+{
+"name": "Guardian's Swordspear",
+"rarity": "Blue",
+"price": 12000,
+"affinity": "Fire",
+"skill": "Flaming Strike",
+"passives": [
+"Improved Fire Attack Power (+9%)"
+],
+"curse": null
+},
+{
+"name": "Hammer",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Lightning",
+"skill": "Lightning Slash",
+"passives": [
+"Improved Attack Power at Low HP (+17%)"
+],
+"curse": null
+},
+{
+"name": "Cleanrot Knight's Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Bloodhound's step",
+"passives": [
+"Improved Fire Damage Negation (+12%)"
+],
+"curse": null
+},
+{
+"name": "Harp Bow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Physical",
+"skill": "Barrage",
+"passives": [
+"Improved Holy Damage Negation (+16%)"
+],
+"curse": null
+},
+{
+"name": "Full Moon Crossbow",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Magic",
+"skill": "Kick",
+"passives": [
+"Magma Surge Sprint"
+],
+"curse": null
+},
+{
+"name": "Hand Ballista",
+"rarity": "Blue",
+"price": 15000,
+"affinity": "Physical",
+"skill": "Kick",
+"passives": [
+"Improved Ranged Weapon Attacks (+10%)",
+"Attacks Calls Vengeful Spirits"
+],
+"curse": "Reduced Maximum Stamina (-5%)"
+},
+{
+"name": "Albinauric Staff",
+"rarity": "Blue",
+"price": 9000,
+"affinity": "",
+"skill": "Shard Spiral",
+"passives": [
+"Improved Attack Power at Full HP (+10%)"
+],
+"curse": null
+},
+{
+"name": "Gravel Stone Seal",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "",
+"skill": "Ancient Dragon's Lightning Strike",
+"passives": [
+"Improved Spell Casting Speed (+1)"
+],
+"curse": null
+},
+{
+"name": "Reduvia",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Physical/Bleed",
+"skill": "Reduvia Blood Blade",
+"passives": [
+"More Runes From Defeating Enemies (+6%)",
+"Improved Skill Attack Power (+21%)"
+],
+"curse": "Lower Stamina Impairs Dmg Negation (-10%)"
+},
+{
+"name": "Ordovis's Greatsword",
+"rarity": "Red",
+"price": 50000,
+"affinity": "Holy",
+"skill": "Ordovis's Vortex",
+"passives": [
+"Holy Shockwave upon Charge Attacks",
+"Improved Attack Power at Full HP (+14%)"
+],
+"curse": "Night's Tide Damage Increased (+150%)"
+},
+{
+"name": "Scepter of the All Knowing",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Magic",
+"skill": "Knowledge Above All",
+"passives": [
+"Increased Maximum FP (+9%)",
+"Many Periodical Glintblades"
+],
+"curse": "Near Death Reduces Max HP (-15%)"
+},
+{
+"name": "Erdtree Greatshield",
+"rarity": "Purple",
+"price": 42000,
+"affinity": "Physical",
+"skill": "Golden Retaliation",
+"passives": [
+"Improved Damage Negation at Low HP (+37%)"
+],
+"curse": null
+}
+],
+"tears": [
+"Crimsonspill Crystal Tear",
+"Spiked Cracked Tear"
+],
+"aromatics": [
+"Spark Aromatics",
+"Uplifting Aromatics"
+]
+},
+"normal": {
+"weapons": [
+{
+"name": "Greatsword",
+"rarity": "White",
+"price": 4000,
+"affinity": "Physical",
+"skill": "Barbaric Roar",
+"passives": [
+"Taking Damage Restores FP (+2)"
+],
+"curse": null
+},
+{
+"name": "Lordsworn Straight Sword",
+"rarity": "Blue",
+"price": 10000,
+"affinity": "Lightning",
+"skill": "Lightning Slash",
+"passives": [
+"Improved Charge Attacks (+19%)"
+],
+"curse": null
+},
+{
+"name": "Beastman Curved Sword",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Poison",
+"skill": "Poison Moth Flight",
+"passives": [
+"Improved Damage Negation on Charge Attacks (+24%)"
+],
+"curse": null
+},
+{
+"name": "Monk's Flameblade",
+"rarity": "Blue",
+"price": 11000,
+"affinity": "Fire",
+"skill": "Flaming Strike",
+"passives": [
+"Lightning Follows Charged Attack that Lands"
+],
+"curse": null
+},
+{
+"name": "Treespear",
+"rarity": "Blue",
+"price": 14000,
+"affinity": "Holy",
+"skill": "Sacred Order",
+"passives": [
+"Improved Holy Attack Power (+9%)",
+"Reduced Skill FP Cost (+18%)"
+],
+"curse": "Impaired Physical Damage Negation (-6%)"
+},
+{
+"name": "Eclipse Crest Greatshield",
+"rarity": "Blue",
+"price": 8000,
+"affinity": "Physical",
+"skill": "No Skill",
+"passives": [
+"Improved Damage Negation At Full HP"
+],
+"curse": null
+},
+{
+"name": "Cipher Pata",
+"rarity": "Purple",
+"price": 45000,
+"affinity": "Holy",
+"skill": "Unblockable Blade",
+"passives": [
+"Improved Holy Attack Power (+12%)",
+"Damage Negation Up When Casting Spells (+30%)"
+],
+"curse": "Near Death Reduces Max HP (-15%)"
+}
+],
+"tears": [
+"Twiggy Cracked tear",
+"Cerulean Hidden Tear"
+],
+"aromatics": [
+"Acid Spraymist",
+"ironjar Aromatic"
+]
+}
+}
+}

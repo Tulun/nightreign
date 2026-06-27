@@ -10,8 +10,9 @@ export default function TownMapPage() {
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
           Twenty-one sets (0–20), each shown by its signature weapon. Select a
-          set to view its Special Merchant stock and passives, or filter by
-          passive and weapon type.
+          set to view its Super and Normal merchant stock — weapons, prices,
+          passives, plus crystal tears and aromatics. Toggle Deep of Night to
+          reveal item curses. Filter by weapon and passive.
         </p>
       </header>
 
