@@ -5,7 +5,6 @@ import { spells } from "@/data/spells";
 import {
   SPELL_CATEGORIES,
   SPELL_CREDIT,
-  SPELL_WIKI_BASE,
   groupBySchool,
   type Spell,
   type SpellCategory,
@@ -175,17 +174,19 @@ function SpellModal({ spell, onClose }: { spell: Spell; onClose: () => void }) {
           <p className="mt-4 font-body text-sm leading-relaxed text-parchment-muted">{spell.effect}</p>
         )}
 
-        <a
-          href={`${SPELL_WIKI_BASE}${spell.href}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-1.5 font-body text-sm text-gold transition-colors hover:text-gold-bright"
-        >
-          View full entry on the wiki
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M7 17L17 7M9 7h8v8" />
-          </svg>
-        </a>
+        {spell.notes && spell.notes.length > 0 && (
+          <ul className="mt-4 space-y-1.5 border-t border-night-700 pt-4">
+            {spell.notes.map((note, i) => (
+              <li
+                key={i}
+                className="flex gap-2 font-body text-sm leading-relaxed text-parchment-muted"
+              >
+                <span aria-hidden="true" className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-gold-faint" />
+                <span>{note}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

@@ -22,6 +22,8 @@ export interface Spell {
   icon?: string | null;
   /** Fextralife page path for the full entry, e.g. "/Magic+Glintblade". */
   href: string;
+  /** "Notes & Tips" bullets — revive damage, stamina cost, staff/seal, etc. */
+  notes?: string[];
 }
 
 export interface SpellSchool {
