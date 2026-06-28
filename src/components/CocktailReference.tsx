@@ -1,8 +1,7 @@
-import Image from "next/image";
 import { cocktails, COCKTAIL_CREDIT } from "@/data/cocktails";
-import { COCKTAIL_CATEGORIES, ELEMENT_ICON, type Cocktail } from "@/lib/cocktails";
-import { asset } from "@/lib/assets";
+import { COCKTAIL_CATEGORIES, recipeSlots, type Cocktail } from "@/lib/cocktails";
 import { CocktailIcon } from "./CocktailIcon";
+import { RecipeAffinityIcon } from "./RecipeAffinityIcon";
 
 /** Recluse cocktails grouped Unholy / Holy, each showing its 3-element recipe. */
 export function CocktailReference() {
@@ -35,15 +34,8 @@ function CocktailCard({ cocktail }: { cocktail: Cocktail }) {
   return (
     <div className="frame flex flex-col items-center rounded-lg bg-night-800 p-3 text-center">
       <div className="mb-2 flex items-center justify-center gap-1">
-        {cocktail.recipe.map((el, i) => (
-          <Image
-            key={i}
-            src={asset(ELEMENT_ICON[el])}
-            alt={el}
-            width={22}
-            height={22}
-            className="h-[22px] w-[22px] rounded object-contain"
-          />
+        {recipeSlots(cocktail.recipe).map((slot, i) => (
+          <RecipeAffinityIcon key={i} src={slot.src} alt={slot.alt} split={slot.split} />
         ))}
       </div>
       <CocktailIcon src={iconSrc} alt={cocktail.name} size={56} />

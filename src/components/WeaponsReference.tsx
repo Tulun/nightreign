@@ -7,8 +7,10 @@ import { weaponSkills } from "@/data/weaponSkills";
 import { Dropdown } from "@/components/Dropdown";
 import { MultiSelect } from "@/components/MultiSelect";
 import { WeaponIcon } from "@/components/WeaponIcon";
+import { RecipeAffinityIcon } from "@/components/RecipeAffinityIcon";
 import { iconFor } from "@/data/weaponIcons";
 import { asset } from "@/lib/assets";
+import { splitIcon, type Element } from "@/lib/cocktails";
 import { STATUS_ICON, type StatusKey } from "@/lib/nightlords";
 import {
   AP_COLUMNS,
@@ -55,6 +57,14 @@ const RARITY_RANK: Record<string, number> = { normal: 0, blue: 1, purple: 2, gol
 /** Scaling grades, best → worst. Index doubles as the sort rank. */
 const GRADES = ["S", "A", "B", "C", "D", "E"];
 const gradeRank = (g?: string | null) => (g ? GRADES.indexOf(g) : 99);
+
+/** Elemental affinities in canonical order, for detecting split-affinity weapons. */
+const ELEMENTS: Element[] = ["magic", "fire", "lightning", "holy"];
+/** A weapon's two elemental affinities, if it deals exactly two (e.g. Sword of Night and Flame). */
+function splitAffinity(w: Weapon): [Element, Element] | null {
+  const present = ELEMENTS.filter((e) => (w.ap?.[e] ?? 0) > 0);
+  return present.length === 2 ? (present as [Element, Element]) : null;
+}
 
 export function WeaponsReference() {
   const [query, setQuery] = useState("");
@@ -185,6 +195,7 @@ export function WeaponsReference() {
 
 function Row({ w }: { w: Weapon }) {
   const eff = skillEffect(w.skill);
+  const split = splitAffinity(w);
   return (
     <tr className="border-b border-night-800/70 hover:bg-night-800/60">
       <td className="sticky left-0 z-10 bg-night-900 px-3 py-2.5 font-display font-semibold">
@@ -203,6 +214,14 @@ function Row({ w }: { w: Weapon }) {
           >
             {w.name}
           </span>
+          {split && (
+            <RecipeAffinityIcon
+              src={splitIcon(split[0], split[1])}
+              alt={`${split[0]}/${split[1]} split affinity`}
+              size={18}
+              split
+            />
+          )}
         </div>
       </td>
       <td className="px-2.5 py-2.5 text-parchment-muted">{w.type}</td>
