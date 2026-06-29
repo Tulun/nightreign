@@ -69,6 +69,8 @@ export interface Cocktail {
   recipe: Element[];
   /** Short effect note, e.g. "lasts ~10s". */
   note: string;
+  /** Full effect description from the in-game/community text. */
+  description: string;
   /** Optional icon under /public, e.g. "/icons/cocktails/molotov.png". */
   icon?: string;
 }

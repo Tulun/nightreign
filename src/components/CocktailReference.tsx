@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { cocktails, COCKTAIL_CREDIT } from "@/data/cocktails";
 import { COCKTAIL_CATEGORIES, recipeSlots, type Cocktail } from "@/lib/cocktails";
 import { CocktailIcon } from "./CocktailIcon";
@@ -30,9 +33,15 @@ export function CocktailReference() {
 }
 
 function CocktailCard({ cocktail }: { cocktail: Cocktail }) {
+  const [expanded, setExpanded] = useState(false);
   const iconSrc = cocktail.icon ?? `/icons/cocktails/${cocktail.id}.png`;
   return (
-    <div className="frame flex flex-col items-center rounded-lg bg-night-800 p-3 text-center">
+    <button
+      type="button"
+      onClick={() => setExpanded((v) => !v)}
+      aria-expanded={expanded}
+      className="frame flex h-full w-full flex-col items-center rounded-lg bg-night-800 p-3 text-center transition-colors hover:bg-night-700 focus:outline-none focus-visible:ring-1 focus-visible:ring-gold-bright"
+    >
       <div className="mb-2 flex items-center justify-center gap-1">
         {recipeSlots(cocktail.recipe).map((slot, i) => (
           <RecipeAffinityIcon key={i} src={slot.src} alt={slot.alt} split={slot.split} />
@@ -45,6 +54,15 @@ function CocktailCard({ cocktail }: { cocktail: Cocktail }) {
       <p className="mt-0.5 font-body text-[0.7rem] uppercase tracking-wide text-parchment-faint">
         {cocktail.note}
       </p>
-    </div>
+      {expanded ? (
+        <p className="mt-2 font-body text-xs leading-snug text-parchment-muted">
+          {cocktail.description}
+        </p>
+      ) : (
+        <span className="mt-2 font-body text-[0.65rem] uppercase tracking-wide text-gold-bright/70">
+          Details
+        </span>
+      )}
+    </button>
   );
 }
