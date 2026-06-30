@@ -122,6 +122,11 @@ def merge_special(old_list, new_m):
     by_name = {e["name"]: e for e in old_list}
     used = set()
     old_purples = [e for e in old_list if e["rarity"] == "Purple"]
+    # Purples still sold in the new shop aren't swap-originals — a deep-exclusive
+    # weapon must NOT borrow a Purple that is itself on the shelf, or that Purple
+    # ends up listed twice (its real entry + a fake normal form). See seed 2:
+    # Scepter of the All-Knowing is DoN-only and must not borrow Prelate.
+    new_names = {w["name"] for w in new_m["weapons"]}
     out = []
     for w in new_m["weapons"]:
         base = {k: w[k] for k in ("name", "rarity", "price", "affinity", "skill")}
@@ -137,7 +142,8 @@ def merge_special(old_list, new_m):
                 used.add(w["name"])
                 base["deep"] = deep
             else:
-                op = next((p for p in old_purples if p["name"] not in used), None)
+                op = next((p for p in old_purples
+                           if p["name"] not in used and p["name"] not in new_names), None)
                 if w["rarity"] == "Purple" and op:
                     used.add(op["name"])
                     base = {"name": op["name"], "rarity": "Purple", "price": 0,
