@@ -11,6 +11,12 @@ export function generateStaticParams() {
   return sets.map((s) => ({ setId: String(s.id) }));
 }
 
+// In-game sightings not yet folded into the merged shop data.
+const SET_NOTES: Record<number, { name: string; note: string }> = {
+  1: { name: "Iron Roundshield", note: "This seed also stocks 1 additional Blue item:" },
+  12: { name: "Large Leather Shield", note: "This seed also stocks 1 additional Blue item:" },
+};
+
 export default function SetDetailPage({
   params,
 }: {
@@ -53,6 +59,13 @@ export default function SetDetailPage({
       <div className="mt-8">
         <SeedShop set={set} />
       </div>
+
+      {SET_NOTES[set.id] && (
+        <p className="mt-6 rounded-md border border-night-700 bg-night-850/60 px-4 py-2.5 font-body text-sm text-parchment-muted">
+          {SET_NOTES[set.id].note}{" "}
+          <span style={{ color: SHOP_RARITY.Blue.color }}>{SET_NOTES[set.id].name}</span>
+        </p>
+      )}
     </div>
   );
 }
