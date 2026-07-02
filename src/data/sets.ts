@@ -543,7 +543,7 @@ export const sets: MerchantSet[] = [
       { name: "Gargoyle's Twinblade", rarity: "Blue", price: 12000, affinity: "Physical/Poison", skill: "Poisonous Mist", passives: ["Improved Item Discovery (+30)"] },
       { name: "Star Fist", rarity: "Blue", price: 14000, affinity: "Lightning/Bleed", skill: "Thunderbolt", passives: ["Improved Charged Attacks"], deep: { passives: ["Attack Up When Wielding Two Armaments (+15%)", "Storm of Red Lightning While Walking"], curse: "All Resistances Down (-30)" } },
       { name: "Large Leather Shield", rarity: "Blue", price: 5000, affinity: "Physical", skill: "Parry", passives: ["Improved Attack Power at Full HP (+10%)"] },
-      { name: "Envoy's Horn", rarity: "Purple", price: 0, affinity: "", skill: "", passives: ["Defeating Enemies Restores HP"], deep: { name: "Siluria's Tree", rarity: "Purple", price: 45000, affinity: "Holy", skill: "Siluria's Woe", passives: ["Improved Affinity Attack Power (+6%)", "Holy Attack Follows Charge Attacks that Land"], curse: "Slower Art Gauge Below Max HP (-10%)" } },
+      { name: "Siluria's Tree", rarity: "Purple", price: 45000, affinity: "Holy", skill: "Siluria's Woe", passives: ["Defeating Enemies Restores HP"], deep: { passives: ["Improved Affinity Attack Power (+6%)", "Holy Attack Follows Charge Attacks that Land"], curse: "Slower Art Gauge Below Max HP (-10%)" } },
       ],
     },
     legendary: [
