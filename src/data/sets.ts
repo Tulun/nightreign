@@ -627,7 +627,7 @@ export const sets: MerchantSet[] = [
       { name: "Cross-Naginata", rarity: "Blue", price: 15000, affinity: "Lightning/Bleed", skill: "Thunderbolt", passives: ["Multiple Periodical Glintblades"], deep: { passives: ["Improved Stamina Recovery (+3)", "Improved Attack Power When Two-Handing (+18%)"], curse: "Reduced Maximum HP (-4%)" } },
       { name: "Gelmir Glintstone Staff", rarity: "Blue", price: 11000, affinity: "", skill: "Roiling Magma", passives: ["Improved Poison Resistance (+75)"] },
       { name: "Distinguished Greatshield", rarity: "Blue", price: 7000, affinity: "Holy", skill: "Vow of the Indomitable", passives: ["Improved Lightning Attack Power (+9%)"] },
-      { name: "Frozen Needle", rarity: "Purple", price: 0, affinity: "", skill: "", passives: ["Improved Magic Damage Negation"], deep: { name: "Raptor Talons", rarity: "Purple", price: 45000, affinity: "Magic/Frost/Bleed", skill: "Hoarfrost Stomp", passives: ["Improved Thrusting Counterattack (+10%)", "Improved Charged Attacks (+22%)"], curse: "Reduced Maximum HP (-6%)" } },
+      { name: "Raptor Talons", rarity: "Purple", price: 45000, affinity: "Magic/Frost/Bleed", skill: "Hoarfrost Stomp", passives: ["Improved Magic Damage Negation"], deep: { passives: ["Improved Thrusting Counterattack (+10%)", "Improved Charged Attacks (+22%)"], curse: "Reduced Maximum HP (-6%)" } },
       ],
     },
     legendary: [
