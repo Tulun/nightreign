@@ -22,6 +22,8 @@ export interface BagcraftItem {
   l1: string;
   l2: string;
   l3: string;
+  /** Icon under public/ (from the Fextralife wiki), where we have one. */
+  icon?: string;
 }
 
 /** Display order of the category filter. */

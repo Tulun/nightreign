@@ -10,7 +10,8 @@ export default function NightlordsPage() {
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
           The expedition end-bosses and the damage type each is weak to — including the
-          Forsaken Hollows additions (Balancers & Dreglord).
+          Forsaken Hollows additions (Balancers & Dreglord). Swap to the Everdark Sovereigns,
+          pick your team size for scaled HP, or apply a Depths of Night modifier.
         </p>
       </header>
 

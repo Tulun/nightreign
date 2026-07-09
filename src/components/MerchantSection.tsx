@@ -1,10 +1,14 @@
+import Image from "next/image";
 import type { Merchant, ShopWeapon } from "@/lib/types";
 import { SHOP_RARITY, weaponForm } from "@/lib/types";
 import { iconFor } from "@/data/weaponIcons";
 import { weaponSkills } from "@/data/weaponSkills";
+import { bagcraftItems } from "@/data/bagcraft";
+import type { BagcraftItem } from "@/lib/bagcraft";
 import { withPassiveValue } from "@/lib/passiveBoost";
 import { AFFINITY_ICON } from "@/lib/weapons";
 import { STATUS_ICON } from "@/lib/nightlords";
+import { asset } from "@/lib/assets";
 import { WeaponIcon } from "./WeaponIcon";
 import { StatIcon } from "./StatIcon";
 
@@ -44,6 +48,58 @@ function Affinity({ affinity }: { affinity: string }) {
   );
 }
 
+// Tear/aromatic name → bagcraft item, tolerating the shop data's casing and
+// plural variants ("ironjar Aromatic", "Spark Aromatics", "Thorny Cracked tear").
+const normConsumable = (s: string) => {
+  const k = s.toLowerCase().replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  return k.endsWith("s") ? k.slice(0, -1) : k;
+};
+const CONSUMABLES: Record<string, BagcraftItem> = {};
+for (const it of bagcraftItems) {
+  if (it.category === "Tear" || it.category === "Aromatic") CONSUMABLES[normConsumable(it.name)] = it;
+}
+
+/** A crystal tear or aromatic with its icon and full effect description. */
+function ConsumableRow({ name, kind }: { name: string; kind: "Crystal Tear" | "Aromatic" }) {
+  const item = CONSUMABLES[normConsumable(name)];
+  if (!item) {
+    return (
+      <li className="flex items-center gap-3 rounded-md border border-night-700 bg-night-850/60 px-3 py-2">
+        <span className="font-body text-sm text-parchment-muted">{name}</span>
+      </li>
+    );
+  }
+  return (
+    <li
+      className="flex gap-3 rounded-md border border-night-700 bg-night-850/60 px-3 py-2"
+      title={`Scholar's Bagcraft — L2: ${item.l2} · L3: ${item.l3}`}
+    >
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-md border border-night-600 bg-night-900">
+        {item.icon && (
+          <Image
+            src={asset(item.icon)}
+            alt={item.name}
+            width={36}
+            height={36}
+            className="h-9 w-9 object-contain"
+          />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="font-display text-sm font-semibold leading-tight text-parchment">
+            {item.name}
+          </span>
+          <span className="shrink-0 font-body text-[0.6rem] uppercase tracking-wide text-parchment-faint">
+            {kind}
+          </span>
+        </div>
+        <p className="mt-0.5 font-body text-xs leading-snug text-parchment-muted">{item.l1}</p>
+      </div>
+    </li>
+  );
+}
+
 // Skill name → effect, for the skill tooltip (strips parenthetical suffixes).
 const normSkill = (s: string) =>
   s.toLowerCase().replace(/\([^)]*\)/g, "").replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
@@ -76,20 +132,14 @@ export function MerchantSection({
       </ul>
 
       {(merchant.tears.length > 0 || merchant.aromatics.length > 0) && (
-        <div className="mt-3 flex flex-wrap gap-x-8 gap-y-1 rounded-md border border-night-700 bg-night-850/60 px-4 py-2.5 font-body text-sm">
-          {merchant.tears.length > 0 && (
-            <p className="text-parchment-muted">
-              <span className="text-parchment-faint">Crystal Tears: </span>
-              {merchant.tears.join(" · ")}
-            </p>
-          )}
-          {merchant.aromatics.length > 0 && (
-            <p className="text-parchment-muted">
-              <span className="text-parchment-faint">Aromatics: </span>
-              {merchant.aromatics.join(" · ")}
-            </p>
-          )}
-        </div>
+        <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
+          {merchant.tears.map((t, i) => (
+            <ConsumableRow key={`tear-${t}-${i}`} name={t} kind="Crystal Tear" />
+          ))}
+          {merchant.aromatics.map((a, i) => (
+            <ConsumableRow key={`aroma-${a}-${i}`} name={a} kind="Aromatic" />
+          ))}
+        </ul>
       )}
     </section>
   );

@@ -1,10 +1,15 @@
-import type { NightlordStatTable } from "@/lib/nightlordStats";
+import type {
+  NightlordStatBlockRef,
+  NightlordStatRow,
+  NightlordStatTable,
+  StatVariant,
+} from "@/lib/nightlordStats";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
  *  NIGHTLORD / NIGHT BOSS STATS — health, per-type damage negation, status
  *  resistances and poise, per team size (solo/duo/trio) and variant
- *  (normal / everdark). Stored for future use. Source: community sheet.
+ *  (normal / everdark). Shown on the Nightlords page. Source: community sheet.
  *  Negation values are % (negative = weakness). Resists: number or "Immune".
  * ─────────────────────────────────────────────────────────────────────────
  */
@@ -133,3 +138,90 @@ export const nightlordStats: NightlordStatTable[] = [
     ],
   },
 ];
+
+/**
+ * Everdark Balancers isn't in the community sheet yet — stubbed from the
+ * Fextralife Everdark Sovereign page (Weapon Bequeathed Harmonia). Negations
+ * & status resistances are exact; HP and poise are undocumented. These apply
+ * to every team size. Blight assumed Immune (matches the normal variant).
+ */
+export const everdarkStatStubs: NightlordStatRow[] = [
+  {
+    name: "Weapon-Bequeathed Harmonia", id: 76200010, health: null, poise: null,
+    negations: { phys: 0, strike: -10, slash: 8, pierce: 0, magic: 0, fire: 8, lightning: 10, holy: 30 },
+    resistances: { poison: 252, rot: 252, bleed: 252, frost: 252, sleep: 84, madness: "Immune", blight: "Immune" },
+    note: "Stubbed from the Fextralife wiki — HP & poise not yet documented.",
+  },
+  {
+    name: "Harmonia Worm", id: 76200010, health: null, poise: null,
+    negations: { phys: -12, strike: -12, slash: -23.2, pierce: -23.2, magic: -12, fire: -12, lightning: -12, holy: 32.8 },
+    resistances: { poison: 252, rot: 252, bleed: 252, frost: 252, sleep: "Immune", madness: "Immune", blight: "Immune" },
+    note: "Weak to Slash & Pierce; immune to Sleep (unlike the valkyries). Stubbed from the Fextralife wiki — HP & poise not yet documented.",
+  },
+];
+
+/**
+ * Which stat-table rows make up each Nightlord's display, per variant.
+ * A variant with no entry means no data (e.g. no Everdark Sovereign exists).
+ * Rows are matched by `name` within the table for the selected team size,
+ * falling back to `everdarkStatStubs` on the everdark variant.
+ */
+export const NIGHTLORD_STAT_MAP: Record<string, Partial<Record<StatVariant, NightlordStatBlockRef[]>>> = {
+  gladius: {
+    normal: [{ row: "Gladius, Beast of Night" }],
+    everdark: [{ row: "Gladius, Beast of Night" }],
+  },
+  adel: {
+    normal: [{ row: "Adel, Baron of Night" }],
+    everdark: [{ row: "Adel, Baron of Night" }],
+  },
+  gnoster: {
+    normal: [
+      { label: "Gnoster (Moth)", row: "Gnoster, Wisdom of Night (Phase 1)" },
+      { label: "Faurtis (Scorpion)", row: "Faurtis Stoneshield (Phase 1)" },
+    ],
+    everdark: [
+      { label: "Gnoster (Moth)", row: "Gnoster, Wisdom of Night (Phase 1)" },
+      { label: "Faurtis (Scorpion)", row: "Faurtis Stoneshield (Phase 1)" },
+      { label: "Final Phase · Animus, Ascendant Light", row: "Animus, Ascendant Light" },
+    ],
+  },
+  maris: {
+    normal: [{ row: "Maris, Fathom of Night" }],
+    everdark: [
+      { label: "Maris, Fathom of Night", row: "Maris, Fathom of Night" },
+      { label: "Augur (summon)", row: "Augur" },
+    ],
+  },
+  libra: {
+    normal: [{ row: "Libra, Creature of Night" }],
+    everdark: [{ row: "Libra, Creature of Night" }],
+  },
+  fulghor: {
+    normal: [{ row: "Fulghor, Champion of Nightglow" }],
+    everdark: [{ row: "Fulghor, Champion of Nightglow" }],
+  },
+  caligo: {
+    normal: [{ row: "Caligo, Miasma of Night" }],
+    everdark: [{ row: "Caligo, Miasma of Night" }],
+  },
+  heolstor: {
+    normal: [
+      { label: "Phase 1 · The Shape of Night", row: "The Shape of Night" },
+      { label: "Phase 2 · Heolstor the Nightlord", row: "Heolstor the Nightlord" },
+    ],
+  },
+  balancers: {
+    normal: [{ row: "Weapon-Bequeathed Harmonia" }],
+    everdark: [
+      { label: "Valkyries", row: "Weapon-Bequeathed Harmonia" },
+      { label: "Final Phase · Worm", row: "Harmonia Worm" },
+    ],
+  },
+  dreglord: {
+    normal: [
+      { label: "Phase 1 · Traitorous Straghess", row: "Traitorous Straghess" },
+      { label: "Phase 2 · Pure Impulse Straghess", row: "Pure Impulse Straghess" },
+    ],
+  },
+};
