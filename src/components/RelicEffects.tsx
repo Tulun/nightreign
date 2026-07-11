@@ -9,6 +9,7 @@ import {
   RELIC_CREDIT,
   RELIC_GROUPS,
   RELIC_VALUES,
+  splitCharacter,
   type RelicEffect,
   type RelicGroup,
 } from "@/lib/relics";
@@ -26,7 +27,13 @@ export function RelicEffects() {
           (e) => e.category === c.key && (!q || e.name.toLowerCase().includes(q)),
         );
         if (c.key === "character") {
-          items = [...items].sort((a, b) => characterIndex(a.name) - characterIndex(b.name));
+          items = [...items].sort(
+            (a, b) =>
+              characterIndex(a.name) - characterIndex(b.name) ||
+              splitCharacter(a.name).rest.localeCompare(splitCharacter(b.name).rest, undefined, { numeric: true }),
+          );
+        } else {
+          items = [...items].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
         }
         return { ...c, items };
       })

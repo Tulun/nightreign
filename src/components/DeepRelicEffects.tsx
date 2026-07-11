@@ -7,6 +7,7 @@ import {
   DEEP_RELIC_CATEGORIES,
   groupByCharacter,
   RELIC_CREDIT,
+  splitCharacter,
   type DeepRelic,
   type DeepRelicCategory,
 } from "@/lib/relics";
@@ -35,7 +36,13 @@ export function DeepRelicEffects() {
   const groups = DEEP_RELIC_CATEGORIES.map((c) => {
     let items = filtered.filter((r) => r.category === c.key);
     if (c.key === "character") {
-      items = [...items].sort((a, b) => characterIndex(a.name) - characterIndex(b.name));
+      items = [...items].sort(
+        (a, b) =>
+          characterIndex(a.name) - characterIndex(b.name) ||
+          splitCharacter(a.name).rest.localeCompare(splitCharacter(b.name).rest, undefined, { numeric: true }),
+      );
+    } else {
+      items = [...items].sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
     }
     return { ...c, items };
   }).filter((g) => g.items.length > 0);
