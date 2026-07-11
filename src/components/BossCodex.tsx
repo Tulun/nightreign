@@ -12,7 +12,9 @@ import {
 
 export function BossCodex() {
   const [cat, setCat] = useState<BossCategory>("night1");
-  const list = bosses.filter((b) => b.categories.includes(cat));
+  const list = bosses
+    .filter((b) => b.categories.includes(cat))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const isNight = cat !== "field";
 
   return (
