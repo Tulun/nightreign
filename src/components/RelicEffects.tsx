@@ -117,10 +117,10 @@ export function RelicEffects() {
                   </div>
                 </div>
               ) : c.key === "character" ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {groupByCharacter(c.items).map((cg) => (
-                    <div key={cg.character}>
-                      <h4 className="mb-1 font-display text-xs font-semibold uppercase tracking-wider text-gold-dim">
+                    <div key={cg.character} className="rounded-md border border-night-700 bg-night-900/50 p-3">
+                      <h4 className="mb-2 border-b border-night-700 pb-1.5 font-display text-xs font-semibold uppercase tracking-wider text-gold-dim">
                         {cg.character}
                       </h4>
                       <div className="grid grid-cols-1 gap-x-5 gap-y-0.5 md:grid-cols-2">

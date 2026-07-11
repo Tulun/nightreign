@@ -7,6 +7,7 @@ import {
   filterSets,
   searchSets,
   type FilterOption,
+  type PassiveGroup,
   type WeaponSource,
 } from "@/lib/filters";
 import { SetCard } from "./SetCard";
@@ -143,6 +144,7 @@ export function FilteredSetGrid() {
             open={openMenu === "passives"}
             onOpen={() => setOpenMenu("passives")}
             onClose={() => setOpenMenu((m) => (m === "passives" ? null : m))}
+            withGroups
           />
           <FilterMenu
             title="Legendary"
@@ -225,10 +227,20 @@ interface FilterMenuProps {
   open: boolean;
   onOpen: () => void;
   onClose: () => void;
+  /** Show the All / Offensive / Defensive views (Passives dropdown only). */
+  withGroups?: boolean;
 }
 
-function FilterMenu({ title, options, selected, onToggle, badge, open, onOpen, onClose }: FilterMenuProps) {
+const GROUP_TABS: { key: PassiveGroup | "all"; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "offensive", label: "Offensive" },
+  { key: "defensive", label: "Defensive" },
+];
+
+function FilterMenu({ title, options, selected, onToggle, badge, open, onOpen, onClose, withGroups }: FilterMenuProps) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const [group, setGroup] = useState<PassiveGroup | "all">("all");
+  const shown = withGroups && group !== "all" ? options.filter((o) => o.group === group) : options;
 
   // Close on outside click or Escape.
   useEffect(() => {
@@ -279,7 +291,33 @@ function FilterMenu({ title, options, selected, onToggle, badge, open, onOpen, o
             aria-multiselectable="true"
             className="fixed left-1/2 top-1/2 z-50 max-h-[75vh] w-[calc(100vw-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-md border border-night-600 bg-night-900 p-1.5 shadow-2xl sm:absolute sm:left-0 sm:top-full sm:z-20 sm:mt-2 sm:max-h-[60vh] sm:w-[24rem] sm:max-w-none sm:translate-x-0 sm:translate-y-0"
           >
-          {options.map((o, i) => {
+          {withGroups && (
+            <div className="mb-1.5 border-b border-night-600 px-1 pb-1.5 pt-0.5">
+              <div className="flex gap-1">
+                {GROUP_TABS.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setGroup(t.key)}
+                    aria-pressed={group === t.key}
+                    className={`rounded-full border px-2.5 py-1 font-body text-xs font-semibold transition-colors ${
+                      group === t.key
+                        ? "border-gold-faint bg-night-700 text-gold-bright"
+                        : "border-night-600 bg-night-800 text-parchment-muted hover:bg-night-700"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              {group !== "all" && (
+                <p className="mt-1.5 px-1 font-body text-[0.7rem] italic text-parchment-faint">
+                  A hand-picked shortlist of the most sought-after {group} passives.
+                </p>
+              )}
+            </div>
+          )}
+          {shown.map((o, i) => {
             const checked = selected.includes(o.key);
             return (
               <div key={o.key}>

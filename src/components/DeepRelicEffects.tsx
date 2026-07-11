@@ -93,10 +93,10 @@ export function DeepRelicEffects() {
                 {g.label} <span className="text-parchment-faint">· {g.items.length}</span>
               </h3>
               {g.key === "character" ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {groupByCharacter(g.items).map((cg) => (
-                    <div key={cg.character}>
-                      <h4 className="mb-1.5 font-display text-xs font-semibold uppercase tracking-wider text-sky-300/80">
+                    <div key={cg.character} className="frame rounded-lg bg-night-900/50 p-3">
+                      <h4 className="mb-2 border-b border-night-700 pb-1.5 font-display text-xs font-semibold uppercase tracking-wider text-sky-300/80">
                         {cg.character}
                       </h4>
                       <div className="space-y-1.5">

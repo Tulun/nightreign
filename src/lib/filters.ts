@@ -15,12 +15,15 @@ import { sets } from "@/data/sets";
 
 export type FilterKind = "weapon" | "passive" | "legendary";
 export type WeaponSource = "special" | "normal" | "both";
+export type PassiveGroup = "offensive" | "defensive";
 
 export interface FilterOption {
   key: string;
   label: string;
   kind: FilterKind;
   source?: WeaponSource;
+  /** Curated grouping for the Passives dropdown's Offensive/Defensive views. */
+  group?: PassiveGroup;
   dividerBefore?: boolean;
 }
 
@@ -40,6 +43,30 @@ const allWeapons = (set: MerchantSet): ShopWeapon[] => [...set.special.weapons, 
 const passiveName = (p: string) => p.replace(/\s*(?:\([^)]*\)|[+-][\d.]+%?)\s*$/, "").trim();
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
 const byLabel = (a: string, b: string) => a.localeCompare(b);
+
+// Hand-picked highest-value passives, surfaced by the Offensive/Defensive views
+// of the Passives dropdown. "Improved Melee Attack Power" would belong here,
+// but it never appears on any merchant weapon, so it has no filter option.
+const OFFENSIVE_PASSIVES = [
+  "Improved Attack Power When Two-Handing",
+  "Improved Attack Power at Full HP",
+  "Improved Charged Attacks",
+  "Improved Incantations",
+  "Improved Skill Attack Power",
+  "Improved Sorceries",
+];
+const DEFENSIVE_PASSIVES = [
+  "Damage Negation Up upon Landing Charge Attacks",
+  "Improved Damage Negation at Full HP",
+  "Improved Damage Negation at Low HP",
+  "Less Likely to Be Targeted",
+  "Successive Attacks Negate Damage",
+  "Taking Damage Boosts Damage Negation",
+];
+const PASSIVE_GROUP: Record<string, PassiveGroup> = Object.fromEntries([
+  ...OFFENSIVE_PASSIVES.map((p) => [norm(p), "offensive" as const]),
+  ...DEFENSIVE_PASSIVES.map((p) => [norm(p), "defensive" as const]),
+]);
 
 function sourceOf(name: string, special: Set<string>, normal: Set<string>): WeaponSource {
   const s = special.has(name);
@@ -91,30 +118,31 @@ export function buildFilterOptions(): FilterGroups {
     dividerBefore: i === 0,
   }));
 
-  // A few high-value passives are pinned to the top of the dropdown.
-  const PASSIVE_PRIORITY = [
-    "Taking Damage Boosts Damage Negation",
-    "Damage Negation Up upon Landing Charge Attacks",
-    "Successive Attacks Negate Damage",
-    "Less Likely to Be Targeted",
-    "Improved Damage Negation at Full HP",
-  ];
-  const rank = (label: string) => {
-    const i = PASSIVE_PRIORITY.indexOf(label);
-    return i === -1 ? PASSIVE_PRIORITY.length : i;
-  };
-  const sortedPassives = Array.from(passives.values()).sort((a, b) => rank(a) - rank(b) || byLabel(a, b));
-  const passiveOptions: FilterOption[] = sortedPassives.map((p, i) => ({
-    key: `passive:${p}`,
-    label: p,
-    kind: "passive" as const,
-    // Divider between the pinned passives and the rest.
-    dividerBefore: i > 0 && rank(sortedPassives[i - 1]) < PASSIVE_PRIORITY.length && rank(p) === PASSIVE_PRIORITY.length,
-  }));
-
-  const legendaryOptions: FilterOption[] = Array.from(legendaryNames)
+  const passiveOptions: FilterOption[] = Array.from(passives.values())
     .sort(byLabel)
-    .map((name) => ({ key: `legendary:${name}`, label: name, kind: "legendary" as const }));
+    .map((p) => ({
+      key: `passive:${p}`,
+      label: p,
+      kind: "passive" as const,
+      group: PASSIVE_GROUP[norm(p)],
+    }));
+
+  // The best legendary weapons for their special passive rise to the top.
+  const LEGENDARY_PRIORITY = ["Grafted Blade Greatsword", "Marais Executioner's Sword"];
+  const legendaryRank = (name: string) => {
+    const i = LEGENDARY_PRIORITY.indexOf(name);
+    return i === -1 ? LEGENDARY_PRIORITY.length : i;
+  };
+  const legendaryOptions: FilterOption[] = Array.from(legendaryNames)
+    .sort((a, b) => legendaryRank(a) - legendaryRank(b) || byLabel(a, b))
+    .map((name, i, arr) => ({
+      key: `legendary:${name}`,
+      label: name,
+      kind: "legendary" as const,
+      // Divider between the pinned legendaries and the rest.
+      dividerBefore:
+        i > 0 && legendaryRank(arr[i - 1]) < LEGENDARY_PRIORITY.length && legendaryRank(name) === LEGENDARY_PRIORITY.length,
+    }));
 
   return { weapons: [...staffOptions, ...sealOptions], passives: passiveOptions, legendary: legendaryOptions };
 }
