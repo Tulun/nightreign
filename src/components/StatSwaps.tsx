@@ -203,7 +203,7 @@ function RelicButton({
       onClick={onClick}
       aria-pressed={equipped}
       title={sceneName}
-      className={`frame flex items-center gap-2 rounded-md py-1 pl-1 pr-3 font-body text-sm transition-colors ${
+      className={`frame flex items-center gap-3 rounded-md py-2 pl-2 pr-5 font-body text-base transition-colors ${
         equipped
           ? "bg-night-700 text-gold-bright"
           : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
@@ -211,7 +211,7 @@ function RelicButton({
       style={equipped ? { borderColor: hue } : undefined}
     >
       <span
-        className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded bg-night-900"
+        className="relative grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded bg-night-900"
         style={{
           backgroundColor: equipped ? `${hue}59` : undefined,
           boxShadow: `inset 0 0 0 1px ${hue}${equipped ? "" : "66"}`,
@@ -221,7 +221,7 @@ function RelicButton({
           src={asset(relicIcon(relic))}
           alt={sceneName}
           fill
-          sizes="36px"
+          sizes="64px"
           className={`object-contain p-0.5 transition-[filter,opacity] ${
             relic.scene
               ? equipped
@@ -231,13 +231,13 @@ function RelicButton({
           }`}
         />
         {!relic.scene && (
-          <span className="absolute font-display text-sm font-bold text-parchment-faint">?</span>
+          <span className="absolute font-display text-base font-bold text-parchment-faint">?</span>
         )}
       </span>
       <span className="flex flex-col items-start leading-snug">
         <span>{label}</span>
-        <span className="text-xs tabular-nums text-parchment-muted">{bonus}</span>
-        <span className="text-xs text-parchment-faint">
+        <span className="text-sm tabular-nums text-parchment-muted">{bonus}</span>
+        <span className="text-sm text-parchment-faint">
           {relic.scene ? `${meta?.color} relic` : "look unknown"}
         </span>
       </span>

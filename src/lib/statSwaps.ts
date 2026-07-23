@@ -24,10 +24,12 @@ export const SWAP_STAT_COLUMNS: { key: SwapStatKey; label: string }[] = [
  */
 export type RelicScene = "burning" | "tranquil" | "drizzly" | "luminous";
 
+// Scene ⇒ color, confirmed in-game: Drizzly is BLUE and Tranquil is GREEN
+// (the wiki's summaries often assume the reverse).
 export const SCENE_META: Record<RelicScene, { color: string; hex: string }> = {
   burning: { color: "Red", hex: "#a83b31" },
-  tranquil: { color: "Blue", hex: "#3e6b9e" },
-  drizzly: { color: "Green", hex: "#57804f" },
+  tranquil: { color: "Green", hex: "#57804f" },
+  drizzly: { color: "Blue", hex: "#3e6b9e" },
   luminous: { color: "Yellow", hex: "#c9a227" },
 };
 

@@ -37,7 +37,8 @@ const groups: NavGroup[] = [
   {
     title: "Items",
     items: [
-      { label: "Relics", href: "/relics" },
+      { label: "Relic Effects", href: "/relics" },
+      { label: "Unique Relics", href: "/unique-relics" },
       { label: "Weapons", href: "/weapons" },
       { label: "Shields", href: "/shields" },
       { label: "Talismans", href: "/talismans" },
