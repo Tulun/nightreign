@@ -1,37 +1,68 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { characterSwaps, SWAP_NOTE, SWAP_CREDIT } from "@/data/statSwaps";
-import { SWAP_STAT_COLUMNS, type SwapStatKey, type SwapStats } from "@/lib/statSwaps";
+import { asset } from "@/lib/assets";
+import {
+  SCENE_META,
+  SWAP_STAT_COLUMNS,
+  relicIcon,
+  type SwapRelic,
+  type SwapStatKey,
+  type SwapStats,
+} from "@/lib/statSwaps";
 
 /** Down-side display names (HP/FP/STM map back to the attribute that drops). */
 const DOWN_NAME: Record<SwapStatKey, string> = {
   hp: "VIG", fp: "MND", stm: "END", str: "STR", dex: "DEX", int: "INT", fai: "FTH", arc: "ARC",
 };
 
+/** Chart units per attribute point (hp=vigor×20, fp=mind×5, stm=endurance×2). */
+const UNITS_PER_POINT: Partial<Record<SwapStatKey, number>> = { hp: 20, fp: 5, stm: 2 };
+
+/** The relic's flat bonus as in-game attribute text, e.g. "VIG +3 · MND +3". */
+function bonusText(bonus: Partial<SwapStats>): string {
+  return SWAP_STAT_COLUMNS.filter((col) => bonus[col.key])
+    .map((col) => `${DOWN_NAME[col.key]} +${(bonus[col.key] ?? 0) / (UNITS_PER_POINT[col.key] ?? 1)}`)
+    .join(" · ");
+}
+
 /**
  * Pick a Nightfarer to contrast their relic stat-swap options against Default.
  * Shows each swap, plus a "Both" row combining them, with bracketed deltas and
- * the stats each one lowers. The "Signboard relics" toggle adds the relics'
- * flat bonus stats on top of the swap.
+ * the stats each one lowers. Clicking a swap's signboard relic marks it
+ * equipped, adding that relic's flat bonus stats on top of the swap.
  */
 export function StatSwaps() {
   const [name, setName] = useState(characterSwaps[0].name);
-  const [withRelics, setWithRelics] = useState(false);
+  // Equipped signboard relics, per character, per swap index.
+  const [equipped, setEquipped] = useState<Record<string, boolean[]>>({});
   const character = characterSwaps.find((c) => c.name === name) ?? characterSwaps[0];
   const base = character.base;
+  const worn = equipped[name] ?? character.swaps.map(() => false);
 
-  // Displayed value for one swap+stat, honoring the relic toggle.
+  const toggleRelic = (index: number) =>
+    setEquipped((prev) => {
+      const next = [...(prev[name] ?? character.swaps.map(() => false))];
+      next[index] = !next[index];
+      return { ...prev, [name]: next };
+    });
+
+  // Displayed value for one swap+stat, honoring that swap's equipped relic.
   const swapValue = (swapIndex: number, key: SwapStatKey) => {
     const swap = character.swaps[swapIndex];
-    return swap.stats[key] - (withRelics ? 0 : swap.bonus[key] ?? 0);
+    return swap.stats[key] - (worn[swapIndex] ? 0 : swap.bonus[key] ?? 0);
   };
 
   // Each swap's displayed statline, plus a combined "Both" line (sum of deltas).
-  const rows = character.swaps.map((swap, i) => ({
-    label: swap.label,
-    values: buildStats((key) => swapValue(i, key)),
-  }));
+  const rows: { label: string; values: SwapStats; relic?: SwapRelic; equipped?: boolean }[] =
+    character.swaps.map((swap, i) => ({
+      label: swap.label,
+      relic: swap.relic,
+      equipped: worn[i],
+      values: buildStats((key) => swapValue(i, key)),
+    }));
   const both = buildStats((key) =>
     base[key] + character.swaps.reduce((sum, _s, i) => sum + (swapValue(i, key) - base[key]), 0),
   );
@@ -62,23 +93,22 @@ export function StatSwaps() {
         })}
       </div>
 
-      {/* Signboard relic toggle */}
+      {/* Signboard relics — click to equip */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => setWithRelics((v) => !v)}
-          aria-pressed={withRelics}
-          className={`frame rounded-md px-3 py-1.5 font-body text-sm transition-colors ${
-            withRelics
-              ? "bg-night-700 text-gold-bright"
-              : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
-          }`}
-          style={withRelics ? { borderColor: "#c9a227" } : undefined}
-        >
-          Signboard relics {withRelics ? "✓" : ""}
-        </button>
+        {character.swaps.map((swap, i) => (
+          <RelicButton
+            key={swap.label}
+            relic={swap.relic}
+            label={swap.label}
+            bonus={bonusText(swap.bonus)}
+            equipped={worn[i]}
+            onClick={() => toggleRelic(i)}
+          />
+        ))}
         <span className="font-body text-xs text-parchment-faint">
-          {withRelics ? "Relic bonus stats included" : "Relic-free default values"}
+          {worn.some(Boolean)
+            ? "Equipped relics include their bonus stats"
+            : "Click a relic to equip it"}
         </span>
       </div>
 
@@ -115,7 +145,16 @@ export function StatSwaps() {
               return (
                 <tr key={row.label} className="border-b border-night-800">
                   <td className="px-2 py-2 align-top">
-                    <div className="font-body text-parchment-muted">{row.label}</div>
+                    <div className="flex items-center gap-1.5 font-body text-parchment-muted">
+                      {row.relic && row.equipped && (
+                        <span
+                          aria-hidden="true"
+                          className="inline-block h-2 w-2 shrink-0 rounded-full"
+                          style={{ backgroundColor: row.relic.scene ? SCENE_META[row.relic.scene].hex : "#c9a227" }}
+                        />
+                      )}
+                      {row.label}
+                    </div>
                     {downs.length > 0 && (
                       <div className="mt-0.5 font-body text-[0.65rem] text-red-300/80">
                         ↓ {downs.join(", ")}
@@ -135,6 +174,74 @@ export function StatSwaps() {
       <p className="mt-3 font-body text-xs text-parchment-faint">{SWAP_NOTE}</p>
       <p className="mt-1 font-body text-xs text-parchment-faint">{SWAP_CREDIT}</p>
     </div>
+  );
+}
+
+/** Clickable signboard relic: colored frame + scene icon, dimmed until equipped. */
+function RelicButton({
+  relic,
+  label,
+  bonus,
+  equipped,
+  onClick,
+}: {
+  relic: SwapRelic;
+  label: string;
+  bonus: string;
+  equipped: boolean;
+  onClick: () => void;
+}) {
+  const meta = relic.scene ? SCENE_META[relic.scene] : null;
+  // Unknown-look relics highlight in the site gold instead of a drab gray.
+  const hue = meta?.hex ?? "#c9a227";
+  const sceneName = relic.scene
+    ? `Grand ${relic.scene.charAt(0).toUpperCase()}${relic.scene.slice(1)} Scene (${meta?.color})`
+    : "Relic look unconfirmed";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={equipped}
+      title={sceneName}
+      className={`frame flex items-center gap-2 rounded-md py-1 pl-1 pr-3 font-body text-sm transition-colors ${
+        equipped
+          ? "bg-night-700 text-gold-bright"
+          : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
+      }`}
+      style={equipped ? { borderColor: hue } : undefined}
+    >
+      <span
+        className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded bg-night-900"
+        style={{
+          backgroundColor: equipped ? `${hue}59` : undefined,
+          boxShadow: `inset 0 0 0 1px ${hue}${equipped ? "" : "66"}`,
+        }}
+      >
+        <Image
+          src={asset(relicIcon(relic))}
+          alt={sceneName}
+          fill
+          sizes="36px"
+          className={`object-contain p-0.5 transition-[filter,opacity] ${
+            relic.scene
+              ? equipped
+                ? ""
+                : "opacity-55 grayscale-[35%]"
+              : "opacity-45 grayscale"
+          }`}
+        />
+        {!relic.scene && (
+          <span className="absolute font-display text-sm font-bold text-parchment-faint">?</span>
+        )}
+      </span>
+      <span className="flex flex-col items-start leading-snug">
+        <span>{label}</span>
+        <span className="text-xs tabular-nums text-parchment-muted">{bonus}</span>
+        <span className="text-xs text-parchment-faint">
+          {relic.scene ? `${meta?.color} relic` : "look unknown"}
+        </span>
+      </span>
+    </button>
   );
 }
 

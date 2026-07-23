@@ -26,7 +26,7 @@ export const depthBuffs: DepthBuff[] = [
     dmg: ["+100%", "+35%", "+61%", "+91%", "+166%", "+211%"],
   },
   {
-    enemy: "Minor Pol Boss",
+    enemy: "Minor POI Boss",
     note: "depends on type",
     hp: ["+65% / +80%", "+30%", "+38%", "+47%", "+65%", "+73%"],
     dmg: ["+50% / +75%", "+30%", "+55%", "+84%", "+154%", "+195%"],
