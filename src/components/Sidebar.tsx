@@ -27,6 +27,7 @@ const groups: NavGroup[] = [
       { label: "Base Stats", href: "/nightfarers" },
       { label: "Stat Swaps", href: "/stat-swaps" },
       { label: "Chalices", href: "/chalices" },
+      { label: "Builds", href: "/builds" },
       { label: "Recluse Cocktails", href: "/recluse-cocktails" },
       { label: "Magic Spells", href: "/magic-spells" },
       { label: "Bagcraft", href: "/bagcraft" },
