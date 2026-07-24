@@ -13,6 +13,7 @@ import {
   mergeStores,
   newId,
   normalizeStore,
+  sameCustomRelic,
   saveStore,
   type Build,
   type BuildSlot,
@@ -23,10 +24,11 @@ import {
 import { SLOT_ICON, type Chalice, type SlotColor } from "@/lib/chalices";
 import {
   EFFECT_VOCABULARY,
+  bestLineMatch,
+  isCurseEffect,
   matchOcrLines,
   parseRelicGroups,
   type EffectMatch,
-  type ParsedRelicGroup,
 } from "@/lib/effectMatch";
 
 const RELIC_COLORS: CustomRelic["color"][] = ["Red", "Blue", "Green", "Yellow"];
@@ -63,6 +65,12 @@ export function BuildsManager() {
   const addCustomRelic = (relic: CustomRelic) =>
     update((s) => ({ ...s, customRelics: [...s.customRelics, relic] }));
 
+  const updateCustomRelic = (relic: CustomRelic) =>
+    update((s) => ({
+      ...s,
+      customRelics: s.customRelics.map((r) => (r.id === relic.id ? relic : r)),
+    }));
+
   if (editing) {
     return (
       <BuildEditor
@@ -74,10 +82,13 @@ export function BuildsManager() {
             ...s,
             builds: [...s.builds.filter((b) => b.id !== build.id), { ...build, updatedAt: Date.now() }],
           }));
+          // Land on the saved build's character in the list.
+          setCharacter(build.character);
           setEditing(null);
         }}
         onCancel={() => setEditing(null)}
         onAddCustomRelic={addCustomRelic}
+        onUpdateCustomRelic={updateCustomRelic}
       />
     );
   }
@@ -200,7 +211,14 @@ export function BuildsManager() {
         </div>
       )}
 
-      <MyRelics relics={store.customRelics} onDelete={deleteCustomRelic} />
+      <MyRelics relics={store.customRelics} onUpdate={updateCustomRelic} onDelete={deleteCustomRelic} />
+
+      {/* Shared autocomplete list for effect inputs */}
+      <datalist id="effect-vocab">
+        {EFFECT_VOCABULARY.map((e) => (
+          <option key={e} value={e} />
+        ))}
+      </datalist>
     </div>
   );
 }
@@ -220,7 +238,7 @@ function resolveSlot(slot: BuildSlot, store: BuildStore): { name: string; color:
     return r ? { name: r.name, color: r.color, effects: r.effects } : null;
   }
   const r = store.customRelics.find((c) => c.id === slot.id);
-  return r ? { name: r.name || `${r.color} relic`, color: r.color, effects: r.effects } : null;
+  return r ? { name: r.name || `${r.color} relic`, color: r.color, effects: r.effects.filter(Boolean) } : null;
 }
 
 /** Infer a relic color from a scene name (Drizzly=Blue, Tranquil=Green in-game). */
@@ -233,8 +251,13 @@ function colorFromRelicName(name: string | null): CustomRelic["color"] | null {
   return null;
 }
 
-/** Run OCR on an image and return its text lines. Loads Tesseract lazily. */
-async function ocrLines(file: File, onProgress: (status: string) => void): Promise<string[]> {
+interface OcrLine {
+  text: string;
+  bbox: { x0: number; y0: number; x1: number; y1: number } | null;
+}
+
+/** Run OCR on an image and return its text lines (with positions when available). */
+async function ocrLines(file: File, onProgress: (status: string) => void): Promise<OcrLine[]> {
   onProgress("Loading OCR engine (downloads a few MB on first use)…");
   const { createWorker } = await import("tesseract.js");
   const worker = await createWorker("eng", 1, {
@@ -244,9 +267,70 @@ async function ocrLines(file: File, onProgress: (status: string) => void): Promi
       }
     },
   });
-  const { data } = await worker.recognize(file);
+  const { data } = await worker.recognize(file, {}, { text: true, blocks: true });
   await worker.terminate();
-  return data.text.split("\n");
+  const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
+    (b.paragraphs ?? []).flatMap((p) =>
+      (p.lines ?? []).map((l) => ({ text: l.text ?? "", bbox: l.bbox ?? null })),
+    ),
+  );
+  if (lines.length > 0) return lines;
+  return data.text.split("\n").map((text) => ({ text, bbox: null }));
+}
+
+/**
+ * Guess each parsed relic's color by sampling the image left of its first
+ * effect line, where the relic icon glows in the relic's color. Best effort —
+ * returns null wherever the icon region can't be located or read.
+ */
+async function guessGroupColors(
+  file: File,
+  groups: { firstLine: string | null; bbox: OcrLine["bbox"] }[],
+): Promise<(CustomRelic["color"] | null)[]> {
+  try {
+    const bmp = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    canvas.width = bmp.width;
+    canvas.height = bmp.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return groups.map(() => null);
+    ctx.drawImage(bmp, 0, 0);
+    return groups.map((g) => {
+      if (!g.bbox) return null;
+      const lineH = Math.max(8, g.bbox.y1 - g.bbox.y0);
+      const x0 = Math.max(0, g.bbox.x0 - lineH * 10);
+      const width = Math.min(g.bbox.x0, lineH * 9);
+      const y0 = Math.max(0, g.bbox.y0 - lineH);
+      const height = Math.min(bmp.height - y0, lineH * 4);
+      if (width < 8 || height < 8) return null;
+      const pixels = ctx.getImageData(x0, y0, width, height).data;
+      const counts = { Red: 0, Blue: 0, Green: 0, Yellow: 0 };
+      let total = 0;
+      for (let i = 0; i < pixels.length; i += 16) {
+        const r = pixels[i] / 255;
+        const gch = pixels[i + 1] / 255;
+        const b = pixels[i + 2] / 255;
+        const max = Math.max(r, gch, b);
+        const min = Math.min(r, gch, b);
+        if (max < 0.2 || max - min < 0.12) continue; // dark or gray
+        const d = max - min;
+        let h = 0;
+        if (max === r) h = 60 * (((gch - b) / d) % 6);
+        else if (max === gch) h = 60 * ((b - r) / d + 2);
+        else h = 60 * ((r - gch) / d + 4);
+        if (h < 0) h += 360;
+        total += 1;
+        if (h < 25 || h >= 330) counts.Red += 1;
+        else if (h < 70) counts.Yellow += 1;
+        else if (h < 170) counts.Green += 1;
+        else if (h < 270) counts.Blue += 1;
+      }
+      const [best] = (Object.entries(counts) as [CustomRelic["color"], number][]).sort((a, b2) => b2[1] - a[1]);
+      return total >= 40 && best[1] / total >= 0.45 ? best[0] : null;
+    });
+  } catch {
+    return groups.map(() => null);
+  }
 }
 
 function SlotIconImg({ color, size = 20 }: { color: SlotColor; size?: number }) {
@@ -302,30 +386,154 @@ function BuildCard({ build, store, onEdit, onDelete }: { build: Build; store: Bu
   );
 }
 
-function MyRelics({ relics, onDelete }: { relics: CustomRelic[]; onDelete: (id: string) => void }) {
+const COLOR_ORDER: Record<CustomRelic["color"], number> = { Red: 0, Blue: 1, Green: 2, Yellow: 3 };
+
+function MyRelics({
+  relics,
+  onUpdate,
+  onDelete,
+}: {
+  relics: CustomRelic[];
+  onUpdate: (r: CustomRelic) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [colorFilter, setColorFilter] = useState<CustomRelic["color"] | null>(null);
+  const [query, setQuery] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   if (relics.length === 0) return null;
+
+  const q = query.trim().toLowerCase();
+  const shown = relics
+    .filter((r) => !colorFilter || r.color === colorFilter)
+    .filter(
+      (r) =>
+        !q ||
+        (r.name || `${r.color} relic`).toLowerCase().includes(q) ||
+        r.effects.some((e) => e.toLowerCase().includes(q)),
+    )
+    .sort((a, b) => COLOR_ORDER[a.color] - COLOR_ORDER[b.color] || (a.name || "z").localeCompare(b.name || "z"));
+
   return (
     <div className="mt-8">
       <h3 className="font-display text-xl font-bold text-parchment">My Relics</h3>
       <p className="mt-1 font-body text-xs text-parchment-faint">
         Custom relics you&rsquo;ve added — usable in any build with a matching slot.
       </p>
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => setColorFilter(null)}
+          aria-pressed={colorFilter === null}
+          className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+            colorFilter === null ? "bg-night-700 text-gold-bright" : "bg-night-800 text-parchment-muted hover:text-parchment"
+          }`}
+        >
+          All
+        </button>
+        {RELIC_COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setColorFilter(colorFilter === c ? null : c)}
+            aria-pressed={colorFilter === c}
+            className={`frame flex items-center gap-1 rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+              colorFilter === c ? "bg-night-700 text-gold-bright" : "bg-night-800 text-parchment-muted hover:text-parchment"
+            }`}
+          >
+            <SlotIconImg color={c} size={14} />
+            {c}
+          </button>
+        ))}
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search relics or effects…"
+          className="frame w-64 max-w-full rounded-md bg-night-900 px-2.5 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint"
+        />
+      </div>
+      {shown.length === 0 && (
+        <p className="mt-3 font-body text-xs text-parchment-faint">No relics match.</p>
+      )}
       <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {relics.map((r) => (
-          <div key={r.id} className="frame flex items-start justify-between gap-2 rounded-md bg-night-800 p-3">
-            <div className="flex items-start gap-2">
-              <SlotIconImg color={r.color} />
-              <div>
-                <p className="font-body text-sm text-parchment">{r.name || `${r.color} relic`}</p>
-                <p className="font-body text-xs leading-snug text-parchment-muted">{r.effects.join(" · ")}</p>
+        {shown.map((r) =>
+          editingId === r.id ? (
+            <RelicCardEditor key={r.id} relic={r} onUpdate={onUpdate} onDone={() => setEditingId(null)} />
+          ) : (
+            <div key={r.id} className="frame flex items-start justify-between gap-2 rounded-md bg-night-800 p-3">
+              <div className="flex items-start gap-2">
+                <SlotIconImg color={r.color} />
+                <div>
+                  <p className="font-body text-sm text-parchment">{r.name || `${r.color} relic`}</p>
+                  <p className="font-body text-xs leading-snug text-parchment-muted">
+                    {r.effects.filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 gap-1.5">
+                <button type="button" onClick={() => setEditingId(r.id)} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">
+                  Edit
+                </button>
+                <button type="button" onClick={() => onDelete(r.id)} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">
+                  Delete
+                </button>
               </div>
             </div>
-            <button type="button" onClick={() => onDelete(r.id)} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">
-              Delete
-            </button>
-          </div>
+          ),
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** In-place editor for a pool relic: name, color, and each effect line. */
+function RelicCardEditor({
+  relic,
+  onUpdate,
+  onDone,
+}: {
+  relic: CustomRelic;
+  onUpdate: (r: CustomRelic) => void;
+  onDone: () => void;
+}) {
+  return (
+    <div className="frame rounded-md border-night-500 bg-night-800 p-3">
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={relic.name}
+          onChange={(e) => onUpdate({ ...relic, name: e.target.value })}
+          placeholder="Relic name"
+          className="frame w-full rounded bg-night-900 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
+        />
+        <select
+          value={relic.color}
+          onChange={(e) => onUpdate({ ...relic, color: e.target.value as CustomRelic["color"] })}
+          className="frame rounded bg-night-900 px-2 py-1 font-body text-sm text-parchment"
+        >
+          {RELIC_COLORS.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
+      <div className="mt-2 space-y-1.5">
+        {[0, 1, 2, 3].map((i) => (
+          <input
+            key={i}
+            type="text"
+            value={relic.effects[i] ?? ""}
+            list="effect-vocab"
+            onChange={(e) =>
+              onUpdate({ ...relic, effects: [0, 1, 2, 3].map((j) => (j === i ? e.target.value : relic.effects[j] ?? "")) })
+            }
+            placeholder={i === 3 ? "Demerit (Deep relics, optional)" : `Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
+            className="frame w-full rounded bg-night-900 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint"
+          />
         ))}
       </div>
+      <button type="button" onClick={onDone} className="frame mt-2 rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600">
+        Done
+      </button>
     </div>
   );
 }
@@ -338,12 +546,14 @@ function BuildEditor({
   onSave,
   onCancel,
   onAddCustomRelic,
+  onUpdateCustomRelic,
 }: {
   initial: Build;
   store: BuildStore;
   onSave: (b: Build) => void;
   onCancel: () => void;
   onAddCustomRelic: (r: CustomRelic) => void;
+  onUpdateCustomRelic: (r: CustomRelic) => void;
 }) {
   const [build, setBuild] = useState<Build>(initial);
   const [newRelicAt, setNewRelicAt] = useState<SlotRef | null>(null);
@@ -358,7 +568,25 @@ function BuildEditor({
       return { ...b, [key]: slots };
     });
 
-  const applyGroup = (group: ParsedRelicGroup, at: SlotRef) => {
+  // Reuse an identical pool relic instead of adding a duplicate — the same
+  // relic imported twice (or owned twice) is one pool entry slotted twice.
+  // The ref also covers relics added earlier in the same batch (Apply all),
+  // before the parent's state update lands.
+  const pendingRelics = useRef<CustomRelic[]>([]);
+  const addOrReuseRelic = (relic: CustomRelic): string => {
+    const existing =
+      store.customRelics.find((r) => sameCustomRelic(r, relic)) ??
+      pendingRelics.current.find((r) => sameCustomRelic(r, relic));
+    if (existing) return existing.id;
+    pendingRelics.current.push(relic);
+    onAddCustomRelic(relic);
+    return relic.id;
+  };
+
+  const applyGroup = (
+    group: { name: string | null; effects: string[]; color?: CustomRelic["color"] | null },
+    at: SlotRef,
+  ) => {
     const slotColor = (at.deep ? chalice.deep : chalice.slots)[at.index];
     const fixed = group.name ? fixedRelics.find((r) => r.name === group.name) : null;
     if (fixed) {
@@ -366,15 +594,16 @@ function BuildEditor({
       return;
     }
     const color =
-      colorFromRelicName(group.name) ?? (slotColor === "White" ? "Red" : (slotColor as CustomRelic["color"]));
-    const relic: CustomRelic = {
+      group.color ??
+      colorFromRelicName(group.name) ??
+      (slotColor === "White" ? "Red" : (slotColor as CustomRelic["color"]));
+    const id = addOrReuseRelic({
       id: newId(),
       name: group.name ?? "",
       color,
-      effects: group.effects.map((e) => e.effect).slice(0, 3),
-    };
-    onAddCustomRelic(relic);
-    setSlot(at, { kind: "custom", id: relic.id });
+      effects: group.effects.slice(0, 4),
+    });
+    setSlot(at, { kind: "custom", id });
   };
 
   const slotSection = (deep: boolean) => {
@@ -384,6 +613,8 @@ function BuildEditor({
       const isNewHere = newRelicAt?.deep === deep && newRelicAt.index === index;
       const value = deep ? build.deepSlots[index] : build.slots[index];
       const resolved = resolveSlot(value, store);
+      const customRelic =
+        value?.kind === "custom" ? store.customRelics.find((r) => r.id === value.id) : undefined;
       return (
         <div key={index} className="frame rounded-md bg-night-900/60 p-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -397,17 +628,45 @@ function BuildEditor({
               onNewRelic={() => setNewRelicAt(isNewHere ? null : at)}
             />
           </div>
-          {resolved && (
-            <p className="mt-1.5 font-body text-xs leading-snug text-parchment-muted">
-              {resolved.effects.join(" · ")}
-            </p>
+          {customRelic ? (
+            // Custom relics stay editable line by line, right in the slot.
+            // The 4th line is a Deep relic's curse.
+            <div className="mt-2 space-y-1.5">
+              {[0, 1, 2, 3].map((i) => (
+                <input
+                  key={i}
+                  type="text"
+                  value={customRelic.effects[i] ?? ""}
+                  list="effect-vocab"
+                  onChange={(e) => {
+                    const effects = [0, 1, 2, 3].map((j) =>
+                      j === i ? e.target.value : customRelic.effects[j] ?? "",
+                    );
+                    onUpdateCustomRelic({ ...customRelic, effects });
+                  }}
+                  placeholder={
+                    i === 3 ? "Demerit (Deep relics, optional)" : `Effect ${i + 1}${i === 0 ? "" : " (optional)"}`
+                  }
+                  className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
+                />
+              ))}
+            </div>
+          ) : (
+            resolved && (
+              <ul className="mt-1.5 space-y-0.5">
+                {resolved.effects.map((effect) => (
+                  <li key={effect} className="font-body text-xs leading-snug text-parchment-muted">
+                    {effect}
+                  </li>
+                ))}
+              </ul>
+            )
           )}
           {isNewHere && (
             <CustomRelicEditor
               slotColor={slotColor}
               onSave={(relic) => {
-                onAddCustomRelic(relic);
-                setSlot(at, { kind: "custom", id: relic.id });
+                setSlot(at, { kind: "custom", id: addOrReuseRelic(relic) });
                 setNewRelicAt(null);
               }}
               onCancel={() => setNewRelicAt(null)}
@@ -424,6 +683,35 @@ function BuildEditor({
         ← All builds
       </button>
 
+      {/* Character first, then chalice and slots follow from it. */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {characterChalices.map((c) => {
+          const active = c.name === build.character;
+          return (
+            <button
+              key={c.name}
+              type="button"
+              onClick={() =>
+                setBuild((b) =>
+                  b.character === c.name
+                    ? b
+                    : { ...b, character: c.name, chalice: chalicesFor(c.name)[0].name },
+                )
+              }
+              aria-pressed={active}
+              className={`frame rounded-md px-3 py-1.5 font-body text-sm transition-colors ${
+                active
+                  ? "bg-night-700 text-gold-bright"
+                  : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
+              }`}
+              style={active ? { borderColor: "#c9a227" } : undefined}
+            >
+              {c.name}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="flex flex-wrap items-center gap-3">
         <input
           type="text"
@@ -432,12 +720,11 @@ function BuildEditor({
           placeholder="Build name"
           className="frame w-64 rounded bg-night-900 px-3 py-2 font-display text-lg text-parchment placeholder:text-parchment-faint"
         />
+        {/* Swapping chalices keeps slotted relics — colors are the user's call. */}
         <ChalicePicker
           chalices={chalices}
           value={chalice}
-          onChange={(name) =>
-            setBuild((b) => ({ ...b, chalice: name, slots: [...EMPTY_SLOTS] as SlotTriple, deepSlots: [...EMPTY_SLOTS] as SlotTriple }))
-          }
+          onChange={(name) => setBuild((b) => ({ ...b, chalice: name }))}
         />
       </div>
 
@@ -452,7 +739,12 @@ function BuildEditor({
         </section>
       </div>
 
-      <ScreenshotBuildImport chalice={chalice} onApply={applyGroup} />
+      <ScreenshotBuildImport
+        chalice={chalice}
+        chalices={chalices}
+        onApply={applyGroup}
+        onSwapChalice={(name) => setBuild((b) => ({ ...b, chalice: name }))}
+      />
 
       <textarea
         value={build.notes}
@@ -681,7 +973,7 @@ function CustomRelicEditor({
 }) {
   const [name, setName] = useState("");
   const [color, setColor] = useState<CustomRelic["color"]>(slotColor === "White" ? "Red" : slotColor);
-  const [effects, setEffects] = useState<string[]>(["", "", ""]);
+  const [effects, setEffects] = useState<string[]>(["", "", "", ""]);
   const lockedColor = slotColor !== "White";
 
   const setEffect = (i: number, v: string) => setEffects((e) => e.map((x, j) => (j === i ? v : x)));
@@ -731,7 +1023,9 @@ function CustomRelicEditor({
             value={e}
             list="effect-vocab"
             onChange={(ev) => setEffect(i, ev.target.value)}
-            placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
+            placeholder={
+              i === 3 ? "Demerit (Deep relics, optional)" : `Effect ${i + 1}${i === 0 ? "" : " (optional)"}`
+            }
             className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
           />
         ))}
@@ -762,7 +1056,7 @@ function SingleRelicParse({ onPick }: { onPick: (effect: string) => void }) {
     setMatches(null);
     try {
       const lines = await ocrLines(file, setStatus);
-      const found = matchOcrLines(lines);
+      const found = matchOcrLines(lines.map((l) => l.text));
       setMatches(found);
       setStatus(
         found.length > 0
@@ -835,9 +1129,35 @@ const SLOT_TARGETS: { label: string; at: SlotRef }[] = [
   { label: "Deep 3", at: { deep: true, index: 2 } },
 ];
 
-function ScreenshotBuildImport({ chalice, onApply }: { chalice: Chalice; onApply: (g: ParsedRelicGroup, at: SlotRef) => void }) {
+/** A parsed relic being reviewed — every line stays editable until applied. */
+interface EditableGroup {
+  name: string | null;
+  deep: boolean;
+  /** Up to three effect lines. */
+  lines: string[];
+  /** Deep relic demerit (curse), kept on its own line. */
+  curse: string;
+  /** Color read from the relic icon in the screenshot, when it could be. */
+  color: CustomRelic["color"] | null;
+}
+
+function ScreenshotBuildImport({
+  chalice,
+  chalices,
+  onApply,
+  onSwapChalice,
+}: {
+  chalice: Chalice;
+  chalices: Chalice[];
+  onApply: (
+    g: { name: string | null; effects: string[]; color?: CustomRelic["color"] | null },
+    at: SlotRef,
+  ) => void;
+  onSwapChalice: (name: string) => void;
+}) {
   const [status, setStatus] = useState<string | null>(null);
-  const [groups, setGroups] = useState<ParsedRelicGroup[] | null>(null);
+  const [groups, setGroups] = useState<EditableGroup[] | null>(null);
+  const [chaliceGuess, setChaliceGuess] = useState<string | null>(null);
   const [targets, setTargets] = useState<number[]>([]);
   const [applied, setApplied] = useState<boolean[]>([]);
   const [busy, setBusy] = useState(false);
@@ -846,15 +1166,45 @@ function ScreenshotBuildImport({ chalice, onApply }: { chalice: Chalice; onApply
   const parse = async (file: File) => {
     setBusy(true);
     setGroups(null);
+    setChaliceGuess(null);
     try {
-      const lines = await ocrLines(file, setStatus);
-      const found = parseRelicGroups(lines);
-      setGroups(found);
-      setTargets(found.map((_, i) => Math.min(i, SLOT_TARGETS.length - 1)));
+      const ocr = await ocrLines(file, setStatus);
+      const texts = ocr.map((l) => l.text);
+      const found = parseRelicGroups(texts);
+      const seen = bestLineMatch(texts, chalices.map((c) => c.name));
+      setChaliceGuess(seen?.effect ?? null);
+      // A screenshot shows either normal relics or Deep relics — never both.
+      const allDeep = found.some((g) => g.deep);
+      // Color: sample the icon region left of each relic's first line.
+      const colors = await guessGroupColors(
+        file,
+        found.map((g) => {
+          const first = g.effects[0]?.line ?? null;
+          const box = first ? ocr.find((l) => l.text.trim() === first.trim())?.bbox ?? null : null;
+          return { firstLine: first, bbox: box };
+        }),
+      );
+      setGroups(
+        found.map((g, i) => {
+          const effects = g.effects.map((e) => e.effect);
+          const curse = effects.find((e) => isCurseEffect(e)) ?? "";
+          const normal = effects.filter((e) => !isCurseEffect(e));
+          return {
+            name: g.name,
+            deep: allDeep,
+            lines: [0, 1, 2].map((j) => normal[j] ?? ""),
+            curse,
+            color: colors[i],
+          };
+        }),
+      );
+      setTargets(found.map((_, i) => (allDeep ? Math.min(3 + i, 5) : Math.min(i, 2))));
       setApplied(found.map(() => false));
       setStatus(
         found.length > 0
-          ? `Found ${found.length} relic${found.length === 1 ? "" : "s"} — check each one, pick its slot, and apply.`
+          ? `Found ${found.length} relic${found.length === 1 ? "" : "s"}${
+              allDeep ? " — these look like Deep relics" : ""
+            }. Edit any line, pick each one's slot, and apply.`
           : "No relics recognized. Try a sharper screenshot of the relic list.",
       );
     } catch {
@@ -862,6 +1212,23 @@ function ScreenshotBuildImport({ chalice, onApply }: { chalice: Chalice; onApply
     } finally {
       setBusy(false);
     }
+  };
+
+  const setLine = (gi: number, li: number, text: string) =>
+    setGroups((gs) =>
+      gs
+        ? gs.map((g, i) => (i === gi ? { ...g, lines: g.lines.map((l, j) => (j === li ? text : l)) } : g))
+        : gs,
+    );
+  const setCurse = (gi: number, text: string) =>
+    setGroups((gs) => (gs ? gs.map((g, i) => (i === gi ? { ...g, curse: text } : g)) : gs));
+
+  const applyOne = (i: number) => {
+    if (!groups || applied[i]) return;
+    const g = groups[i];
+    const effects = [...g.lines, g.curse].map((l) => l.trim()).filter(Boolean);
+    onApply({ name: g.name, effects, color: g.color }, SLOT_TARGETS[targets[i]].at);
+    setApplied((a) => a.map((x, j) => (j === i ? true : x)));
   };
 
   return (
@@ -881,6 +1248,15 @@ function ScreenshotBuildImport({ chalice, onApply }: { chalice: Chalice; onApply
         >
           Parse screenshot
         </button>
+        {groups && groups.length > 0 && applied.some((a) => !a) && (
+          <button
+            type="button"
+            onClick={() => groups.forEach((_, i) => applyOne(i))}
+            className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
+          >
+            Apply all
+          </button>
+        )}
         {status && <span className="font-body text-xs text-parchment-faint">{status}</span>}
       </div>
       <input
@@ -894,26 +1270,62 @@ function ScreenshotBuildImport({ chalice, onApply }: { chalice: Chalice; onApply
           e.target.value = "";
         }}
       />
+      {chaliceGuess && chaliceGuess !== chalice.name && (
+        <div className="frame mt-3 flex flex-wrap items-center gap-2 rounded-md bg-night-900 px-3 py-2">
+          <span className="font-body text-sm text-parchment-muted">
+            The screenshot looks like it uses <span className="text-parchment">{chaliceGuess}</span>.
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              onSwapChalice(chaliceGuess);
+              setChaliceGuess(null);
+            }}
+            className="frame rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600"
+          >
+            Switch chalice
+          </button>
+          <span className="font-body text-xs text-parchment-faint">Slotted relics are kept — shuffle them if the colors moved.</span>
+        </div>
+      )}
       {groups && groups.length > 0 && (
         <div className="mt-3 grid gap-2 lg:grid-cols-2">
           {groups.map((g, i) => (
             <div key={i} className="frame rounded-md bg-night-900 p-3">
-              <p className="font-body text-sm text-parchment">
+              <p className="flex items-center gap-2 font-body text-sm text-parchment">
+                {g.color && <SlotIconImg color={g.color} size={18} />}
                 {g.name ?? <span className="text-parchment-faint">Unnamed relic</span>}
-              </p>
-              <ul className="mt-1 space-y-0.5">
-                {g.effects.map((e) => (
-                  <li key={e.effect} className="font-body text-xs text-parchment-muted">
-                    {e.effect}
-                    <span className={`ml-1.5 ${e.score >= 0.8 ? "text-emerald-300/80" : "text-yellow-300/70"}`}>
-                      {Math.round(e.score * 100)}%
-                    </span>
-                  </li>
-                ))}
-                {g.effects.length === 0 && (
-                  <li className="font-body text-xs text-parchment-faint">No effects read — applies as a fixed relic.</li>
+                {g.deep && (
+                  <span className="rounded border border-night-500 px-1 font-body text-[0.6rem] uppercase tracking-wide text-gold-dim">
+                    Deep
+                  </span>
                 )}
-              </ul>
+              </p>
+              <div className="mt-2 space-y-1.5">
+                {g.lines.map((line, li) => (
+                  <input
+                    key={li}
+                    type="text"
+                    value={line}
+                    list="effect-vocab"
+                    disabled={applied[i]}
+                    onChange={(e) => setLine(i, li, e.target.value)}
+                    placeholder={`Effect ${li + 1}${li === 0 ? "" : " (optional)"}`}
+                    className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint disabled:opacity-60"
+                  />
+                ))}
+                {g.deep && (
+                  <input
+                    type="text"
+                    value={g.curse}
+                    list="effect-vocab"
+                    disabled={applied[i]}
+                    onChange={(e) => setCurse(i, e.target.value)}
+                    placeholder="Demerit (optional)"
+                    className="w-full rounded border border-red-900/60 bg-night-800 px-2 py-1 font-body text-xs text-red-200/90 placeholder:text-red-300/40 disabled:opacity-60"
+                  />
+                )}
+              </div>
               <div className="mt-2 flex items-center gap-2">
                 <select
                   value={targets[i]}
@@ -932,10 +1344,7 @@ function ScreenshotBuildImport({ chalice, onApply }: { chalice: Chalice; onApply
                 <button
                   type="button"
                   disabled={applied[i]}
-                  onClick={() => {
-                    onApply(g, SLOT_TARGETS[targets[i]].at);
-                    setApplied((a) => a.map((x, j) => (j === i ? true : x)));
-                  }}
+                  onClick={() => applyOne(i)}
                   className="frame rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600 disabled:opacity-50"
                 >
                   {applied[i] ? "Applied ✓" : "Apply"}

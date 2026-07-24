@@ -8,14 +8,76 @@ import { deepRelics } from "@/data/deepRelics";
 import { relicEffects } from "@/data/relicEffects";
 import { uniqueRelics } from "@/data/uniqueRelics";
 
-/** Every effect name a relic can carry, deduplicated. */
+// Template effect names ("Improved [Weapon] Attack Power") are expanded into
+// concrete variants so OCR of real UI text ("Improved Greatsword Attack
+// Power") matches well — and so two different weapon classes don't collapse
+// into the same canonical name and get deduplicated away.
+const WEAPON_CLASSES = [
+  "Dagger", "Straight Sword", "Greatsword", "Colossal Sword", "Curved Sword",
+  "Curved Greatsword", "Katana", "Twinblade", "Thrusting Sword",
+  "Heavy Thrusting Sword", "Axe", "Greataxe", "Hammer", "Flail", "Great Hammer",
+  "Colossal Weapon", "Spear", "Great Spear", "Halberd", "Reaper", "Whip",
+  "Fist", "Claw", "Bow", "Greatbow", "Crossbow", "Staves", "Sacred Seal",
+  "Torch", "Small Shield", "Medium Shield", "Greatshield",
+];
+const ELEMENTS = ["Magic", "Fire", "Lightning", "Holy"];
+const STATUSES = ["Poison", "Scarlet Rot", "Blood Loss", "Frostbite", "Sleep", "Madness", "Death Blight"];
+
+function expandName(name: string): string[] {
+  const token = ["[Weapon Class]", "[Weapon]", "[Element]", "[Status]"].find((t) => name.includes(t));
+  if (!token) return [name];
+  const variants = token === "[Element]" ? ELEMENTS : token === "[Status]" ? STATUSES : WEAPON_CLASSES;
+  return variants.map((v) => name.split(token).join(v));
+}
+
+/** Every effect name a relic can carry, templates expanded, deduplicated. */
 export const EFFECT_VOCABULARY: string[] = Array.from(
-  new Set([
-    ...relicEffects.map((e) => e.name),
-    ...deepRelics.map((e) => e.name),
-    ...uniqueRelics.flatMap((r) => r.effects),
-  ]),
+  new Set(
+    [
+      ...relicEffects.map((e) => e.name),
+      ...deepRelics.map((e) => e.name),
+      ...uniqueRelics.flatMap((r) => r.effects),
+    ].flatMap(expandName),
+  ),
 ).sort();
+
+/**
+ * In-game phrasings that differ from the catalogue's names. Matching against
+ * these resolves to the canonical name, so OCR of the real UI text doesn't
+ * get pulled toward a lexically-closer but wrong effect.
+ */
+const EFFECT_ALIASES: Record<string, string> = {
+  "Attack power increased for each Night Invader defeated":
+    "Attack power up after defeating a Night Invader",
+};
+
+/** Match targets: canonical names plus alias phrasings that map back to them. */
+const MATCH_ENTRIES: { text: string; canonical: string }[] = [
+  ...EFFECT_VOCABULARY.map((v) => ({ text: v, canonical: v })),
+  ...Object.entries(EFFECT_ALIASES).map(([text, canonical]) => ({ text, canonical })),
+];
+
+const NORMAL_EFFECT_NAMES = new Set<string>(
+  [...relicEffects.map((e) => e.name), ...uniqueRelics.flatMap((r) => r.effects)].flatMap(expandName),
+);
+
+/** Effects that only exist on Deep relics — seeing one marks a relic as Deep. */
+export const DEEP_ONLY_EFFECTS = new Set<string>(
+  deepRelics
+    .filter((d) => !d.crossover)
+    .flatMap((d) => expandName(d.name))
+    .filter((name) => !NORMAL_EFFECT_NAMES.has(name)),
+);
+
+/** Deep relic curses — they trail a Deep relic's effects as a fourth line. */
+const CURSE_EFFECTS = new Set<string>(
+  deepRelics.filter((d) => d.category === "curse").flatMap((d) => expandName(d.name)),
+);
+
+/** Whether an effect is a Deep relic curse (demerit). */
+export function isCurseEffect(name: string): boolean {
+  return CURSE_EFFECTS.has(name);
+}
 
 /** Lowercase and strip everything but letters, digits, and plus signs. */
 function normalize(s: string): string {
@@ -74,7 +136,7 @@ export function matchOcrLines(lines: string[], minScore = 0.5): EffectMatch[] {
   for (const raw of lines) {
     const line = raw.trim();
     if (line.length < 8) continue;
-    const top = bestMatch(line, EFFECT_VOCABULARY, minScore);
+    const top = bestEffectMatch(line, minScore);
     if (top && (!best.has(top.effect) || best.get(top.effect)!.score < top.score)) {
       best.set(top.effect, top);
     }
@@ -89,6 +151,30 @@ function bestMatch(line: string, vocab: string[], minScore: number): EffectMatch
     if (score >= minScore && (!top || score > top.score)) {
       top = { effect, score, line };
     }
+  }
+  return top;
+}
+
+/** Like bestMatch, but over canonical names + aliases, resolving aliases. */
+function bestEffectMatch(line: string, minScore: number): EffectMatch | null {
+  let top: EffectMatch | null = null;
+  for (const entry of MATCH_ENTRIES) {
+    const score = similarity(line, entry.text);
+    if (score >= minScore && (!top || score > top.score)) {
+      top = { effect: entry.canonical, score, line };
+    }
+  }
+  return top;
+}
+
+/** Best match for ANY line against a vocabulary — e.g. spotting a chalice name. */
+export function bestLineMatch(lines: string[], vocab: string[], minScore = 0.65): EffectMatch | null {
+  let top: EffectMatch | null = null;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line.length < 8) continue;
+    const m = bestMatch(line, vocab, minScore);
+    if (m && (!top || m.score > top.score)) top = m;
   }
   return top;
 }
@@ -114,12 +200,15 @@ export interface ParsedRelicGroup {
   /** Matched relic name, or null when only effects were recognized. */
   name: string | null;
   effects: EffectMatch[];
+  /** True when the group carries a Deep-only effect (stat swap, curse, …). */
+  deep: boolean;
 }
 
 /**
  * Cluster OCR lines into relic groups. A line matching a relic name starts a
  * new group; effect lines attach to the current group (max 3 per relic, as
- * in game). Returns at most `maxGroups` groups that contain something.
+ * in game — plus a trailing Deep curse as a fourth line). Returns at most
+ * `maxGroups` groups that contain something.
  */
 export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGroup[] {
   const groups: ParsedRelicGroup[] = [];
@@ -133,18 +222,23 @@ export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGro
     const line = raw.trim();
     if (line.length < 8) continue;
     const asName = bestMatch(line, RELIC_NAME_VOCABULARY, 0.62);
-    const asEffect = bestMatch(line, EFFECT_VOCABULARY, 0.5);
+    const asEffect = bestEffectMatch(line, 0.5);
     if (asName && (!asEffect || asName.score >= asEffect.score)) {
-      current = push({ name: asName.effect, effects: [] });
+      current = push({ name: asName.effect, effects: [], deep: /^deep /i.test(asName.effect) });
     } else if (asEffect) {
-      if (!current || current.effects.length >= 3) {
-        current = push({ name: null, effects: [] });
+      // Curses trail a Deep relic's three effects as a fourth line.
+      const roomFor = current && CURSE_EFFECTS.has(asEffect.effect) ? 4 : 3;
+      if (!current || current.effects.length >= roomFor) {
+        current = push({ name: null, effects: [], deep: false });
       }
       // Skip duplicates within a group (OCR sometimes doubles lines).
       if (!current.effects.some((e) => e.effect === asEffect.effect)) {
         current.effects.push(asEffect);
       }
     }
+  }
+  for (const g of groups) {
+    g.deep = g.deep || g.effects.some((e) => DEEP_ONLY_EFFECTS.has(e.effect));
   }
   return groups.filter((g) => g.name !== null || g.effects.length > 0);
 }
