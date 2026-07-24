@@ -40,10 +40,14 @@ export const NEGATION_COLUMNS: { key: keyof CharacterNegations; label: string }[
   { key: "lightning", label: "Lit" }, { key: "holy", label: "Holy" },
 ];
 
-export const RESIST_COLUMNS: { key: keyof CharacterResistances; label: string }[] = [
-  { key: "poison", label: "Poison" }, { key: "rot", label: "Rot" }, { key: "bleed", label: "Bleed" },
-  { key: "frost", label: "Frost" }, { key: "sleep", label: "Sleep" }, { key: "madness", label: "Madness" },
-  { key: "blight", label: "Blight" },
+export const RESIST_COLUMNS: { key: keyof CharacterResistances; label: string; icon: string }[] = [
+  { key: "poison", label: "Poison", icon: "/icons/status/poison.png" },
+  { key: "rot", label: "Rot", icon: "/icons/status/rot.png" },
+  { key: "bleed", label: "Bleed", icon: "/icons/status/bleed.png" },
+  { key: "frost", label: "Frost", icon: "/icons/status/frost.png" },
+  { key: "sleep", label: "Sleep", icon: "/icons/status/sleep.png" },
+  { key: "madness", label: "Madness", icon: "/icons/status/madness.png" },
+  { key: "blight", label: "Blight", icon: "/icons/status/deathblight.png" },
 ];
 
 export const CHARACTER_CREDIT = "Base stats from the community Nightreign sheet";

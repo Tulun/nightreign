@@ -9,10 +9,26 @@ import {
 import { NEG_ICONS } from "@/lib/negationCalc";
 import { StatIcon } from "@/components/StatIcon";
 
+/** Full names for the damage-negation legend (tiles show only the symbol). */
+const NEGATION_LEGEND: Record<string, string> = {
+  physical: "Physical", slash: "Slash", strike: "Strike", thrust: "Thrust",
+  magic: "Magic", fire: "Fire", lightning: "Lightning", holy: "Holy",
+};
+
 /** Base-stat cards for the 10 Nightfarers. */
 export function Nightfarers() {
   return (
     <div>
+      {/* Damage-type legend for the symbol-only negation tiles */}
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+        <span className="eyebrow">Damage Types</span>
+        {NEGATION_COLUMNS.map((n) => (
+          <span key={n.key} className="flex items-center gap-1.5 font-body text-xs text-parchment-muted">
+            <StatIcon src={NEG_ICONS[n.key]} alt="" size={16} />
+            {NEGATION_LEGEND[n.key]}
+          </span>
+        ))}
+      </div>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         {nightfarers.map((c) => (
           <NightfarerCard key={c.name} c={c} />
@@ -58,8 +74,8 @@ function NightfarerCard({ c }: { c: Nightfarer }) {
             const cls = v >= 24 ? "border-sky-500/60 bg-sky-500/10 text-sky-300" : v <= 12 ? "border-red-500/40 text-red-300" : "border-night-700 text-parchment-muted";
             return (
               <div key={n.key} className={`rounded border ${cls} px-1 py-1 text-center`}>
-                <div className="flex items-center justify-center gap-0.5 font-body text-[0.55rem] uppercase tracking-wide text-parchment-faint">
-                  {NEG_ICONS[n.key] && <StatIcon src={NEG_ICONS[n.key]!} alt="" size={12} />}{n.label}
+                <div className="flex items-center justify-center py-0.5" title={NEGATION_LEGEND[n.key]}>
+                  <StatIcon src={NEG_ICONS[n.key]} alt={NEGATION_LEGEND[n.key]} size={16} />
                 </div>
                 <div className="font-display text-xs font-semibold tabular-nums">{v}%</div>
               </div>
@@ -73,7 +89,8 @@ function NightfarerCard({ c }: { c: Nightfarer }) {
         <p className="eyebrow mb-1.5">Status Resistance</p>
         <div className="flex flex-wrap gap-1.5">
           {RESIST_COLUMNS.map((r) => (
-            <span key={r.key} className="rounded border border-night-700 px-1.5 py-0.5 font-body text-[0.7rem] text-parchment-muted">
+            <span key={r.key} className="flex items-center gap-1 rounded border border-night-700 px-1.5 py-0.5 font-body text-[0.7rem] text-parchment-muted">
+              <StatIcon src={r.icon} alt="" size={14} />
               {r.label} <span className="font-semibold text-parchment">{c.resistances[r.key]}</span>
             </span>
           ))}
