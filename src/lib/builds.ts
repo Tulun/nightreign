@@ -83,6 +83,14 @@ export interface Build {
   deepSlots: SlotTriple;
   notes: string;
   updatedAt: number;
+  /** True for builds imported from a share link — view-only, not editable. */
+  shared?: boolean;
+  /**
+   * Build-scoped custom relics for shared imports. Slots of a shared build
+   * resolve against these instead of the user's pool, so viewing a friend's
+   * build never adds their relics to your collection.
+   */
+  relics?: CustomRelic[];
 }
 
 export interface BuildStore {
@@ -244,6 +252,10 @@ export async function encodeSharedBuild(build: Build, store: BuildStore): Promis
   const used = new Set(
     [...build.slots, ...build.deepSlots].flatMap((s) => (s?.kind === "custom" ? [s.id] : [])),
   );
+  // A shared (view-only) build resolves its slots from its own relics, so
+  // re-sharing one must draw from those; the pool covers everything else.
+  const byId = new Map<string, CustomRelic>();
+  for (const r of [...store.customRelics, ...(build.relics ?? [])]) byId.set(r.id, r);
   const payload: V2Payload = {
     v: 2,
     b: [
@@ -253,7 +265,7 @@ export async function encodeSharedBuild(build: Build, store: BuildStore): Promis
       build.slots.map(packSlot),
       build.deepSlots.map(packSlot),
     ],
-    r: store.customRelics
+    r: Array.from(byId.values())
       .filter((r) => used.has(r.id))
       .map((r) => [r.id, r.name, r.color, r.look ?? "", r.effects, r.demerits ?? []]),
   };

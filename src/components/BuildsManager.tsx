@@ -152,33 +152,16 @@ export function BuildsManager() {
 
   const importShared = () => {
     if (!shared) return;
-    update((s) => {
-      // Reuse identical pool relics; add the rest under fresh ids.
-      const idMap = new Map<string, string>();
-      const customRelics = [...s.customRelics];
-      for (const r of shared.relics) {
-        const existing = customRelics.find((x) => sameCustomRelic(x, r));
-        if (existing) {
-          idMap.set(r.id, existing.id);
-        } else {
-          const fresh = { ...r, id: newId() };
-          idMap.set(r.id, fresh.id);
-          customRelics.push(fresh);
-        }
-      }
-      const remap = (slots: SlotTriple): SlotTriple =>
-        slots.map((sl) =>
-          sl?.kind === "custom" ? { ...sl, id: idMap.get(sl.id) ?? sl.id } : sl,
-        ) as SlotTriple;
-      const build: Build = {
-        ...shared.build,
-        id: newId(),
-        updatedAt: Date.now(),
-        slots: remap(shared.build.slots),
-        deepSlots: remap(shared.build.deepSlots),
-      };
-      return { ...s, customRelics, builds: [...s.builds, build] };
-    });
+    // Saved as view-only: the friend's relics stay embedded in the build
+    // (you don't own them), so nothing is added to your relic pool.
+    const build: Build = {
+      ...shared.build,
+      id: newId(),
+      updatedAt: Date.now(),
+      shared: true,
+      relics: shared.relics,
+    };
+    update((s) => ({ ...s, builds: [...s.builds, build] }));
     setCharacter((c) => (c ? shared.build.character : c));
     setView("builds");
     dismissShared();
@@ -278,7 +261,8 @@ export function BuildsManager() {
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-display text-lg font-semibold text-parchment">Shared build</h3>
             <span className="font-body text-xs text-parchment-faint">
-              This link carries a {shared.build.character} build — add it to your collection, or dismiss it.
+              This link carries a {shared.build.character} build — keep it as a view-only build
+              (its relics won&rsquo;t join your relic pool), or dismiss it.
             </span>
             <div className="ml-auto flex gap-2">
               <button
@@ -286,7 +270,7 @@ export function BuildsManager() {
                 onClick={importShared}
                 className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
               >
-                Add to my builds
+                Keep (view only)
               </button>
               <button
                 type="button"
@@ -627,6 +611,11 @@ function BuildCard({
   const [copied, setCopied] = useState(false);
   const chalice = chalicesFor(build.character).find((c) => c.name === build.chalice);
   const hasDeep = build.deepSlots.some(Boolean);
+  // Shared (view-only) builds carry their own relics; slots resolve against
+  // those, not the user's pool.
+  const relicStore = build.relics?.length
+    ? { ...store, customRelics: [...store.customRelics, ...build.relics] }
+    : store;
 
   const share = async () => {
     const url = `${window.location.origin}${window.location.pathname}#b=${await encodeSharedBuild(build, store)}`;
@@ -641,7 +630,7 @@ function BuildCard({
   };
   const renderSlots = (slots: SlotTriple, colors?: readonly SlotColor[]) =>
     slots.map((slot, i) => {
-      const resolved = resolveSlot(slot, store);
+      const resolved = resolveSlot(slot, relicStore);
       return (
         <div key={i} className="flex items-start gap-2.5">
           {resolved ? (
@@ -666,7 +655,14 @@ function BuildCard({
     <article className="frame rounded-md bg-night-800 p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h4 className="font-display font-semibold text-parchment">{build.name || "Unnamed build"}</h4>
+          <h4 className="font-display font-semibold text-parchment">
+            {build.name || "Unnamed build"}
+            {build.shared && (
+              <span className="ml-2 rounded border border-gold-dim/40 px-1.5 py-0.5 align-middle font-body text-[10px] font-normal uppercase tracking-wide text-gold-dim">
+                Shared · view only
+              </span>
+            )}
+          </h4>
           <p className="font-body text-xs text-parchment-faint">
             {build.character} · {build.chalice}
           </p>
@@ -676,7 +672,9 @@ function BuildCard({
             <button type="button" onClick={share} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">
               {copied ? "Copied ✓" : "Share"}
             </button>
-            <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
+            {!build.shared && (
+              <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
+            )}
             <button type="button" onClick={onDelete} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">Delete</button>
           </div>
         )}
