@@ -53,7 +53,7 @@ type SlotRef = { deep: boolean; index: number };
  */
 export function BuildsManager() {
   const [store, setStore] = useState<BuildStore | null>(null);
-  const [view, setView] = useState<"builds" | "relics">("builds");
+  const [view, setView] = useState<"builds" | "sharedBuilds" | "relics">("builds");
   // Character filter for the build list — "" shows all Nightfarers.
   const [character, setCharacter] = useState("");
   const [editing, setEditing] = useState<Build | null>(null);
@@ -112,7 +112,13 @@ export function BuildsManager() {
     );
   }
 
-  const builds = store.builds
+  // Your own builds live in the Builds tab; view-only builds kept from
+  // friends' share links get their own Shared Builds tab.
+  const ownBuilds = store.builds.filter((b) => !b.shared);
+  const sharedBuilds = store.builds
+    .filter((b) => b.shared)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  const builds = ownBuilds
     .filter((b) => !character || b.character === character)
     .sort((a, b) => b.updatedAt - a.updatedAt);
 
@@ -162,8 +168,7 @@ export function BuildsManager() {
       relics: shared.relics,
     };
     update((s) => ({ ...s, builds: [...s.builds, build] }));
-    setCharacter((c) => (c ? shared.build.character : c));
-    setView("builds");
+    setView("sharedBuilds");
     dismissShared();
   };
 
@@ -193,7 +198,8 @@ export function BuildsManager() {
       <div className="mb-5 flex gap-1 border-b border-night-700">
         {(
           [
-            { key: "builds", label: "Builds", count: store.builds.length },
+            { key: "builds", label: "Builds", count: ownBuilds.length },
+            { key: "sharedBuilds", label: "Shared Builds", count: sharedBuilds.length },
             { key: "relics", label: "My Relics", count: store.customRelics.length },
           ] as const
         ).map((t) => {
@@ -217,6 +223,41 @@ export function BuildsManager() {
         })}
       </div>
 
+      {/* Share-link banner — shown on any tab so an opened link is never missed. */}
+      {shared && (
+        <section className="frame mb-5 rounded-md bg-night-850 p-4" style={{ borderColor: "#c9a227" }}>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-display text-lg font-semibold text-parchment">Shared build</h3>
+            <span className="font-body text-xs text-parchment-faint">
+              This link carries a {shared.build.character} build — keep it in Shared Builds
+              (view only; its relics won&rsquo;t join your relic pool), or dismiss it.
+            </span>
+            <div className="ml-auto flex gap-2">
+              <button
+                type="button"
+                onClick={importShared}
+                className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
+              >
+                Keep (view only)
+              </button>
+              <button
+                type="button"
+                onClick={dismissShared}
+                className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:text-parchment"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 max-w-2xl">
+            <BuildCard
+              build={{ ...shared.build, id: "shared-preview", updatedAt: 0 }}
+              store={{ version: 3, builds: [], customRelics: shared.relics }}
+            />
+          </div>
+        </section>
+      )}
+
       {view === "builds" && (
         <>
       {/* Toolbar */}
@@ -226,7 +267,7 @@ export function BuildsManager() {
           onChange={setCharacter}
           placeholder="All Nightfarers"
           options={characterChalices.map((c) => {
-            const count = store.builds.filter((b) => b.character === c.name).length;
+            const count = ownBuilds.filter((b) => b.character === c.name).length;
             return { value: c.name, label: count > 0 ? `${c.name} (${count})` : c.name };
           })}
           className="w-52"
@@ -256,40 +297,6 @@ export function BuildsManager() {
         </span>
       </div>
 
-      {shared && (
-        <section className="frame mb-5 rounded-md bg-night-850 p-4" style={{ borderColor: "#c9a227" }}>
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-lg font-semibold text-parchment">Shared build</h3>
-            <span className="font-body text-xs text-parchment-faint">
-              This link carries a {shared.build.character} build — keep it as a view-only build
-              (its relics won&rsquo;t join your relic pool), or dismiss it.
-            </span>
-            <div className="ml-auto flex gap-2">
-              <button
-                type="button"
-                onClick={importShared}
-                className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
-              >
-                Keep (view only)
-              </button>
-              <button
-                type="button"
-                onClick={dismissShared}
-                className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:text-parchment"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-          <div className="mt-3 max-w-2xl">
-            <BuildCard
-              build={{ ...shared.build, id: "shared-preview", updatedAt: 0 }}
-              store={{ version: 3, builds: [], customRelics: shared.relics }}
-            />
-          </div>
-        </section>
-      )}
-
       {builds.length === 0 ? (
         <p className="font-body text-sm text-parchment-faint">
           No builds {character ? `for ${character}` : ""} yet — create one, or import a backup.
@@ -301,6 +308,27 @@ export function BuildsManager() {
           ))}
         </div>
       )}
+        </>
+      )}
+
+      {view === "sharedBuilds" && (
+        <>
+          <p className="mb-5 font-body text-xs text-parchment-faint">
+            Builds kept from friends&rsquo; share links — view only. Their relics stay out of
+            your relic pool; delete a build to remove it.
+          </p>
+          {sharedBuilds.length === 0 ? (
+            <p className="font-body text-sm text-parchment-faint">
+              No shared builds yet — open a share link from a friend and choose
+              &ldquo;Keep (view only)&rdquo;.
+            </p>
+          ) : (
+            <div className="grid gap-3 xl:grid-cols-2">
+              {sharedBuilds.map((b) => (
+                <BuildCard key={b.id} build={b} store={store} onDelete={() => deleteBuild(b.id)} />
+              ))}
+            </div>
+          )}
         </>
       )}
 
@@ -594,8 +622,10 @@ function RelicLineInputs({
 // ── List view ────────────────────────────────────────────────────────────
 
 /**
- * One saved build. With onEdit/onDelete it's an interactive card (Share,
- * Edit, Delete); without them it's a read-only preview (shared-link banner).
+ * One saved build. With onDelete it's an interactive card (Share, Delete,
+ * plus Edit when onEdit is given — shared builds are view-only, so the
+ * Shared Builds tab omits it); with neither it's a read-only preview
+ * (shared-link banner).
  */
 function BuildCard({
   build,
@@ -655,24 +685,17 @@ function BuildCard({
     <article className="frame rounded-md bg-night-800 p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <h4 className="font-display font-semibold text-parchment">
-            {build.name || "Unnamed build"}
-            {build.shared && (
-              <span className="ml-2 rounded border border-gold-dim/40 px-1.5 py-0.5 align-middle font-body text-[10px] font-normal uppercase tracking-wide text-gold-dim">
-                Shared · view only
-              </span>
-            )}
-          </h4>
+          <h4 className="font-display font-semibold text-parchment">{build.name || "Unnamed build"}</h4>
           <p className="font-body text-xs text-parchment-faint">
             {build.character} · {build.chalice}
           </p>
         </div>
-        {onEdit && onDelete && (
+        {onDelete && (
           <div className="flex gap-1.5">
             <button type="button" onClick={share} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">
               {copied ? "Copied ✓" : "Share"}
             </button>
-            {!build.shared && (
+            {onEdit && (
               <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
             )}
             <button type="button" onClick={onDelete} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">Delete</button>
