@@ -3,9 +3,15 @@ import type { CharacterChalices, Chalice } from "@/lib/chalices";
 // ─────────────────────────────────────────────────────────────────────────
 //  CHALICES (VESSELS)  ·  per-Nightfarer, in game order
 // ─────────────────────────────────────────────────────────────────────────
-//  Slot colors from the Fextralife Vessels table (cross-checked against the
-//  per-character pages), including each vessel's Deep of Night slot layout —
-//  several vessels change slots there. White is the universal slot.
+//  Slot colors from the Fextralife per-vessel pages (cross-checked against
+//  Game8), including each vessel's Deep of Night slot layout — several
+//  vessels change slots there. White is the universal slot.
+//  NOTE: the Fextralife "Vessels" summary table has errors (Guardian's
+//  Chalice deep, Decrepit Recluse's Goblet, Forgotten Scholar's Goblet deep);
+//  the individual vessel pages are the ones that match the game.
+//  Disputed: Forgotten Undertaker's Goblet deep — Fextralife says B/Y/Green
+//  (kept here), Game8 says B/Y/White; every other Forgotten Goblet's deep
+//  layout ends in White, so worth confirming in-game.
 
 export const CHALICE_CREDIT = "Vessel data from the Fextralife Nightreign wiki";
 
@@ -26,7 +32,7 @@ export const characterChalices: CharacterChalices[] = [
   { name: "Guardian", chalices: [
     { name: "Guardian's Urn", slots: ["Red", "Yellow", "Yellow"], deep: ["Red", "Yellow", "Yellow"], source: STARTING },
     { name: "Guardian's Goblet", slots: ["Blue", "Blue", "Green"], deep: ["Blue", "Blue", "Green"], source: BAZAAR },
-    { name: "Guardian's Chalice", slots: ["Blue", "Yellow", "White"], deep: ["Yellow", "Yellow", "Green"], source: "Guardian Remembrance quest reward" },
+    { name: "Guardian's Chalice", slots: ["Blue", "Yellow", "White"], deep: ["Red", "Blue", "Yellow"], source: "Guardian Remembrance quest reward" },
     { name: "Soot-Covered Guardian's Urn", slots: ["Red", "Green", "Green"], deep: ["Red", "Green", "Green"], source: SIGNBOARD },
     { name: "Sealed Guardian's Urn", slots: ["Yellow", "Yellow", "Red"], deep: ["Green", "Green", "Blue"], source: SIGNBOARD },
     { name: "Decrepit Guardian's Goblet", slots: ["Yellow", "Green", "Green"], deep: ["Yellow", "Green", "Green"], source: SIGNBOARD },
@@ -74,7 +80,7 @@ export const characterChalices: CharacterChalices[] = [
     { name: "Recluse's Chalice", slots: ["Yellow", "Green", "White"], deep: ["Blue", "Green", "Green"], source: "Recluse Remembrance quest reward (part 1)" },
     { name: "Soot-Covered Recluse's Urn", slots: ["Red", "Red", "Yellow"], deep: ["Red", "Red", "Yellow"], source: SIGNBOARD },
     { name: "Sealed Recluse's Urn", slots: ["Green", "Blue", "Blue"], deep: ["Yellow", "Yellow", "Red"], source: SIGNBOARD },
-    { name: "Decrepit Recluse's Goblet", slots: ["Yellow", "Yellow", "Blue"], deep: ["Yellow", "Yellow", "Blue"], source: SIGNBOARD },
+    { name: "Decrepit Recluse's Goblet", slots: ["Red", "Red", "Blue"], deep: ["Red", "Red", "Blue"], source: SIGNBOARD },
     { name: "Forgotten Recluse's Goblet", slots: ["Yellow", "Blue", "Red"], deep: ["Blue", "Green", "White"], source: SIGNBOARD },
   ] },
   { name: "Executor", chalices: [
@@ -93,7 +99,7 @@ export const characterChalices: CharacterChalices[] = [
     { name: "Soot-Covered Scholar's Urn", slots: ["Blue", "Green", "Green"], deep: ["Blue", "Green", "Green"], source: SIGNBOARD },
     { name: "Sealed Scholar's Urn", slots: ["Yellow", "Red", "Red"], deep: ["Green", "Blue", "Blue"], source: SIGNBOARD },
     { name: "Decrepit Scholar's Goblet", slots: ["Blue", "Blue", "Green"], deep: ["Blue", "Blue", "Green"], source: SIGNBOARD },
-    { name: "Forgotten Scholar's Goblet", slots: ["Yellow", "Green", "Blue"], deep: ["Yellow", "Green", "Green"], source: SIGNBOARD },
+    { name: "Forgotten Scholar's Goblet", slots: ["Yellow", "Green", "Blue"], deep: ["Red", "Green", "White"], source: SIGNBOARD },
   ] },
   { name: "Undertaker", chalices: [
     { name: "Undertaker's Urn", slots: ["Blue", "Green", "Green"], deep: ["Blue", "Green", "Green"], source: STARTING },
