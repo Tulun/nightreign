@@ -21,12 +21,15 @@ export function MultiSelect({
   onChange,
   placeholder = "All",
   className = "",
+  showValues = false,
 }: {
   values: string[];
   options: MultiOption[];
   onChange: (v: string[]) => void;
   placeholder?: string;
   className?: string;
+  /** Show the selected labels in the trigger instead of a "N selected" count. */
+  showValues?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<MenuPos | null>(null);
@@ -84,7 +87,13 @@ export function MultiSelect({
     onChange(options.filter((o) => next.has(o.value)).map((o) => o.value));
   };
 
-  const label = values.length === 0 ? placeholder : `${values.length} selected`;
+  const byValue = new Map(options.map((o) => [o.value, o.label]));
+  const label =
+    values.length === 0
+      ? placeholder
+      : showValues
+        ? values.map((v) => byValue.get(v) ?? v).join(", ")
+        : `${values.length} selected`;
 
   const menu = open && pos && typeof document !== "undefined" && createPortal(
     <div

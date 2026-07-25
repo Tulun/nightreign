@@ -328,6 +328,7 @@ export function BuildsManager() {
               onChange={setTagFilter}
               placeholder="All tags"
               className="w-44"
+              showValues
             />
             {/* Match any (OR) vs all (AND) of the selected tags. */}
             {tagFilter.length > 1 && (
@@ -345,7 +346,7 @@ export function BuildsManager() {
                         : "bg-night-900 text-parchment-muted hover:text-parchment"
                     }`}
                   >
-                    {m === "any" ? "Any" : "All"}
+                    {m === "any" ? "Match any" : "Match all"}
                   </button>
                 ))}
               </div>
@@ -388,6 +389,21 @@ export function BuildsManager() {
           Saved in this browser only — export to back up or move devices.
         </span>
       </div>
+
+      {/* Spell the tag filter out in words so the Match any/all choice is
+          self-explanatory: "tagged Boss or Farm" vs "tagged Boss and Farm". */}
+      {tagFilter.length > 0 && (
+        <p className="-mt-3 mb-5 font-body text-xs text-parchment-faint">
+          Showing builds tagged{" "}
+          {tagFilter.map((t, i) => (
+            <span key={t}>
+              {i > 0 && (tagMode === "any" ? " or " : " and ")}
+              <span className="text-parchment-muted">{t}</span>
+            </span>
+          ))}
+          .
+        </p>
+      )}
 
       {managingTags && (
         <TagManager
