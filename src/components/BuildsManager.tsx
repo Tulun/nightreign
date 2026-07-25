@@ -912,6 +912,12 @@ function BuildEditor({
           value={chalice}
           onChange={(name) => setBuild((b) => ({ ...b, chalice: name }))}
         />
+        <ScreenshotBuildImport
+          chalice={chalice}
+          chalices={chalices}
+          onApply={applyGroup}
+          onSwapChalice={(name) => setBuild((b) => ({ ...b, chalice: name }))}
+        />
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -924,13 +930,6 @@ function BuildEditor({
           <div className="space-y-3">{slotSection(true)}</div>
         </section>
       </div>
-
-      <ScreenshotBuildImport
-        chalice={chalice}
-        chalices={chalices}
-        onApply={applyGroup}
-        onSwapChalice={(name) => setBuild((b) => ({ ...b, chalice: name }))}
-      />
 
       <textarea
         value={build.notes}
@@ -1295,7 +1294,7 @@ function RelicBrowserCard({
   );
 }
 
-// ── Custom relic editor (single relic, with per-relic screenshot parse) ──
+// ── Custom relic editor (modal, with searchable effects + screenshot parse) ──
 
 function CustomRelicEditor({
   slotColor,
@@ -1316,9 +1315,20 @@ function CustomRelicEditor({
     effects: ["", "", ""],
     demerits: ["", "", ""],
   });
-  const lockedColor = slotColor !== "White";
+  const [q, setQ] = useState("");
+  // A colored slot dictates the relic's color — only White slots ask.
+  const askColor = slotColor === "White";
 
-  const addParsedEffect = (effect: string) =>
+  // The page behind the modal shouldn't scroll while it's open.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  const addEffect = (effect: string) =>
     setDraft((d) => {
       if (isCurseEffect(effect)) {
         // Demerits attach to an effect line — use the last filled one.
@@ -1332,6 +1342,13 @@ function CustomRelicEditor({
       const i = d.effects.findIndex((x) => !x.trim());
       return i === -1 ? d : { ...d, effects: d.effects.map((x, j) => (j === i ? effect : x)) };
     });
+
+  const query = q.trim().toLowerCase();
+  // Curse (demerit) effects only exist on Deep relics — hide them elsewhere.
+  const vocab = EFFECT_VOCABULARY.filter(
+    (e) => (deep || !isCurseEffect(e)) && (!query || e.toLowerCase().includes(query)),
+  );
+  const chosen = new Set([...draft.effects, ...draft.demerits].filter((e) => e.trim()));
 
   const save = () => {
     const kept = [0, 1, 2].filter((i) => (draft.effects[i] ?? "").trim());
@@ -1349,37 +1366,108 @@ function CustomRelicEditor({
   };
 
   return (
-    <div className="frame mt-2 rounded-md bg-night-900 p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="text"
-          value={draft.name}
-          onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
-          placeholder="Relic name (optional)"
-          className="frame w-52 rounded bg-night-800 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
-        />
-        <select
-          value={draft.color}
-          disabled={lockedColor}
-          onChange={(e) => setDraft((d) => ({ ...d, color: e.target.value as CustomRelic["color"] }))}
-          className="frame rounded bg-night-800 px-2 py-1 font-body text-sm text-parchment disabled:opacity-60"
-        >
-          {RELIC_COLORS.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-      </div>
-      <RelicLineInputs relic={draft} onUpdate={setDraft} className="mt-2" showDemerits={deep} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onCancel();
+      }}
+    >
+      <div className="absolute inset-0 bg-black/70" onClick={onCancel} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="New custom relic"
+        className="relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-md border border-night-500 bg-night-850 shadow-lift"
+      >
+        <div className="flex items-center gap-2 border-b border-night-600 px-4 py-3">
+          <SlotIconImg color={askColor ? draft.color : slotColor} size={22} />
+          <h3 className="font-display text-lg font-semibold text-parchment">
+            New custom relic
+            <span className="ml-2 font-body text-xs font-normal text-parchment-faint">
+              {askColor ? "any color fits this slot" : `${slotColor} slot`}
+              {deep && " · Deep of Night"}
+            </span>
+          </h3>
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Close"
+            className="ml-auto rounded border border-night-600 px-2 py-0.5 font-body text-sm text-parchment-muted hover:text-parchment"
+          >
+            ✕
+          </button>
+        </div>
 
-      <SingleRelicParse onPick={addParsedEffect} />
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={draft.name}
+              onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+              placeholder="Relic name (optional)"
+              className="frame w-64 rounded bg-night-900 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
+            />
+            {askColor && (
+              <select
+                value={draft.color}
+                onChange={(e) => setDraft((d) => ({ ...d, color: e.target.value as CustomRelic["color"] }))}
+                className="frame rounded bg-night-900 px-2 py-1 font-body text-sm text-parchment"
+              >
+                {RELIC_COLORS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            )}
+          </div>
+          <RelicLineInputs relic={draft} onUpdate={setDraft} className="mt-3" showDemerits={deep} />
 
-      <div className="mt-3 flex gap-2">
-        <button type="button" onClick={save} className="frame rounded-md bg-night-700 px-3 py-1 font-body text-sm text-gold-bright hover:bg-night-600">
-          Save relic
-        </button>
-        <button type="button" onClick={onCancel} className="frame rounded-md bg-night-800 px-3 py-1 font-body text-sm text-parchment-muted hover:text-parchment">
-          Cancel
-        </button>
+          <p className="eyebrow mb-1.5 mt-4">Add effects</p>
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search effects…"
+            className="frame w-full rounded bg-night-900 px-3 py-1.5 font-body text-sm text-parchment placeholder:text-parchment-faint"
+          />
+          <div className="mt-2 max-h-60 overflow-y-auto rounded-md border border-night-700">
+            {vocab.map((e) => {
+              const isDemerit = deep && isCurseEffect(e);
+              const picked = chosen.has(e);
+              return (
+                <button
+                  key={e}
+                  type="button"
+                  onClick={() => addEffect(e)}
+                  className={`flex w-full items-baseline gap-2 px-2.5 py-1.5 text-left font-body text-xs hover:bg-night-800 ${
+                    picked ? "text-gold-dim" : "text-parchment-muted hover:text-parchment"
+                  }`}
+                >
+                  <span className="min-w-0 flex-1">{e}</span>
+                  {isDemerit && (
+                    <span className="shrink-0 rounded border border-red-900/60 px-1 text-[0.6rem] text-red-300/80">
+                      demerit
+                    </span>
+                  )}
+                  {picked && <span className="shrink-0">✓</span>}
+                </button>
+              );
+            })}
+            {vocab.length === 0 && (
+              <p className="px-2.5 py-2 font-body text-xs text-parchment-faint">Nothing matches “{q}”.</p>
+            )}
+          </div>
+
+          <SingleRelicParse onPick={addEffect} />
+        </div>
+
+        <div className="flex gap-2 border-t border-night-600 px-4 py-3">
+          <button type="button" onClick={save} className="frame rounded-md bg-night-700 px-4 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600">
+            Save relic
+          </button>
+          <button type="button" onClick={onCancel} className="frame rounded-md bg-night-800 px-4 py-1.5 font-body text-sm text-parchment-muted hover:text-parchment">
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1587,32 +1675,27 @@ function ScreenshotBuildImport({
   };
 
   return (
-    <section className="frame mt-6 rounded-md bg-night-850 p-4">
-      <h3 className="eyebrow">Import from game screenshot</h3>
-      <p className="mt-1 max-w-prose font-body text-xs text-parchment-faint">
-        Screenshot the relic rites screen (relic names + effects visible), and
-        the parser will group what it reads into relics you can drop into
-        slots. Fix anything it misreads afterwards — OCR is rarely perfect.
-      </p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+    <>
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
           disabled={busy}
           onClick={() => fileRef.current?.click()}
-          className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment disabled:opacity-50"
+          title="Screenshot the relic rites screen (relic names + effects visible); the parser groups what it reads into relics you can drop into slots. Fix anything it misreads afterwards."
+          className="frame rounded-md bg-night-800 px-3 py-2 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment disabled:opacity-50"
         >
-          Parse screenshot
+          Import from screenshot
         </button>
         {groups && groups.length > 0 && applied.some((a) => !a) && (
           <button
             type="button"
             onClick={() => groups.forEach((_, i) => applyOne(i))}
-            className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
+            className="frame rounded-md bg-night-700 px-3 py-2 font-body text-sm text-gold-bright hover:bg-night-600"
           >
             Apply all
           </button>
         )}
-        {status && <span className="font-body text-xs text-parchment-faint">{status}</span>}
+        {status && <span className="max-w-xs font-body text-xs text-parchment-faint">{status}</span>}
       </div>
       <input
         ref={fileRef}
@@ -1626,7 +1709,7 @@ function ScreenshotBuildImport({
         }}
       />
       {chaliceGuess && chaliceGuess !== chalice.name && (
-        <div className="frame mt-3 flex flex-wrap items-center gap-2 rounded-md bg-night-900 px-3 py-2">
+        <div className="frame flex w-full flex-wrap items-center gap-2 rounded-md bg-night-900 px-3 py-2">
           <span className="font-body text-sm text-parchment-muted">
             The screenshot looks like it uses <span className="text-parchment">{chaliceGuess}</span>.
           </span>
@@ -1644,7 +1727,7 @@ function ScreenshotBuildImport({
         </div>
       )}
       {groups && groups.length > 0 && (
-        <div className="mt-3 grid gap-2 lg:grid-cols-2">
+        <div className="grid w-full gap-2 lg:grid-cols-2">
           {groups.map((g, i) => (
             <div key={i} className="frame rounded-md bg-night-900 p-3">
               <p className="flex items-center gap-2 font-body text-sm text-parchment">
@@ -1710,6 +1793,6 @@ function ScreenshotBuildImport({
           ))}
         </div>
       )}
-    </section>
+    </>
   );
 }
