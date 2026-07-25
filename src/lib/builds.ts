@@ -64,20 +64,20 @@ export function relicLookIcon(color: CustomRelic["color"], look: RelicLook): str
 }
 
 /**
- * The look a relic renders with: its saved look, or — for relics saved
- * before looks existed — a default picked from its id, so it stays the same
- * across renders and sessions without touching the store. Deep relics
- * default to the deep looks.
+ * The look a relic renders with: its saved look if the user picked one,
+ * otherwise sized by effect count the way the game does — 1 line renders as
+ * the tiny delicate relic, 2 as polished, 3 as grand. Deep relics use the
+ * deep variants.
  */
-export function effectiveLook(relic: Pick<CustomRelic, "id" | "look" | "deep">): RelicLook {
+export function effectiveLook(relic: Pick<CustomRelic, "look" | "deep" | "effects">): RelicLook {
   if (relic.look) return relic.look;
-  let h = 0;
-  for (let i = 0; i < relic.id.length; i++) h = (h * 31 + relic.id.charCodeAt(i)) >>> 0;
-  return RELIC_LOOKS[(h % 3) + (relic.deep ? 3 : 0)];
+  const lines = (relic.effects ?? []).filter((e) => e && e.trim()).length;
+  const size = Math.min(Math.max(lines, 1), 3) - 1;
+  return RELIC_LOOKS[size + (relic.deep ? 3 : 0)];
 }
 
 /** Icon path for a custom relic (its color's scene, in its look). */
-export function customRelicIcon(relic: Pick<CustomRelic, "id" | "look" | "color" | "deep">): string {
+export function customRelicIcon(relic: Pick<CustomRelic, "look" | "color" | "deep" | "effects">): string {
   return relicLookIcon(relic.color, effectiveLook(relic));
 }
 

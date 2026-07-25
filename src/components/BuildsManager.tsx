@@ -453,7 +453,12 @@ export function BuildsManager() {
       )}
 
       {view === "relics" && (
-        <MyRelics relics={store.customRelics} onUpdate={updateCustomRelic} onDelete={deleteCustomRelic} />
+        <MyRelics
+          relics={store.customRelics}
+          onAdd={addCustomRelic}
+          onUpdate={updateCustomRelic}
+          onDelete={deleteCustomRelic}
+        />
       )}
 
       {/* Shared autocomplete list for effect inputs */}
@@ -955,10 +960,12 @@ const COLOR_ORDER: Record<CustomRelic["color"], number> = { Red: 0, Blue: 1, Gre
 
 function MyRelics({
   relics,
+  onAdd,
   onUpdate,
   onDelete,
 }: {
   relics: CustomRelic[];
+  onAdd: (r: CustomRelic) => void;
   onUpdate: (r: CustomRelic) => void;
   onDelete: (id: string) => void;
 }) {
@@ -966,12 +973,48 @@ function MyRelics({
   const [kindFilter, setKindFilter] = useState<"normal" | "deep" | null>(null);
   const [query, setQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  // The creation modal — the same editor slots use, with free color and a
+  // Normal/Deep choice since no slot dictates them here.
+  const creator = creating && (
+    <CustomRelicEditor
+      slotColor="White"
+      deep={false}
+      allowKindChoice
+      onSave={(relic) => {
+        // A duplicate would be unreachable noise — one pool entry covers it.
+        if (relics.some((r) => sameCustomRelic(r, relic))) {
+          window.alert("An identical relic is already in your pool.");
+          return;
+        }
+        onAdd(relic);
+        setCreating(false);
+      }}
+      onCancel={() => setCreating(false)}
+    />
+  );
+
+  const newRelicButton = (
+    <button
+      type="button"
+      onClick={() => setCreating(true)}
+      className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
+    >
+      + New relic
+    </button>
+  );
+
   if (relics.length === 0) {
     return (
-      <p className="font-body text-sm text-parchment-faint">
-        No custom relics yet — they&rsquo;re created while editing a build (&ldquo;+ Add new
-        relic&rdquo; in any slot), or imported from a screenshot.
-      </p>
+      <div>
+        <p className="font-body text-sm text-parchment-faint">
+          No custom relics yet — create one here, add one while editing a build (&ldquo;+ Add
+          new relic&rdquo; in any slot), or import from a screenshot.
+        </p>
+        <div className="mt-3">{newRelicButton}</div>
+        {creator}
+      </div>
     );
   }
 
@@ -994,6 +1037,8 @@ function MyRelics({
         Custom relics you&rsquo;ve added — usable in any build with a matching slot.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        {newRelicButton}
+        <span className="mx-1 h-4 w-px bg-night-600" aria-hidden="true" />
         <button
           type="button"
           onClick={() => setColorFilter(null)}
@@ -1081,6 +1126,7 @@ function MyRelics({
           ),
         )}
       </div>
+      {creator}
     </div>
   );
 }
@@ -1142,6 +1188,19 @@ function RelicCardEditor({
       </div>
       {/* Relic picture — the color's scene image in the chosen look. */}
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onUpdate({ ...relic, look: undefined })}
+          aria-pressed={!relic.look}
+          title="Size by effect count (1 line small, 3 lines large)"
+          className={`rounded-md border px-2 py-1 font-body text-xs transition-colors ${
+            !relic.look
+              ? "border-gold-bright bg-night-700 text-gold-bright"
+              : "border-night-600 bg-night-900 text-parchment-muted hover:border-night-400"
+          }`}
+        >
+          Auto
+        </button>
         {RELIC_LOOKS.map((look) => {
           const active = effectiveLook(relic) === look;
           return (
@@ -1890,12 +1949,18 @@ function RelicBrowserCard({
 function CustomRelicEditor({
   slotColor,
   deep,
+  allowKindChoice = false,
   onSave,
   onCancel,
 }: {
   slotColor: SlotColor;
   /** Whether this relic is for a Deep of Night slot — only those have demerits. */
   deep: boolean;
+  /**
+   * Show a Normal/Deep choice (pool creation from My Relics, where no slot
+   * dictates the kind); `deep` is then just the starting value.
+   */
+  allowKindChoice?: boolean;
   onSave: (r: CustomRelic) => void;
   onCancel: () => void;
 }) {
@@ -1908,6 +1973,7 @@ function CustomRelicEditor({
     deep,
   });
   const [q, setQ] = useState("");
+  const isDeep = !!draft.deep;
   // A colored slot dictates the relic's color — only White slots ask.
   const askColor = slotColor === "White";
 
@@ -1925,7 +1991,7 @@ function CustomRelicEditor({
       if (isCurseEffect(effect)) {
         // Demerits attach to an effect line — use the last filled one.
         // Normal relics can't carry demerits, so a curse line is a misparse.
-        if (!deep) return d;
+        if (!d.deep) return d;
         const i = d.effects.map((e) => e.trim() !== "").lastIndexOf(true);
         if (i === -1 || d.demerits[i]) return d;
         return { ...d, demerits: d.demerits.map((x, j) => (j === i ? effect : x)) };
@@ -1938,7 +2004,7 @@ function CustomRelicEditor({
   const query = q.trim().toLowerCase();
   // Curse (demerit) effects only exist on Deep relics — hide them elsewhere.
   const vocab = EFFECT_VOCABULARY.filter(
-    (e) => (deep || !isCurseEffect(e)) && (!query || e.toLowerCase().includes(query)),
+    (e) => (isDeep || !isCurseEffect(e)) && (!query || e.toLowerCase().includes(query)),
   );
   const chosen = new Set([...draft.effects, ...draft.demerits].filter((e) => e.trim()));
 
@@ -1953,8 +2019,8 @@ function CustomRelicEditor({
       name: draft.name.trim(),
       color: draft.color,
       effects: kept.map((i) => draft.effects[i].trim()),
-      demerits: kept.map((i) => (draft.demerits[i] ?? "").trim()),
-      deep,
+      demerits: kept.map((i) => (isDeep ? (draft.demerits[i] ?? "").trim() : "")),
+      deep: isDeep,
     });
   };
 
@@ -1977,8 +2043,8 @@ function CustomRelicEditor({
           <h3 className="font-display text-lg font-semibold text-parchment">
             New custom relic
             <span className="ml-2 font-body text-xs font-normal text-parchment-faint">
-              {askColor ? "any color fits this slot" : `${slotColor} slot`}
-              {deep && " · Deep of Night"}
+              {allowKindChoice ? "added to your pool" : askColor ? "any color fits this slot" : `${slotColor} slot`}
+              {isDeep && " · Deep of Night"}
             </span>
           </h3>
           <button
@@ -2011,8 +2077,33 @@ function CustomRelicEditor({
                 ))}
               </select>
             )}
+            {allowKindChoice && (
+              <div className="flex overflow-hidden rounded-md border border-night-600" role="group" aria-label="Relic kind">
+                {([false, true] as const).map((kind) => (
+                  <button
+                    key={String(kind)}
+                    type="button"
+                    onClick={() =>
+                      setDraft((d) =>
+                        kind
+                          ? { ...d, deep: true }
+                          : { ...d, deep: false, demerits: ["", "", ""] },
+                      )
+                    }
+                    aria-pressed={isDeep === kind}
+                    className={`px-2.5 py-1.5 font-body text-xs transition-colors ${
+                      isDeep === kind
+                        ? "bg-night-700 text-gold-bright"
+                        : "bg-night-900 text-parchment-muted hover:text-parchment"
+                    }`}
+                  >
+                    {kind ? "Deep of Night" : "Normal"}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-          <RelicLineInputs relic={draft} onUpdate={setDraft} className="mt-3" showDemerits={deep} />
+          <RelicLineInputs relic={draft} onUpdate={setDraft} className="mt-3" showDemerits={isDeep} />
 
           <p className="eyebrow mb-1.5 mt-4">Add effects</p>
           <input
@@ -2024,7 +2115,7 @@ function CustomRelicEditor({
           />
           <div className="mt-2 max-h-60 overflow-y-auto rounded-md border border-night-700">
             {vocab.map((e) => {
-              const isDemerit = deep && isCurseEffect(e);
+              const isDemerit = isDeep && isCurseEffect(e);
               const picked = chosen.has(e);
               return (
                 <button
