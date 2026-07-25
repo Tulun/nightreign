@@ -167,7 +167,7 @@ export const relicEffects: RelicEffect[] = [
   { name: "Recluse: Collecting affinity residue activates Terra Magica", category: "character" },
   { name: "Recluse: Suffer blood loss and increase attack power upon Art activation", category: "character" },
   { name: "Wylder: +1 additional Character Skill use", category: "character" },
-  { name: "Guardian: Reflect a portion of damage received when ability is activated", category: "character" },
+  { name: "Guardian: Successful guards send out shockwaves while ability is active", category: "character" },
   { name: "Recluse: Activating Ultimate Art raises Max HP", category: "character" },
   { name: "Executor: Character Skill Boosts Attack but Lowers Damage Negation While Attacking", category: "character" },
   { name: "Executor: While Character Skill is active, unlocking use of cursed sword restores HP", category: "character" },

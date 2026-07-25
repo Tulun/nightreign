@@ -23,11 +23,60 @@ const WEAPON_CLASSES = [
 const ELEMENTS = ["Magic", "Fire", "Lightning", "Holy"];
 const STATUSES = ["Poison", "Scarlet Rot", "Blood Loss", "Frostbite", "Sleep", "Madness", "Death Blight"];
 
+/** The "[Item] in possession…" pool: crystal/cracked tears and perfume items. */
+const POSSESSION_ITEMS = [
+  "Cerulean Crystal Tear", "Cerulean Hidden Tear", "Crimson Bubbletear",
+  "Crimson Crystal Tear", "Crimsonburst Crystal Tear", "Crimsonspill Crystal Tear",
+  "Crimsonwhorl Bubbletear", "Flame-Shrouding Cracked Tear", "Greenburst Crystal Tear",
+  "Greenspill Crystal Tear", "Holy-Shrouding Cracked Tear", "Leaden Hardtear",
+  "Lightning-Shrouding Cracked Tear", "Magic-Shrouding Cracked Tear",
+  "Opaline Bubbletear", "Opaline Hardtear", "Speckled Hardtear", "Spiked Crystal Tear",
+  "Stonebarb Cracked Tear", "Thorny Cracked Tear", "Twiggy Cracked Tear",
+  "Windy Crystal Tear", "Acid Spraymist", "Bloodboil Aromatic", "Ironjar Aromatic",
+  "Uplifting Aromatic",
+];
+
+/**
+ * Grouped names that expand to the concrete per-variant names the game
+ * shows (any tier suffix is preserved). Element groups expand to the normal
+ * catalogue's "<Element> Attack Power Up" phrasing so tiers of the same
+ * effect line up ("Magic/Fire/Lightning/Holy Attack Up +2" → the existing
+ * "Fire Attack Power Up +2" entry, not a second spelling of it).
+ */
+const AFFLICTED = ["Poison", "Rot", "Frost"].map((s) => `Attack Power Up vs ${s}-Afflicted Enemy`);
+const NAME_GROUPS: [string, string[]][] = [
+  ["Magic/Fire/Lightning/Holy Attack Up", ELEMENTS.map((e) => `${e} Attack Power Up`)],
+  ["Attack Power Up vs Poison/Rot/Frost-Afflicted Enemy", AFFLICTED],
+  ["Attack Power Up vs Frost/Poison/Rot-Afflicted Enemy", AFFLICTED],
+  ["Sleep/Madness in Vicinity Improves Attack Power",
+    ["Sleep", "Madness"].map((s) => `${s} in Vicinity Improves Attack Power`)],
+  ["Improved [Consumable] Damage",
+    ["Improved Throwing Pot Damage", "Improved Throwing Knife Damage",
+     "Improved Throwing Stone Damage", "Improved Perfuming Arts Damage"]],
+];
+
+/** "Foo +3/4" → ["Foo +3", "Foo +4"]; names without a tier group pass through. */
+function splitTierSuffix(name: string): string[] {
+  const m = name.match(/^(.+?) \+(\d(?:\/\+?\d)+)$/);
+  if (!m) return [name];
+  return m[2].split("/").map((t) => `${m[1]} +${t.replace(/^\+/, "")}`);
+}
+
 function expandName(name: string): string[] {
-  const token = ["[Weapon Class]", "[Weapon]", "[Element]", "[Status]"].find((t) => name.includes(t));
-  if (!token) return [name];
-  const variants = token === "[Element]" ? ELEMENTS : token === "[Status]" ? STATUSES : WEAPON_CLASSES;
-  return variants.map((v) => name.split(token).join(v));
+  return splitTierSuffix(name).flatMap((tiered) => {
+    const group = NAME_GROUPS.find(([key]) => tiered.startsWith(key));
+    const variants = group ? group[1].map((v) => tiered.replace(group[0], v)) : [tiered];
+    return variants.flatMap((v) => {
+      const token = ["[Weapon Class]", "[Weapon]", "[Element]", "[Status]", "[Item]"].find((t) => v.includes(t));
+      if (!token) return [v];
+      const list =
+        token === "[Element]" ? ELEMENTS
+        : token === "[Status]" ? STATUSES
+        : token === "[Item]" ? POSSESSION_ITEMS
+        : WEAPON_CLASSES;
+      return list.map((x) => v.split(token).join(x));
+    });
+  });
 }
 
 /** Every effect name a relic can carry, templates expanded, deduplicated. */
