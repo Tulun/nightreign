@@ -143,6 +143,68 @@ export function sameCustomRelic(
   return a.color === b.color && lines(a) === lines(b);
 }
 
+// ── Build sharing ────────────────────────────────────────────────────────
+//  A build travels as a URL hash (#b=<payload>): the build itself plus any
+//  custom relics its slots reference. Fixed relics travel by name — they
+//  ship with the app. No server involved; the link *is* the data.
+
+export interface SharedBuild {
+  build: Omit<Build, "id" | "updatedAt">;
+  relics: CustomRelic[];
+}
+
+/** Encode a build and the custom relics it uses into a URL-safe string. */
+export function encodeSharedBuild(build: Build, store: BuildStore): string {
+  const used = new Set(
+    [...build.slots, ...build.deepSlots].flatMap((s) => (s?.kind === "custom" ? [s.id] : [])),
+  );
+  const payload = {
+    v: 1,
+    build: {
+      name: build.name,
+      character: build.character,
+      chalice: build.chalice,
+      slots: build.slots,
+      deepSlots: build.deepSlots,
+      notes: build.notes,
+    },
+    relics: store.customRelics.filter((r) => used.has(r.id)),
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
+}
+
+/** Decode a shared-build payload; null if it isn't one. */
+export function decodeSharedBuild(encoded: string): SharedBuild | null {
+  try {
+    const bin = atob(encoded.replaceAll("-", "+").replaceAll("_", "/"));
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const d = JSON.parse(new TextDecoder().decode(bytes)) as {
+      v?: number;
+      build?: SharedBuild["build"];
+      relics?: CustomRelic[];
+    };
+    const b = d.build;
+    if (
+      d.v !== 1 ||
+      !b ||
+      typeof b.character !== "string" ||
+      !Array.isArray(b.slots) ||
+      b.slots.length !== 3 ||
+      !Array.isArray(b.deepSlots) ||
+      b.deepSlots.length !== 3 ||
+      !Array.isArray(d.relics)
+    ) {
+      return null;
+    }
+    return { build: b, relics: d.relics.map(migrateRelicLines) };
+  } catch {
+    return null;
+  }
+}
+
 // ── Fixed relic options ──────────────────────────────────────────────────
 
 export interface FixedRelicOption {

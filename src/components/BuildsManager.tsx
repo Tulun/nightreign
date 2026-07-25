@@ -7,6 +7,8 @@ import { asset } from "@/lib/assets";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
+  decodeSharedBuild,
+  encodeSharedBuild,
   fixedRelics,
   fixedRelicsFor,
   loadStore,
@@ -19,6 +21,7 @@ import {
   type BuildSlot,
   type BuildStore,
   type CustomRelic,
+  type SharedBuild,
   type SlotTriple,
 } from "@/lib/builds";
 import { SLOT_ICON, type Chalice, type SlotColor } from "@/lib/chalices";
@@ -46,9 +49,15 @@ export function BuildsManager() {
   const [store, setStore] = useState<BuildStore | null>(null);
   const [character, setCharacter] = useState(characterChalices[0].name);
   const [editing, setEditing] = useState<Build | null>(null);
+  const [shared, setShared] = useState<SharedBuild | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => setStore(loadStore()), []);
+  useEffect(() => {
+    setStore(loadStore());
+    // A share link carries a build in the hash — offer it for import.
+    const m = window.location.hash.match(/^#b=(.+)$/);
+    if (m) setShared(decodeSharedBuild(m[1]));
+  }, []);
 
   if (!store) {
     return <p className="font-body text-sm text-parchment-faint">Loading saved builds…</p>;
@@ -125,6 +134,44 @@ export function BuildsManager() {
     }));
   };
 
+  const dismissShared = () => {
+    setShared(null);
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  };
+
+  const importShared = () => {
+    if (!shared) return;
+    update((s) => {
+      // Reuse identical pool relics; add the rest under fresh ids.
+      const idMap = new Map<string, string>();
+      const customRelics = [...s.customRelics];
+      for (const r of shared.relics) {
+        const existing = customRelics.find((x) => sameCustomRelic(x, r));
+        if (existing) {
+          idMap.set(r.id, existing.id);
+        } else {
+          const fresh = { ...r, id: newId() };
+          idMap.set(r.id, fresh.id);
+          customRelics.push(fresh);
+        }
+      }
+      const remap = (slots: SlotTriple): SlotTriple =>
+        slots.map((sl) =>
+          sl?.kind === "custom" ? { ...sl, id: idMap.get(sl.id) ?? sl.id } : sl,
+        ) as SlotTriple;
+      const build: Build = {
+        ...shared.build,
+        id: newId(),
+        updatedAt: Date.now(),
+        slots: remap(shared.build.slots),
+        deepSlots: remap(shared.build.deepSlots),
+      };
+      return { ...s, customRelics, builds: [...s.builds, build] };
+    });
+    setCharacter(shared.build.character);
+    dismissShared();
+  };
+
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(store, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -199,6 +246,39 @@ export function BuildsManager() {
         </span>
       </div>
 
+      {shared && (
+        <section className="frame mb-5 rounded-md bg-night-850 p-4" style={{ borderColor: "#c9a227" }}>
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-display text-lg font-semibold text-parchment">Shared build</h3>
+            <span className="font-body text-xs text-parchment-faint">
+              This link carries a {shared.build.character} build — add it to your collection, or dismiss it.
+            </span>
+            <div className="ml-auto flex gap-2">
+              <button
+                type="button"
+                onClick={importShared}
+                className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
+              >
+                Add to my builds
+              </button>
+              <button
+                type="button"
+                onClick={dismissShared}
+                className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:text-parchment"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 max-w-2xl">
+            <BuildCard
+              build={{ ...shared.build, id: "shared-preview", updatedAt: 0 }}
+              store={{ version: 3, builds: [], customRelics: shared.relics }}
+            />
+          </div>
+        </section>
+      )}
+
       {builds.length === 0 ? (
         <p className="font-body text-sm text-parchment-faint">
           No builds for {character} yet — create one, or import a backup.
@@ -254,11 +334,25 @@ function resolveSlot(
 }
 
 /** Effect lines with their demerits, one per row. */
-function EffectLines({ lines, className }: { lines: ResolvedLine[]; className?: string }) {
+function EffectLines({
+  lines,
+  className,
+  size = "xs",
+}: {
+  lines: ResolvedLine[];
+  className?: string;
+  /** "sm" for reading surfaces (build cards); "xs" for dense pickers. */
+  size?: "xs" | "sm";
+}) {
   return (
     <ul className={className}>
       {lines.map((l, i) => (
-        <li key={`${l.text}-${i}`} className="font-body text-xs leading-snug text-parchment-muted">
+        <li
+          key={`${l.text}-${i}`}
+          className={`font-body text-parchment-muted ${
+            size === "sm" ? "text-sm leading-relaxed" : "text-xs leading-snug"
+          }`}
+        >
           {l.text}
           {l.demerit && <span className="block pl-3 text-red-300/80">{l.demerit}</span>}
         </li>
@@ -425,19 +519,46 @@ function RelicLineInputs({
 
 // ── List view ────────────────────────────────────────────────────────────
 
-function BuildCard({ build, store, onEdit, onDelete }: { build: Build; store: BuildStore; onEdit: () => void; onDelete: () => void }) {
+/**
+ * One saved build. With onEdit/onDelete it's an interactive card (Share,
+ * Edit, Delete); without them it's a read-only preview (shared-link banner).
+ */
+function BuildCard({
+  build,
+  store,
+  onEdit,
+  onDelete,
+}: {
+  build: Build;
+  store: BuildStore;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
   const chalice = chalicesFor(build.character).find((c) => c.name === build.chalice);
   const hasDeep = build.deepSlots.some(Boolean);
+
+  const share = async () => {
+    const url = `${window.location.origin}${window.location.pathname}#b=${encodeSharedBuild(build, store)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable (permissions, http) — show the link instead.
+      window.prompt("Copy this link:", url);
+    }
+  };
   const renderSlots = (slots: SlotTriple, colors?: readonly SlotColor[]) =>
     slots.map((slot, i) => {
       const resolved = resolveSlot(slot, store);
       return (
-        <div key={i} className="flex items-start gap-2">
-          {colors?.[i] && <SlotIconImg color={colors[i]} />}
+        <div key={i} className="flex items-start gap-2.5">
+          {colors?.[i] && <SlotIconImg color={colors[i]} size={24} />}
           {resolved ? (
             <div className="min-w-0">
-              <p className="font-body text-sm text-parchment">{resolved.name}</p>
-              <EffectLines lines={resolved.lines} />
+              <p className="font-body text-base text-parchment">{resolved.name}</p>
+              <EffectLines lines={resolved.lines} size="sm" className="mt-0.5 space-y-0.5" />
             </div>
           ) : (
             <p className="font-body text-sm text-parchment-faint">Empty slot</p>
@@ -453,16 +574,21 @@ function BuildCard({ build, store, onEdit, onDelete }: { build: Build; store: Bu
           <h4 className="font-display font-semibold text-parchment">{build.name || "Unnamed build"}</h4>
           <p className="font-body text-xs text-parchment-faint">{build.chalice}</p>
         </div>
-        <div className="flex gap-1.5">
-          <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
-          <button type="button" onClick={onDelete} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">Delete</button>
-        </div>
+        {onEdit && onDelete && (
+          <div className="flex gap-1.5">
+            <button type="button" onClick={share} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">
+              {copied ? "Copied ✓" : "Share"}
+            </button>
+            <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
+            <button type="button" onClick={onDelete} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">Delete</button>
+          </div>
+        )}
       </div>
-      <div className="mt-3 space-y-2">{renderSlots(build.slots, chalice?.slots)}</div>
+      <div className="mt-4 space-y-4">{renderSlots(build.slots, chalice?.slots)}</div>
       {hasDeep && (
-        <div className="mt-3 border-t border-night-700 pt-2">
-          <p className="eyebrow mb-1.5 text-gold-dim">Deep of Night</p>
-          <div className="space-y-2">{renderSlots(build.deepSlots, chalice?.deep)}</div>
+        <div className="mt-4 border-t border-night-700 pt-3">
+          <p className="eyebrow mb-2 text-gold-dim">Deep of Night</p>
+          <div className="space-y-4">{renderSlots(build.deepSlots, chalice?.deep)}</div>
         </div>
       )}
       {build.notes && <p className="mt-2 font-body text-xs text-parchment-faint">{build.notes}</p>}
