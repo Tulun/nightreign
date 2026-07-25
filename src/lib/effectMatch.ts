@@ -123,6 +123,22 @@ const CURSE_EFFECTS = new Set<string>(
   deepRelics.filter((d) => d.category === "curse").flatMap((d) => expandName(d.name)),
 );
 
+// Per-kind vocabularies for relic creation: a rolled relic can only carry
+// effects from its own pool, so suggestions are filtered by relic kind.
+
+/** Effects legal on rolled normal relics — the normal pool minus fixed-only. */
+export const NORMAL_EFFECT_VOCABULARY: string[] = Array.from(
+  new Set(relicEffects.filter((e) => e.category !== "unrollable").flatMap((e) => expandName(e.name))),
+).sort();
+
+/** Effects legal on Deep relics (stat swaps included), without the curses. */
+export const DEEP_EFFECT_VOCABULARY: string[] = Array.from(
+  new Set(deepRelics.filter((d) => d.category !== "curse").flatMap((d) => expandName(d.name))),
+).sort();
+
+/** Deep relic curses — the only legal demerit lines. */
+export const CURSE_VOCABULARY: string[] = Array.from(CURSE_EFFECTS).sort();
+
 /** Whether an effect is a Deep relic curse (demerit). */
 export function isCurseEffect(name: string): boolean {
   return CURSE_EFFECTS.has(name);

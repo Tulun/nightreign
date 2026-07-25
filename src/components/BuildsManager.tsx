@@ -34,7 +34,9 @@ import {
 } from "@/lib/builds";
 import { SLOT_ICON, type Chalice, type SlotColor } from "@/lib/chalices";
 import {
-  EFFECT_VOCABULARY,
+  CURSE_VOCABULARY,
+  DEEP_EFFECT_VOCABULARY,
+  NORMAL_EFFECT_VOCABULARY,
   bestLineMatch,
   isCurseEffect,
   matchOcrLines,
@@ -43,6 +45,39 @@ import {
 } from "@/lib/effectMatch";
 
 const RELIC_COLORS: CustomRelic["color"][] = ["Red", "Blue", "Green", "Yellow"];
+
+/** Everything clickable when creating a Deep relic: effects plus curses. */
+const DEEP_CREATE_VOCABULARY = [...DEEP_EFFECT_VOCABULARY, ...CURSE_VOCABULARY].sort();
+
+/** The datalist id for an effect input of the given relic kind. */
+const effectListId = (deep: boolean) => (deep ? "effect-vocab-deep" : "effect-vocab-normal");
+
+/**
+ * Shared autocomplete lists for effect inputs — one per relic kind, so a
+ * relic only ever suggests effects that can legally roll on it, plus the
+ * curse list for demerit lines.
+ */
+function EffectDatalists() {
+  return (
+    <>
+      <datalist id="effect-vocab-normal">
+        {NORMAL_EFFECT_VOCABULARY.map((e) => (
+          <option key={e} value={e} />
+        ))}
+      </datalist>
+      <datalist id="effect-vocab-deep">
+        {DEEP_EFFECT_VOCABULARY.map((e) => (
+          <option key={e} value={e} />
+        ))}
+      </datalist>
+      <datalist id="effect-vocab-curse">
+        {CURSE_VOCABULARY.map((e) => (
+          <option key={e} value={e} />
+        ))}
+      </datalist>
+    </>
+  );
+}
 
 /** Slot address within a build: normal or Deep of Night, index 0–2. */
 type SlotRef = { deep: boolean; index: number };
@@ -461,12 +496,7 @@ export function BuildsManager() {
         />
       )}
 
-      {/* Shared autocomplete list for effect inputs */}
-      <datalist id="effect-vocab">
-        {EFFECT_VOCABULARY.map((e) => (
-          <option key={e} value={e} />
-        ))}
-      </datalist>
+      <EffectDatalists />
     </div>
   );
 }
@@ -723,7 +753,7 @@ function RelicLineInputs({
           <input
             type="text"
             value={relic.effects[i] ?? ""}
-            list="effect-vocab"
+            list={effectListId(!!relic.deep)}
             onChange={(e) => setEffect(i, e.target.value)}
             placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
             className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
@@ -732,7 +762,7 @@ function RelicLineInputs({
             <input
               type="text"
               value={relic.demerits?.[i] ?? ""}
-              list="effect-vocab"
+              list="effect-vocab-curse"
               onChange={(e) => setDemerit(i, e.target.value)}
               placeholder="Demerit (optional)"
               className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40"
@@ -764,6 +794,8 @@ function BuildCard({
   onDelete?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  // Mobile-only: which slot set the card shows (desktop always shows both).
+  const [view, setView] = useState<"normal" | "deep">("normal");
   const chalice = chalicesFor(build.character).find((c) => c.name === build.chalice);
   const hasDeep = build.deepSlots.some(Boolean);
   // Shared (view-only) builds carry their own relics; slots resolve against
@@ -836,9 +868,32 @@ function BuildCard({
           </div>
         )}
       </div>
-      <div className="mt-4 space-y-4">{renderSlots(build.slots, chalice?.slots)}</div>
+      {/* Mobile-only view toggle — the stacked sections mean a lot of
+          scrolling on small screens, so show one set at a time there. */}
       {hasDeep && (
-        <div className="mt-4 border-t border-night-700 pt-3">
+        <div className="mt-3 flex items-center gap-1 sm:hidden">
+          {(["normal", "deep"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              aria-pressed={view === v}
+              className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+                view === v
+                  ? "bg-night-700 text-gold-bright"
+                  : "bg-night-900 text-parchment-muted hover:text-parchment"
+              }`}
+            >
+              {v === "normal" ? "Normal" : "Deep of Night"}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className={`mt-4 space-y-4 ${view === "deep" ? "hidden sm:block" : ""}`}>
+        {renderSlots(build.slots, chalice?.slots)}
+      </div>
+      {hasDeep && (
+        <div className={`mt-4 border-t border-night-700 pt-3 ${view === "normal" ? "hidden sm:block" : ""}`}>
           <p className="eyebrow mb-2 text-gold-dim">Deep of Night</p>
           <div className="space-y-4">{renderSlots(build.deepSlots, chalice?.deep)}</div>
         </div>
@@ -1304,7 +1359,9 @@ function BuildEditor({
     at: SlotRef,
   ) => {
     const slotColor = (at.deep ? chalice.deep : chalice.slots)[at.index];
-    const fixed = group.name ? fixedRelics.find((r) => r.name === group.name) : null;
+    // Deep slots never take fixed relics — every Depth relic is a custom
+    // roll, even when it shares a name with a fixed one.
+    const fixed = !at.deep && group.name ? fixedRelics.find((r) => r.name === group.name) : null;
     if (fixed) {
       setSlot(at, { kind: "fixed", name: fixed.name });
       return;
@@ -1490,12 +1547,7 @@ function BuildEditor({
         </button>
       </div>
 
-      {/* Shared autocomplete list for effect inputs */}
-      <datalist id="effect-vocab">
-        {EFFECT_VOCABULARY.map((e) => (
-          <option key={e} value={e} />
-        ))}
-      </datalist>
+      <EffectDatalists />
     </div>
   );
 }
@@ -1802,8 +1854,9 @@ function RelicBrowser({
           </button>
         </div>
 
-        {/* Section tabs */}
-        <div className="flex flex-wrap gap-1.5 border-b border-night-600 px-4 py-2">
+        {/* Section tabs — deep slots only ever hold custom relics, so the
+            fixed-relic tabs would all be empty there. */}
+        <div className={`flex flex-wrap gap-1.5 border-b border-night-600 px-4 py-2 ${deep ? "hidden" : ""}`}>
           {BROWSER_TABS.map((t) => {
             const active = tab === t.key;
             return (
@@ -1853,7 +1906,13 @@ function RelicBrowser({
           ))}
           {customShown.length === 0 && visibleSections.length === 0 && (
             <p className="py-6 text-center font-body text-sm text-parchment-faint">
-              {query ? <>Nothing matches “{q}”.</> : "Nothing here for this slot."}
+              {query ? (
+                <>Nothing matches “{q}”.</>
+              ) : deep ? (
+                "Deep of Night relics are all custom rolls — add yours with “+ New custom relic”."
+              ) : (
+                "Nothing here for this slot."
+              )}
             </p>
           )}
         </div>
@@ -2009,9 +2068,10 @@ function CustomRelicEditor({
     });
 
   const query = q.trim().toLowerCase();
-  // Curse (demerit) effects only exist on Deep relics — hide them elsewhere.
-  const vocab = EFFECT_VOCABULARY.filter(
-    (e) => (isDeep || !isCurseEffect(e)) && (!query || e.toLowerCase().includes(query)),
+  // Only effects that can legally roll on this relic kind — the Deep pool
+  // also lists curses, which addEffect routes to a demerit line.
+  const vocab = (isDeep ? DEEP_CREATE_VOCABULARY : NORMAL_EFFECT_VOCABULARY).filter(
+    (e) => !query || e.toLowerCase().includes(query),
   );
   const chosen = new Set([...draft.effects, ...draft.demerits].filter((e) => e.trim()));
 
@@ -2445,7 +2505,7 @@ function ScreenshotPoolImport({
                       <input
                         type="text"
                         value={line}
-                        list="effect-vocab"
+                        list={effectListId(g.deep)}
                         disabled={!!added[i]}
                         onChange={(e) => setLine(i, li, e.target.value)}
                         placeholder={`Effect ${li + 1}${li === 0 ? "" : " (optional)"}`}
@@ -2455,7 +2515,7 @@ function ScreenshotPoolImport({
                         <input
                           type="text"
                           value={g.demerits[li] ?? ""}
-                          list="effect-vocab"
+                          list="effect-vocab-curse"
                           disabled={!!added[i]}
                           onChange={(e) => setDemerit(i, li, e.target.value)}
                           placeholder="Demerit (optional)"
@@ -2673,7 +2733,7 @@ function ScreenshotBuildImport({
                     <input
                       type="text"
                       value={line}
-                      list="effect-vocab"
+                      list={effectListId(g.deep)}
                       disabled={applied[i]}
                       onChange={(e) => setLine(i, li, e.target.value)}
                       placeholder={`Effect ${li + 1}${li === 0 ? "" : " (optional)"}`}
@@ -2683,7 +2743,7 @@ function ScreenshotBuildImport({
                       <input
                         type="text"
                         value={g.demerits[li] ?? ""}
-                        list="effect-vocab"
+                        list="effect-vocab-curse"
                         disabled={applied[i]}
                         onChange={(e) => setDemerit(i, li, e.target.value)}
                         placeholder="Demerit (optional)"

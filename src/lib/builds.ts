@@ -441,15 +441,18 @@ export const fixedRelics: FixedRelicOption[] = [
  * are included (people do run other Nightfarers' relics); the current
  * character's own and the all-Nightfarer ones sort first.
  *
- * Exception: a normal-slot signboard swap relic carries nothing but another
- * character's stat swap, so those only show for their own character. Deep
- * swap relics can roll extra effects worth borrowing, so deep slots see all.
+ * Deep of Night slots take no fixed relics at all: every Depth relic is
+ * randomly rolled in-game, so they only ever exist here as custom relics.
+ *
+ * Exception: a signboard swap relic carries nothing but another character's
+ * stat swap, so those only show for their own character.
  */
 export function fixedRelicsFor(character: string, slotColor: SlotColor, deep = false): FixedRelicOption[] {
+  if (deep) return [];
   const fits = fixedRelics.filter(
     (r) =>
       (slotColor === "White" || r.color === slotColor) &&
-      (deep || r.group !== "swap" || r.character === character),
+      (r.group !== "swap" || r.character === character),
   );
   const rank = (r: FixedRelicOption) => (!r.character ? 0 : r.character === character ? 1 : 2);
   return fits.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
