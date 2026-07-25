@@ -7,6 +7,7 @@
 
 import { characterSwaps } from "@/data/statSwaps";
 import { uniqueRelics } from "@/data/uniqueRelics";
+import { isCurseEffect } from "@/lib/effectMatch";
 import { SCENE_META } from "@/lib/statSwaps";
 import type { SlotColor } from "@/lib/chalices";
 
@@ -15,8 +16,10 @@ export interface CustomRelic {
   /** Optional display name; falls back to "<Color> relic". */
   name: string;
   color: Exclude<SlotColor, "White">;
-  /** 1–3 effect lines, plus an optional 4th curse line on Deep relics. */
+  /** Up to 3 effect lines. */
   effects: string[];
+  /** Per-line demerits (Deep relics): demerits[i] belongs to effects[i]. */
+  demerits: string[];
 }
 
 export type BuildSlot =
@@ -40,25 +43,45 @@ export interface Build {
 }
 
 export interface BuildStore {
-  version: 2;
+  version: 3;
   builds: Build[];
   customRelics: CustomRelic[];
 }
 
 const STORAGE_KEY = "nightreign-builds";
 
-export const EMPTY_STORE: BuildStore = { version: 2, builds: [], customRelics: [] };
+export const EMPTY_STORE: BuildStore = { version: 3, builds: [], customRelics: [] };
 
 export const EMPTY_SLOTS: SlotTriple = [null, null, null];
+
+/**
+ * Migrate a legacy relic whose effects were one flat list (with any curse
+ * mixed in) into parallel effects + per-line demerits: a curse line becomes
+ * the demerit of the effect above it.
+ */
+function migrateRelicLines(relic: CustomRelic): CustomRelic {
+  if (Array.isArray(relic.demerits)) return relic;
+  const effects: string[] = [];
+  const demerits: string[] = [];
+  for (const raw of (relic.effects ?? []).filter(Boolean)) {
+    if (isCurseEffect(raw) && effects.length > 0) {
+      demerits[effects.length - 1] = raw;
+    } else {
+      effects.push(raw);
+      demerits.push("");
+    }
+  }
+  return { ...relic, effects, demerits: effects.map((_, i) => demerits[i] ?? "") };
+}
 
 /** Validate/migrate a parsed store of any known version; null if unusable. */
 export function normalizeStore(data: unknown): BuildStore | null {
   const d = data as { version?: number; builds?: Build[]; customRelics?: CustomRelic[] };
   if (!d || !Array.isArray(d.builds) || !Array.isArray(d.customRelics)) return null;
-  if (d.version !== 1 && d.version !== 2) return null;
+  if (d.version !== 1 && d.version !== 2 && d.version !== 3) return null;
   return {
-    version: 2,
-    customRelics: d.customRelics,
+    version: 3,
+    customRelics: d.customRelics.map(migrateRelicLines),
     // v1 builds predate Deep of Night slots — give them empty ones.
     builds: d.builds.map((b) => ({ ...b, deepSlots: b.deepSlots ?? [...EMPTY_SLOTS] as SlotTriple })),
   };
@@ -92,7 +115,7 @@ export function mergeStores(current: BuildStore, imported: BuildStore): BuildSto
     return Array.from(map.values());
   };
   return {
-    version: 2,
+    version: 3,
     builds: mergeById(current.builds, imported.builds),
     customRelics: mergeById(current.customRelics, imported.customRelics),
   };
@@ -104,15 +127,19 @@ export function newId(): string {
 
 /**
  * Whether two custom relics are the same relic: same color and same effect
- * lines. Re-importing a relic that's already in the pool reuses the existing
- * entry — a duplicate relic in-game is just the one pool relic slotted twice.
+ * lines (including each line's demerit). Re-importing a relic that's already
+ * in the pool reuses the existing entry — a duplicate relic in-game is just
+ * the one pool relic slotted twice.
  */
 export function sameCustomRelic(
-  a: Pick<CustomRelic, "color" | "effects">,
-  b: Pick<CustomRelic, "color" | "effects">,
+  a: Pick<CustomRelic, "color" | "effects" | "demerits">,
+  b: Pick<CustomRelic, "color" | "effects" | "demerits">,
 ): boolean {
-  const lines = (r: Pick<CustomRelic, "effects">) =>
-    r.effects.map((e) => e.trim().toLowerCase()).filter(Boolean).join("\n");
+  const lines = (r: Pick<CustomRelic, "effects" | "demerits">) =>
+    r.effects
+      .map((e, i) => `${e.trim().toLowerCase()}|${(r.demerits?.[i] ?? "").trim().toLowerCase()}`)
+      .filter((l) => l !== "|")
+      .join("\n");
   return a.color === b.color && lines(a) === lines(b);
 }
 

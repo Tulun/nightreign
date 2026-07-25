@@ -200,15 +200,17 @@ export interface ParsedRelicGroup {
   /** Matched relic name, or null when only effects were recognized. */
   name: string | null;
   effects: EffectMatch[];
+  /** Per-line demerits: demerits[i] belongs to effects[i] (null = none). */
+  demerits: (string | null)[];
   /** True when the group carries a Deep-only effect (stat swap, curse, …). */
   deep: boolean;
 }
 
 /**
  * Cluster OCR lines into relic groups. A line matching a relic name starts a
- * new group; effect lines attach to the current group (max 3 per relic, as
- * in game — plus a trailing Deep curse as a fourth line). Returns at most
- * `maxGroups` groups that contain something.
+ * new group; effect lines attach to the current group (max 3 per relic, as in
+ * game). A curse line is the demerit of the effect directly above it. Returns
+ * at most `maxGroups` groups that contain something.
  */
 export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGroup[] {
   const groups: ParsedRelicGroup[] = [];
@@ -224,21 +226,30 @@ export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGro
     const asName = bestMatch(line, RELIC_NAME_VOCABULARY, 0.62);
     const asEffect = bestEffectMatch(line, 0.5);
     if (asName && (!asEffect || asName.score >= asEffect.score)) {
-      current = push({ name: asName.effect, effects: [], deep: /^deep /i.test(asName.effect) });
+      current = push({ name: asName.effect, effects: [], demerits: [], deep: /^deep /i.test(asName.effect) });
     } else if (asEffect) {
-      // Curses trail a Deep relic's three effects as a fourth line.
-      const roomFor = current && CURSE_EFFECTS.has(asEffect.effect) ? 4 : 3;
-      if (!current || current.effects.length >= roomFor) {
-        current = push({ name: null, effects: [], deep: false });
+      // A demerit rides with the effect above it, not as its own line.
+      if (CURSE_EFFECTS.has(asEffect.effect)) {
+        if (current && current.effects.length > 0) {
+          current.demerits[current.effects.length - 1] = asEffect.effect;
+        }
+        continue;
+      }
+      if (!current || current.effects.length >= 3) {
+        current = push({ name: null, effects: [], demerits: [], deep: false });
       }
       // Skip duplicates within a group (OCR sometimes doubles lines).
       if (!current.effects.some((e) => e.effect === asEffect.effect)) {
         current.effects.push(asEffect);
+        current.demerits.push(null);
       }
     }
   }
   for (const g of groups) {
-    g.deep = g.deep || g.effects.some((e) => DEEP_ONLY_EFFECTS.has(e.effect));
+    g.deep =
+      g.deep ||
+      g.effects.some((e) => DEEP_ONLY_EFFECTS.has(e.effect)) ||
+      g.demerits.some(Boolean);
   }
   return groups.filter((g) => g.name !== null || g.effects.length > 0);
 }
