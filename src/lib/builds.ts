@@ -33,6 +33,21 @@ export interface CustomRelic {
   effects: string[];
   /** Per-line demerits (Deep relics): demerits[i] belongs to effects[i]. */
   demerits: string[];
+  /**
+   * Deep of Night relic — only these fit deep slots (and only they carry
+   * demerits). Normalized stores always have it set; relics from before the
+   * flag get a one-time guess (see inferDeep), adjustable in My Relics.
+   */
+  deep?: boolean;
+}
+
+/**
+ * Best guess at deep-ness for relics saved before the flag existed: a
+ * demerit or a deep look proves Deep; anything else reads as normal (a
+ * demerit-less deep relic can't be told apart — the user can fix it).
+ */
+export function inferDeep(r: Pick<CustomRelic, "demerits" | "look">): boolean {
+  return (r.demerits ?? []).some((d) => d && d.trim()) || (r.look?.startsWith("deep-") ?? false);
 }
 
 /** Scene look per relic color (Drizzly=Blue, Tranquil=Green in-game). */
@@ -51,17 +66,18 @@ export function relicLookIcon(color: CustomRelic["color"], look: RelicLook): str
 /**
  * The look a relic renders with: its saved look, or — for relics saved
  * before looks existed — a default picked from its id, so it stays the same
- * across renders and sessions without touching the store.
+ * across renders and sessions without touching the store. Deep relics
+ * default to the deep looks.
  */
-export function effectiveLook(relic: Pick<CustomRelic, "id" | "look">): RelicLook {
+export function effectiveLook(relic: Pick<CustomRelic, "id" | "look" | "deep">): RelicLook {
   if (relic.look) return relic.look;
   let h = 0;
   for (let i = 0; i < relic.id.length; i++) h = (h * 31 + relic.id.charCodeAt(i)) >>> 0;
-  return RELIC_LOOKS[h % 3];
+  return RELIC_LOOKS[(h % 3) + (relic.deep ? 3 : 0)];
 }
 
 /** Icon path for a custom relic (its color's scene, in its look). */
-export function customRelicIcon(relic: Pick<CustomRelic, "id" | "look" | "color">): string {
+export function customRelicIcon(relic: Pick<CustomRelic, "id" | "look" | "color" | "deep">): string {
   return relicLookIcon(relic.color, effectiveLook(relic));
 }
 
@@ -144,7 +160,11 @@ export function normalizeStore(data: unknown): BuildStore | null {
   const declared = Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === "string") : [];
   return {
     version: 3,
-    customRelics: d.customRelics.map(migrateRelicLines),
+    // Relics from before the deep flag get a one-time guess, stored
+    // explicitly so a user's later correction sticks.
+    customRelics: d.customRelics
+      .map(migrateRelicLines)
+      .map((r) => ({ ...r, deep: r.deep ?? inferDeep(r) })),
     builds,
     // Registry = declared tags plus any a build references (pre-tags stores
     // declare none), so every tag in use survives a merge or hand edit.
@@ -199,15 +219,16 @@ export function newId(): string {
 }
 
 /**
- * Whether two custom relics are the same relic: same color and same effect
- * lines (including each line's demerit). Re-importing a relic that's already
- * in the pool reuses the existing entry — a duplicate relic in-game is just
- * the one pool relic slotted twice.
+ * Whether two custom relics are the same relic: same deep-ness, same color,
+ * and same effect lines (including each line's demerit). Re-importing a
+ * relic that's already in the pool reuses the existing entry — a duplicate
+ * relic in-game is just the one pool relic slotted twice.
  */
 export function sameCustomRelic(
-  a: Pick<CustomRelic, "color" | "effects" | "demerits">,
-  b: Pick<CustomRelic, "color" | "effects" | "demerits">,
+  a: Pick<CustomRelic, "color" | "effects" | "demerits" | "deep">,
+  b: Pick<CustomRelic, "color" | "effects" | "demerits" | "deep">,
 ): boolean {
+  if (!!a.deep !== !!b.deep) return false;
   const lines = (r: Pick<CustomRelic, "effects" | "demerits">) =>
     r.effects
       .map((e, i) => `${e.trim().toLowerCase()}|${(r.demerits?.[i] ?? "").trim().toLowerCase()}`)
@@ -255,8 +276,11 @@ interface V2Payload {
   v: 2;
   /** [name, character, chalice, slots, deepSlots] */
   b: [string, string, string, PackedSlot[], PackedSlot[]];
-  /** [id, name, color, look, effects, demerits] per custom relic. */
-  r: [string, string, CustomRelic["color"], string, string[], string[]][];
+  /**
+   * [id, name, color, look, effects, demerits, deep?] per custom relic —
+   * deep (0/1) was added later, so older links omit it and get inferDeep.
+   */
+  r: [string, string, CustomRelic["color"], string, string[], string[], (0 | 1)?][];
 }
 
 const packSlot = (s: BuildSlot): PackedSlot =>
@@ -289,7 +313,7 @@ export async function encodeSharedBuild(build: Build, store: BuildStore): Promis
     ],
     r: Array.from(byId.values())
       .filter((r) => used.has(r.id))
-      .map((r) => [r.id, r.name, r.color, r.look ?? "", r.effects, r.demerits ?? []]),
+      .map((r) => [r.id, r.name, r.color, r.look ?? "", r.effects, r.demerits ?? [], r.deep ? 1 : 0]),
   };
   const bytes = new TextEncoder().encode(JSON.stringify(payload));
   // Old browsers without CompressionStream ship the JSON as-is (still v2).
@@ -320,14 +344,18 @@ function unpackV2(d: V2Payload): SharedBuild | null {
       deepSlots: deepSlots.map(unpackSlot) as SlotTriple,
       notes: "",
     },
-    relics: d.r.map(([id, rName, color, look, effects, demerits]) => ({
-      id: String(id),
-      name: String(rName ?? ""),
-      color,
-      ...(look ? { look: look as RelicLook } : {}),
-      effects: Array.isArray(effects) ? effects : [],
-      demerits: Array.isArray(demerits) ? demerits : [],
-    })),
+    relics: d.r.map(([id, rName, color, look, effects, demerits, deep]) => {
+      const relic: CustomRelic = {
+        id: String(id),
+        name: String(rName ?? ""),
+        color,
+        ...(look ? { look: look as RelicLook } : {}),
+        effects: Array.isArray(effects) ? effects : [],
+        demerits: Array.isArray(demerits) ? demerits : [],
+      };
+      // Links minted before the deep flag omit it — fall back to inference.
+      return { ...relic, deep: deep === undefined ? inferDeep(relic) : deep === 1 };
+    }),
   };
 }
 
@@ -355,7 +383,10 @@ export async function decodeSharedBuild(encoded: string): Promise<SharedBuild | 
     ) {
       return null;
     }
-    return { build: b, relics: relics.map(migrateRelicLines) };
+    return {
+      build: b,
+      relics: relics.map(migrateRelicLines).map((r) => ({ ...r, deep: r.deep ?? inferDeep(r) })),
+    };
   } catch {
     return null;
   }

@@ -916,6 +916,7 @@ function MyRelics({
   onDelete: (id: string) => void;
 }) {
   const [colorFilter, setColorFilter] = useState<CustomRelic["color"] | null>(null);
+  const [kindFilter, setKindFilter] = useState<"normal" | "deep" | null>(null);
   const [query, setQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   if (relics.length === 0) {
@@ -930,6 +931,7 @@ function MyRelics({
   const q = query.trim().toLowerCase();
   const shown = relics
     .filter((r) => !colorFilter || r.color === colorFilter)
+    .filter((r) => !kindFilter || (kindFilter === "deep") === !!r.deep)
     .filter(
       (r) =>
         !q ||
@@ -969,6 +971,20 @@ function MyRelics({
             {c}
           </button>
         ))}
+        <span className="mx-1 h-4 w-px bg-night-600" aria-hidden="true" />
+        {(["normal", "deep"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setKindFilter(kindFilter === k ? null : k)}
+            aria-pressed={kindFilter === k}
+            className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+              kindFilter === k ? "bg-night-700 text-gold-bright" : "bg-night-800 text-parchment-muted hover:text-parchment"
+            }`}
+          >
+            {k === "normal" ? "Normal" : "Deep"}
+          </button>
+        ))}
         <input
           type="text"
           value={query}
@@ -989,8 +1005,13 @@ function MyRelics({
               <RelicImg src={customRelicIcon(r)} alt={r.color} size={36} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="truncate font-body text-sm font-semibold text-parchment">
+                  <p className="min-w-0 truncate font-body text-sm font-semibold text-parchment">
                     {r.name || `${r.color} relic`}
+                    {r.deep && (
+                      <span className="ml-1.5 rounded border border-gold-dim/40 px-1 py-px align-middle font-body text-[10px] font-normal uppercase tracking-wide text-gold-dim">
+                        Deep
+                      </span>
+                    )}
                   </p>
                   <div className="flex shrink-0 gap-1">
                     <IconButton label="Edit relic" onClick={() => setEditingId(r.id)}>
@@ -1047,6 +1068,31 @@ function RelicCardEditor({
           ))}
         </select>
       </div>
+      {/* Normal vs Deep decides which slots the relic fits. Going normal
+          drops demerits — only Deep relics carry them. */}
+      <div className="mt-2 flex items-center gap-1.5">
+        {([false, true] as const).map((isDeep) => (
+          <button
+            key={String(isDeep)}
+            type="button"
+            onClick={() =>
+              onUpdate(
+                isDeep
+                  ? { ...relic, deep: true }
+                  : { ...relic, deep: false, demerits: relic.effects.map(() => "") },
+              )
+            }
+            aria-pressed={!!relic.deep === isDeep}
+            className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+              !!relic.deep === isDeep
+                ? "bg-night-700 text-gold-bright"
+                : "bg-night-900 text-parchment-muted hover:text-parchment"
+            }`}
+          >
+            {isDeep ? "Deep of Night" : "Normal"}
+          </button>
+        ))}
+      </div>
       {/* Relic picture — the color's scene image in the chosen look. */}
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {RELIC_LOOKS.map((look) => {
@@ -1067,7 +1113,7 @@ function RelicCardEditor({
           );
         })}
       </div>
-      <RelicLineInputs relic={relic} onUpdate={onUpdate} className="mt-2" />
+      <RelicLineInputs relic={relic} onUpdate={onUpdate} className="mt-2" showDemerits={!!relic.deep} />
       <button type="button" onClick={onDone} className="frame mt-2 rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600">
         Done
       </button>
@@ -1160,6 +1206,7 @@ function BuildEditor({
       color,
       effects: group.effects.slice(0, 3),
       demerits: group.demerits.slice(0, 3),
+      deep: at.deep,
     });
     setSlot(at, { kind: "custom", id });
   };
@@ -1544,7 +1591,11 @@ function RelicBrowser({
   }, []);
 
   const fixed = fixedRelicsFor(character, slotColor, deep);
-  const custom = store.customRelics.filter((r) => slotColor === "White" || r.color === slotColor);
+  // Only relics of the slot's kind fit: deep slots take Deep relics, normal
+  // slots take normal ones — same as in-game.
+  const custom = store.customRelics.filter(
+    (r) => !!r.deep === deep && (slotColor === "White" || r.color === slotColor),
+  );
   const query = q.trim().toLowerCase();
   const matches = (name: string, effects: string[], char?: string) =>
     !query ||
@@ -1807,6 +1858,7 @@ function CustomRelicEditor({
     color: slotColor === "White" ? "Red" : (slotColor as CustomRelic["color"]),
     effects: ["", "", ""],
     demerits: ["", "", ""],
+    deep,
   });
   const [q, setQ] = useState("");
   // A colored slot dictates the relic's color — only White slots ask.
@@ -1855,6 +1907,7 @@ function CustomRelicEditor({
       color: draft.color,
       effects: kept.map((i) => draft.effects[i].trim()),
       demerits: kept.map((i) => (draft.demerits[i] ?? "").trim()),
+      deep,
     });
   };
 
