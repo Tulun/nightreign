@@ -58,8 +58,10 @@ export function BuildsManager() {
   const [view, setView] = useState<"builds" | "sharedBuilds" | "relics">("builds");
   // Character filter for the build list — "" shows all Nightfarers.
   const [character, setCharacter] = useState("");
-  // Tag filter — empty means all builds; otherwise any selected tag matches.
+  // Tag filter — empty means all builds; otherwise builds matching any of
+  // the selected tags ("any") or carrying every one of them ("all").
   const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [tagMode, setTagMode] = useState<"any" | "all">("any");
   const [managingTags, setManagingTags] = useState(false);
   const [editing, setEditing] = useState<Build | null>(null);
   const [shared, setShared] = useState<SharedBuild | null>(null);
@@ -161,7 +163,13 @@ export function BuildsManager() {
     .sort((a, b) => b.updatedAt - a.updatedAt);
   const builds = ownBuilds
     .filter((b) => !character || b.character === character)
-    .filter((b) => tagFilter.length === 0 || tagFilter.some((t) => b.tags?.includes(t)))
+    .filter(
+      (b) =>
+        tagFilter.length === 0 ||
+        (tagMode === "any"
+          ? tagFilter.some((t) => b.tags?.includes(t))
+          : tagFilter.every((t) => b.tags?.includes(t))),
+    )
     .sort((a, b) => b.updatedAt - a.updatedAt);
 
   const newBuildCharacter = character || characterChalices[0].name;
@@ -313,13 +321,36 @@ export function BuildsManager() {
           className="w-52"
         />
         {store.tags.length > 0 && (
-          <MultiSelect
-            values={tagFilter}
-            options={store.tags.map((t) => ({ value: t, label: t }))}
-            onChange={setTagFilter}
-            placeholder="All tags"
-            className="w-44"
-          />
+          <>
+            <MultiSelect
+              values={tagFilter}
+              options={store.tags.map((t) => ({ value: t, label: t }))}
+              onChange={setTagFilter}
+              placeholder="All tags"
+              className="w-44"
+            />
+            {/* Match any (OR) vs all (AND) of the selected tags. */}
+            {tagFilter.length > 1 && (
+              <div className="flex overflow-hidden rounded-md border border-night-600" role="group" aria-label="Tag match mode">
+                {(["any", "all"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setTagMode(m)}
+                    aria-pressed={tagMode === m}
+                    title={m === "any" ? "Builds with at least one selected tag (OR)" : "Builds with every selected tag (AND)"}
+                    className={`px-2.5 py-1.5 font-body text-xs transition-colors ${
+                      tagMode === m
+                        ? "bg-night-700 text-gold-bright"
+                        : "bg-night-900 text-parchment-muted hover:text-parchment"
+                    }`}
+                  >
+                    {m === "any" ? "Any" : "All"}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
         <button type="button" onClick={startNew} className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600">
           + New build
