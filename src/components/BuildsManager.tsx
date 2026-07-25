@@ -3,11 +3,15 @@
 import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
 import { characterChalices, grailChalices } from "@/data/chalices";
+import { Dropdown } from "@/components/Dropdown";
 import { asset } from "@/lib/assets";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
+  RELIC_LOOKS,
+  customRelicIcon,
   decodeSharedBuild,
+  effectiveLook,
   encodeSharedBuild,
   fixedRelics,
   fixedRelicsFor,
@@ -15,12 +19,14 @@ import {
   mergeStores,
   newId,
   normalizeStore,
+  relicLookIcon,
   sameCustomRelic,
   saveStore,
   type Build,
   type BuildSlot,
   type BuildStore,
   type CustomRelic,
+  type FixedRelicOption,
   type SharedBuild,
   type SlotTriple,
 } from "@/lib/builds";
@@ -47,7 +53,9 @@ type SlotRef = { deep: boolean; index: number };
  */
 export function BuildsManager() {
   const [store, setStore] = useState<BuildStore | null>(null);
-  const [character, setCharacter] = useState(characterChalices[0].name);
+  const [view, setView] = useState<"builds" | "relics">("builds");
+  // Character filter for the build list — "" shows all Nightfarers.
+  const [character, setCharacter] = useState("");
   const [editing, setEditing] = useState<Build | null>(null);
   const [shared, setShared] = useState<SharedBuild | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
@@ -56,7 +64,7 @@ export function BuildsManager() {
     setStore(loadStore());
     // A share link carries a build in the hash — offer it for import.
     const m = window.location.hash.match(/^#b=(.+)$/);
-    if (m) setShared(decodeSharedBuild(m[1]));
+    if (m) decodeSharedBuild(m[1]).then(setShared);
   }, []);
 
   if (!store) {
@@ -91,8 +99,10 @@ export function BuildsManager() {
             ...s,
             builds: [...s.builds.filter((b) => b.id !== build.id), { ...build, updatedAt: Date.now() }],
           }));
-          // Land on the saved build's character in the list.
-          setCharacter(build.character);
+          // Keep the saved build visible: leave "All" alone, but move a
+          // character filter to the build's character.
+          setCharacter((c) => (c ? build.character : c));
+          setView("builds");
           setEditing(null);
         }}
         onCancel={() => setEditing(null)}
@@ -103,15 +113,16 @@ export function BuildsManager() {
   }
 
   const builds = store.builds
-    .filter((b) => b.character === character)
+    .filter((b) => !character || b.character === character)
     .sort((a, b) => b.updatedAt - a.updatedAt);
 
+  const newBuildCharacter = character || characterChalices[0].name;
   const startNew = () =>
     setEditing({
       id: newId(),
       name: "",
-      character,
-      chalice: chalicesFor(character)[0].name,
+      character: newBuildCharacter,
+      chalice: chalicesFor(newBuildCharacter)[0].name,
       slots: [...EMPTY_SLOTS] as SlotTriple,
       deepSlots: [...EMPTY_SLOTS] as SlotTriple,
       notes: "",
@@ -168,7 +179,8 @@ export function BuildsManager() {
       };
       return { ...s, customRelics, builds: [...s.builds, build] };
     });
-    setCharacter(shared.build.character);
+    setCharacter((c) => (c ? shared.build.character : c));
+    setView("builds");
     dismissShared();
   };
 
@@ -194,33 +206,48 @@ export function BuildsManager() {
 
   return (
     <div>
-      {/* Character selector */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {characterChalices.map((c) => {
-          const active = c.name === character;
-          const count = store.builds.filter((b) => b.character === c.name).length;
+      {/* Builds / My Relics view switch */}
+      <div className="mb-5 flex gap-1 border-b border-night-700">
+        {(
+          [
+            { key: "builds", label: "Builds", count: store.builds.length },
+            { key: "relics", label: "My Relics", count: store.customRelics.length },
+          ] as const
+        ).map((t) => {
+          const active = view === t.key;
           return (
             <button
-              key={c.name}
+              key={t.key}
               type="button"
-              onClick={() => setCharacter(c.name)}
+              onClick={() => setView(t.key)}
               aria-pressed={active}
-              className={`frame rounded-md px-3 py-1.5 font-body text-sm transition-colors ${
+              className={`-mb-px rounded-t-md border-b-2 px-4 py-2 font-display text-sm font-semibold transition-colors ${
                 active
-                  ? "bg-night-700 text-gold-bright"
-                  : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
+                  ? "border-gold-bright text-gold-bright"
+                  : "border-transparent text-parchment-muted hover:text-parchment"
               }`}
-              style={active ? { borderColor: "#c9a227" } : undefined}
             >
-              {c.name}
-              {count > 0 && <span className="ml-1.5 text-xs text-parchment-faint">{count}</span>}
+              {t.label}
+              {t.count > 0 && <span className="ml-1.5 font-body text-xs text-parchment-faint">{t.count}</span>}
             </button>
           );
         })}
       </div>
 
+      {view === "builds" && (
+        <>
       {/* Toolbar */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
+        <Dropdown
+          value={character}
+          onChange={setCharacter}
+          placeholder="All Nightfarers"
+          options={characterChalices.map((c) => {
+            const count = store.builds.filter((b) => b.character === c.name).length;
+            return { value: c.name, label: count > 0 ? `${c.name} (${count})` : c.name };
+          })}
+          className="w-52"
+        />
         <button type="button" onClick={startNew} className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600">
           + New build
         </button>
@@ -281,7 +308,7 @@ export function BuildsManager() {
 
       {builds.length === 0 ? (
         <p className="font-body text-sm text-parchment-faint">
-          No builds for {character} yet — create one, or import a backup.
+          No builds {character ? `for ${character}` : ""} yet — create one, or import a backup.
         </p>
       ) : (
         <div className="grid gap-3 xl:grid-cols-2">
@@ -290,8 +317,12 @@ export function BuildsManager() {
           ))}
         </div>
       )}
+        </>
+      )}
 
-      <MyRelics relics={store.customRelics} onUpdate={updateCustomRelic} onDelete={deleteCustomRelic} />
+      {view === "relics" && (
+        <MyRelics relics={store.customRelics} onUpdate={updateCustomRelic} onDelete={deleteCustomRelic} />
+      )}
 
       {/* Shared autocomplete list for effect inputs */}
       <datalist id="effect-vocab">
@@ -319,18 +350,20 @@ interface ResolvedLine {
 function resolveSlot(
   slot: BuildSlot,
   store: BuildStore,
-): { name: string; color: SlotColor; lines: ResolvedLine[] } | null {
+): { name: string; color: SlotColor; icon: string; lines: ResolvedLine[] } | null {
   if (!slot) return null;
   if (slot.kind === "fixed") {
     const r = fixedRelics.find((f) => f.name === slot.name);
-    return r ? { name: r.name, color: r.color, lines: r.effects.map((text) => ({ text })) } : null;
+    return r
+      ? { name: r.name, color: r.color, icon: r.icon, lines: r.effects.map((text) => ({ text })) }
+      : null;
   }
   const r = store.customRelics.find((c) => c.id === slot.id);
   if (!r) return null;
   const lines = r.effects
     .map((text, i) => ({ text, demerit: r.demerits?.[i]?.trim() || undefined }))
     .filter((l) => l.text.trim());
-  return { name: r.name || `${r.color} relic`, color: r.color, lines };
+  return { name: r.name || `${r.color} relic`, color: r.color, icon: customRelicIcon(r), lines };
 }
 
 /** Effect lines with their demerits, one per row. */
@@ -338,26 +371,76 @@ function EffectLines({
   lines,
   className,
   size = "xs",
+  divided = false,
 }: {
   lines: ResolvedLine[];
   className?: string;
   /** "sm" for reading surfaces (build cards); "xs" for dense pickers. */
   size?: "xs" | "sm";
+  /** Rule between lines, so each effect reads separately at a glance. */
+  divided?: boolean;
 }) {
   return (
-    <ul className={className}>
+    <ul className={`${divided ? "divide-y divide-night-700" : ""} ${className ?? ""}`}>
       {lines.map((l, i) => (
         <li
           key={`${l.text}-${i}`}
           className={`font-body text-parchment-muted ${
             size === "sm" ? "text-sm leading-relaxed" : "text-xs leading-snug"
-          }`}
+          } ${divided ? "py-1.5 first:pt-0 last:pb-0" : ""}`}
         >
           {l.text}
           {l.demerit && <span className="block pl-3 text-red-300/80">{l.demerit}</span>}
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Compact square icon button (edit / delete on dense cards). */
+function IconButton({
+  label,
+  onClick,
+  danger = false,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={`grid h-7 w-7 shrink-0 place-items-center rounded border border-night-600 text-parchment-muted transition-colors ${
+        danger ? "hover:border-red-400/60 hover:text-red-300" : "hover:border-gold-faint hover:text-gold-bright"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 6h18" />
+      <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
   );
 }
 
@@ -459,6 +542,13 @@ function SlotIconImg({ color, size = 20 }: { color: SlotColor; size?: number }) 
   );
 }
 
+/** A relic's picture (unique-relic art or a scene image for custom relics). */
+function RelicImg({ src, alt, size = 32 }: { src: string; alt: string; size?: number }) {
+  return (
+    <Image src={asset(src)} alt={alt} title={alt} width={size} height={size} className="shrink-0 object-contain" style={{ width: size, height: size }} />
+  );
+}
+
 /**
  * Editable effect lines for a pool relic — each effect input gets a demerit
  * input beneath it (demerits are tied to their line on Deep relics). The
@@ -539,7 +629,7 @@ function BuildCard({
   const hasDeep = build.deepSlots.some(Boolean);
 
   const share = async () => {
-    const url = `${window.location.origin}${window.location.pathname}#b=${encodeSharedBuild(build, store)}`;
+    const url = `${window.location.origin}${window.location.pathname}#b=${await encodeSharedBuild(build, store)}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -554,14 +644,19 @@ function BuildCard({
       const resolved = resolveSlot(slot, store);
       return (
         <div key={i} className="flex items-start gap-2.5">
-          {colors?.[i] && <SlotIconImg color={colors[i]} size={24} />}
           {resolved ? (
-            <div className="min-w-0">
-              <p className="font-body text-base text-parchment">{resolved.name}</p>
-              <EffectLines lines={resolved.lines} size="sm" className="mt-0.5 space-y-0.5" />
-            </div>
+            <>
+              <RelicImg src={resolved.icon} alt={resolved.name} size={32} />
+              <div className="min-w-0">
+                <p className="font-body text-base text-parchment">{resolved.name}</p>
+                <EffectLines lines={resolved.lines} size="sm" className="mt-0.5 space-y-0.5" />
+              </div>
+            </>
           ) : (
-            <p className="font-body text-sm text-parchment-faint">Empty slot</p>
+            <>
+              {colors?.[i] && <SlotIconImg color={colors[i]} size={24} />}
+              <p className="font-body text-sm text-parchment-faint">Empty slot</p>
+            </>
           )}
         </div>
       );
@@ -572,7 +667,9 @@ function BuildCard({
       <div className="flex items-start justify-between gap-2">
         <div>
           <h4 className="font-display font-semibold text-parchment">{build.name || "Unnamed build"}</h4>
-          <p className="font-body text-xs text-parchment-faint">{build.chalice}</p>
+          <p className="font-body text-xs text-parchment-faint">
+            {build.character} · {build.chalice}
+          </p>
         </div>
         {onEdit && onDelete && (
           <div className="flex gap-1.5">
@@ -591,7 +688,6 @@ function BuildCard({
           <div className="space-y-4">{renderSlots(build.deepSlots, chalice?.deep)}</div>
         </div>
       )}
-      {build.notes && <p className="mt-2 font-body text-xs text-parchment-faint">{build.notes}</p>}
     </article>
   );
 }
@@ -610,7 +706,14 @@ function MyRelics({
   const [colorFilter, setColorFilter] = useState<CustomRelic["color"] | null>(null);
   const [query, setQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  if (relics.length === 0) return null;
+  if (relics.length === 0) {
+    return (
+      <p className="font-body text-sm text-parchment-faint">
+        No custom relics yet — they&rsquo;re created while editing a build (&ldquo;+ Add new
+        relic&rdquo; in any slot), or imported from a screenshot.
+      </p>
+    );
+  }
 
   const q = query.trim().toLowerCase();
   const shown = relics
@@ -625,9 +728,8 @@ function MyRelics({
     .sort((a, b) => COLOR_ORDER[a.color] - COLOR_ORDER[b.color] || (a.name || "z").localeCompare(b.name || "z"));
 
   return (
-    <div className="mt-8">
-      <h3 className="font-display text-xl font-bold text-parchment">My Relics</h3>
-      <p className="mt-1 font-body text-xs text-parchment-faint">
+    <div>
+      <p className="font-body text-xs text-parchment-faint">
         Custom relics you&rsquo;ve added — usable in any build with a matching slot.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -671,25 +773,29 @@ function MyRelics({
           editingId === r.id ? (
             <RelicCardEditor key={r.id} relic={r} onUpdate={onUpdate} onDone={() => setEditingId(null)} />
           ) : (
-            <div key={r.id} className="frame flex items-start justify-between gap-2 rounded-md bg-night-800 p-3">
-              <div className="flex items-start gap-2">
-                <SlotIconImg color={r.color} />
-                <div>
-                  <p className="font-body text-sm text-parchment">{r.name || `${r.color} relic`}</p>
-                  <EffectLines
-                    lines={r.effects
-                      .map((text, i) => ({ text, demerit: r.demerits?.[i]?.trim() || undefined }))
-                      .filter((l) => l.text.trim())}
-                  />
+            <div key={r.id} className="frame flex items-start gap-2.5 rounded-md bg-night-800 p-3">
+              <RelicImg src={customRelicIcon(r)} alt={r.color} size={36} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="truncate font-body text-sm font-semibold text-parchment">
+                    {r.name || `${r.color} relic`}
+                  </p>
+                  <div className="flex shrink-0 gap-1">
+                    <IconButton label="Edit relic" onClick={() => setEditingId(r.id)}>
+                      <PencilIcon />
+                    </IconButton>
+                    <IconButton label="Delete relic" danger onClick={() => onDelete(r.id)}>
+                      <TrashIcon />
+                    </IconButton>
+                  </div>
                 </div>
-              </div>
-              <div className="flex shrink-0 gap-1.5">
-                <button type="button" onClick={() => setEditingId(r.id)} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">
-                  Edit
-                </button>
-                <button type="button" onClick={() => onDelete(r.id)} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">
-                  Delete
-                </button>
+                <EffectLines
+                  divided
+                  className="mt-1.5"
+                  lines={r.effects
+                    .map((text, i) => ({ text, demerit: r.demerits?.[i]?.trim() || undefined }))
+                    .filter((l) => l.text.trim())}
+                />
               </div>
             </div>
           ),
@@ -728,6 +834,26 @@ function RelicCardEditor({
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
+      </div>
+      {/* Relic picture — the color's scene image in the chosen look. */}
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {RELIC_LOOKS.map((look) => {
+          const active = effectiveLook(relic) === look;
+          return (
+            <button
+              key={look}
+              type="button"
+              onClick={() => onUpdate({ ...relic, look })}
+              aria-pressed={active}
+              title={look.replace("-", " ")}
+              className={`rounded-md border p-1 transition-colors ${
+                active ? "border-gold-bright bg-night-700" : "border-night-600 bg-night-900 hover:border-night-400"
+              }`}
+            >
+              <RelicImg src={relicLookIcon(relic.color, look)} alt={look} size={28} />
+            </button>
+          );
+        })}
       </div>
       <RelicLineInputs relic={relic} onUpdate={onUpdate} className="mt-2" />
       <button type="button" onClick={onDone} className="frame mt-2 rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600">
@@ -830,6 +956,7 @@ function BuildEditor({
             <RelicPicker
               character={build.character}
               slotColor={slotColor}
+              deep={deep}
               store={store}
               value={value}
               onChange={(slot) => setSlot(at, slot)}
@@ -931,15 +1058,7 @@ function BuildEditor({
         </section>
       </div>
 
-      <textarea
-        value={build.notes}
-        onChange={(e) => setBuild((b) => ({ ...b, notes: e.target.value }))}
-        placeholder="Notes (optional)"
-        rows={2}
-        className="frame mt-5 w-full rounded bg-night-900 px-3 py-2 font-body text-sm text-parchment placeholder:text-parchment-faint"
-      />
-
-      <div className="mt-4 flex gap-2">
+      <div className="mt-5 flex gap-2">
         <button type="button" onClick={() => onSave(build)} className="frame rounded-md bg-night-700 px-5 py-2 font-body text-sm text-gold-bright hover:bg-night-600">
           Save build
         </button>
@@ -1022,6 +1141,7 @@ function ChalicePicker({ chalices, value, onChange }: { chalices: Chalice[]; val
 function RelicPicker({
   character,
   slotColor,
+  deep,
   store,
   value,
   onChange,
@@ -1029,6 +1149,7 @@ function RelicPicker({
 }: {
   character: string;
   slotColor: SlotColor;
+  deep: boolean;
   store: BuildStore;
   value: BuildSlot;
   onChange: (slot: BuildSlot) => void;
@@ -1081,6 +1202,7 @@ function RelicPicker({
         <RelicBrowser
           character={character}
           slotColor={slotColor}
+          deep={deep}
           store={store}
           value={value}
           onPick={(slot) => {
@@ -1103,9 +1225,34 @@ function RelicPicker({
  * with every effect line visible, so similar relics can be told apart at a
  * glance. Search covers names, effects, and character.
  */
+/** The fixed-relic groupings shown as tables in the browser. */
+const FIXED_SECTIONS: { key: "nightlord" | "other"; title: string; groups: FixedRelicOption["group"][] }[] = [
+  { key: "nightlord", title: "Nightlord Relics", groups: ["nightlord", "everdark"] },
+  { key: "other", title: "Remembrance & Other", groups: ["swap", "character", "shop", "boss"] },
+];
+
+const BROWSER_TABS = [
+  { key: "all", label: "All" },
+  { key: "mine", label: "My Relics" },
+  { key: "nightlord", label: "Nightlord" },
+  { key: "other", label: "Remembrance & Other" },
+] as const;
+type BrowserTab = (typeof BROWSER_TABS)[number]["key"];
+
+/**
+ * Order within "Remembrance & Other": the current character's stat swaps,
+ * then their Remembrance relics, then all-Nightfarer relics, then other
+ * characters' — so a Nightfarer's own gear floats to the top.
+ */
+function rankOtherSection(r: FixedRelicOption, character: string): number {
+  if (r.character === character) return r.group === "swap" ? 0 : 1;
+  return !r.character ? 2 : 3;
+}
+
 function RelicBrowser({
   character,
   slotColor,
+  deep,
   store,
   value,
   onPick,
@@ -1114,6 +1261,7 @@ function RelicBrowser({
 }: {
   character: string;
   slotColor: SlotColor;
+  deep: boolean;
   store: BuildStore;
   value: BuildSlot;
   onPick: (slot: BuildSlot) => void;
@@ -1121,6 +1269,7 @@ function RelicBrowser({
   onClose: () => void;
 }) {
   const [q, setQ] = useState("");
+  const [tab, setTab] = useState<BrowserTab>("all");
 
   // The page behind the modal shouldn't scroll while it's open.
   useEffect(() => {
@@ -1131,7 +1280,7 @@ function RelicBrowser({
     };
   }, []);
 
-  const fixed = fixedRelicsFor(character, slotColor);
+  const fixed = fixedRelicsFor(character, slotColor, deep);
   const custom = store.customRelics.filter((r) => slotColor === "White" || r.color === slotColor);
   const query = q.trim().toLowerCase();
   const matches = (name: string, effects: string[], char?: string) =>
@@ -1142,9 +1291,26 @@ function RelicBrowser({
   const filteredCustom = custom.filter((r) => matches(r.name || `${r.color} relic`, r.effects));
   const filteredFixed = fixed.filter((r) => matches(r.name, r.effects, r.character));
 
+  const showCustom = tab === "all" || tab === "mine";
+  const visibleSections = FIXED_SECTIONS.filter((s) => tab === "all" || tab === s.key)
+    .map((s) => {
+      const rows = filteredFixed.filter((r) => s.groups.includes(r.group));
+      if (s.key === "other") {
+        rows.sort(
+          (a, b) =>
+            rankOtherSection(a, character) - rankOtherSection(b, character) ||
+            a.name.localeCompare(b.name),
+        );
+      }
+      return { ...s, rows };
+    })
+    .filter((s) => s.rows.length > 0);
+
+  const customShown = showCustom ? filteredCustom : [];
   const pickFirst = () => {
-    if (filteredCustom[0]) onPick({ kind: "custom", id: filteredCustom[0].id });
-    else if (filteredFixed[0]) onPick({ kind: "fixed", name: filteredFixed[0].name });
+    const firstFixed = visibleSections[0]?.rows[0];
+    if (customShown[0]) onPick({ kind: "custom", id: customShown[0].id });
+    else if (firstFixed) onPick({ kind: "fixed", name: firstFixed.name });
   };
 
   const cardGrid = "grid items-start gap-2 sm:grid-cols-2 xl:grid-cols-3";
@@ -1209,16 +1375,39 @@ function RelicBrowser({
           </button>
         </div>
 
+        {/* Section tabs */}
+        <div className="flex flex-wrap gap-1.5 border-b border-night-600 px-4 py-2">
+          {BROWSER_TABS.map((t) => {
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setTab(t.key)}
+                aria-pressed={active}
+                className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+                  active
+                    ? "bg-night-700 text-gold-bright"
+                    : "bg-night-900 text-parchment-muted hover:bg-night-800 hover:text-parchment"
+                }`}
+                style={active ? { borderColor: "#c9a227" } : undefined}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="overflow-y-auto p-4">
-          {filteredCustom.length > 0 && (
+          {customShown.length > 0 && (
             <>
               <p className="eyebrow mb-2">My relics</p>
               <div className={cardGrid}>
-                {filteredCustom.map((r) => (
+                {customShown.map((r) => (
                   <RelicBrowserCard
                     key={r.id}
                     name={r.name || `${r.color} relic`}
-                    color={r.color}
+                    icon={customRelicIcon(r)}
                     lines={r.effects
                       .map((text, i) => ({ text, demerit: r.demerits?.[i]?.trim() || undefined }))
                       .filter((l) => l.text.trim())}
@@ -1229,27 +1418,15 @@ function RelicBrowser({
               </div>
             </>
           )}
-          {filteredFixed.length > 0 && (
-            <>
-              <p className={`eyebrow mb-2 ${filteredCustom.length > 0 ? "mt-4" : ""}`}>Relics</p>
-              <div className={cardGrid}>
-                {filteredFixed.map((r) => (
-                  <RelicBrowserCard
-                    key={r.name}
-                    name={r.name}
-                    color={r.color}
-                    tag={r.character && r.character !== character ? r.character : undefined}
-                    lines={r.effects.map((text) => ({ text }))}
-                    active={value?.kind === "fixed" && value.name === r.name}
-                    onClick={() => onPick({ kind: "fixed", name: r.name })}
-                  />
-                ))}
-              </div>
-            </>
-          )}
-          {filteredCustom.length === 0 && filteredFixed.length === 0 && (
+          {visibleSections.map(({ title, rows }) => (
+            <div key={title} className="mt-4 first:mt-0">
+              <p className="eyebrow mb-1.5">{title}</p>
+              <FixedRelicTable relics={rows} character={character} value={value} onPick={onPick} />
+            </div>
+          ))}
+          {customShown.length === 0 && visibleSections.length === 0 && (
             <p className="py-6 text-center font-body text-sm text-parchment-faint">
-              Nothing matches “{q}”.
+              {query ? <>Nothing matches “{q}”.</> : "Nothing here for this slot."}
             </p>
           )}
         </div>
@@ -1258,16 +1435,69 @@ function RelicBrowser({
   );
 }
 
+/** Fixed relics as table rows — name column plus effects, one relic per row. */
+function FixedRelicTable({
+  relics,
+  character,
+  value,
+  onPick,
+}: {
+  relics: FixedRelicOption[];
+  character: string;
+  value: BuildSlot;
+  onPick: (slot: BuildSlot) => void;
+}) {
+  return (
+    <table className="w-full border-collapse">
+      <tbody>
+        {relics.map((r) => {
+          const active = value?.kind === "fixed" && value.name === r.name;
+          return (
+            <tr
+              key={r.name}
+              tabIndex={0}
+              onClick={() => onPick({ kind: "fixed", name: r.name })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onPick({ kind: "fixed", name: r.name });
+              }}
+              className={`cursor-pointer border-b border-night-700 transition-colors last:border-b-0 ${
+                active ? "bg-night-700" : "hover:bg-night-800"
+              }`}
+            >
+              <td className="w-[40%] min-w-44 py-2 pl-1 pr-3 align-top">
+                <span className="flex items-center gap-2">
+                  <RelicImg src={r.icon} alt="" size={24} />
+                  <span className={`font-body text-sm ${active ? "text-gold-bright" : "text-parchment"}`}>
+                    {r.name}
+                  </span>
+                  {r.character && r.character !== character && (
+                    <span className="shrink-0 rounded border border-night-600 px-1 font-body text-[0.6rem] text-parchment-faint">
+                      {r.character}
+                    </span>
+                  )}
+                </span>
+              </td>
+              <td className="py-2 pr-1 align-top">
+                <EffectLines lines={r.effects.map((text) => ({ text }))} className="space-y-0.5" />
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
 function RelicBrowserCard({
   name,
-  color,
+  icon,
   tag,
   lines,
   active,
   onClick,
 }: {
   name: string;
-  color: SlotColor;
+  icon: string;
   tag?: string;
   lines: ResolvedLine[];
   active: boolean;
@@ -1283,13 +1513,13 @@ function RelicBrowserCard({
       style={active ? { borderColor: "#c9a227" } : undefined}
     >
       <span className="flex items-center gap-2">
-        <SlotIconImg color={color} size={18} />
+        <RelicImg src={icon} alt="" size={24} />
         <span className={`font-body text-sm ${active ? "text-gold-bright" : "text-parchment"}`}>{name}</span>
         {tag && (
           <span className="rounded border border-night-600 px-1 font-body text-[0.6rem] text-parchment-faint">{tag}</span>
         )}
       </span>
-      <EffectLines lines={lines} className="mt-1.5 space-y-0.5" />
+      <EffectLines lines={lines} divided className="mt-2" />
     </button>
   );
 }

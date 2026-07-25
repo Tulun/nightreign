@@ -57,6 +57,12 @@ export const uniqueRelics: UniqueRelic[] = [
   { name: "Night of the Wise", color: "Yellow", icon: "night-of-the-wise.png", group: "nightlord",
     effects: ["Increased Maximum FP", "Starting armament inflicts poison", "Poison & Rot in Vicinity Increases Attack Power"],
     source: "Defeat Sentient Pest (first clear)" },
+  { name: "The Night of Dregs", color: "Red", icon: "the-night-of-dregs.png", group: "nightlord",
+    effects: ["Status Ailment Gauges Slowly Increase Attack Power", "Attacks Inflict Rot when Damage is Taken", "Rot in Vicinity Causes Continuous HP Recovery"],
+    source: "Defeat Dreglord — Traitorous Straghess (first clear, DLC)" },
+  { name: "The Will of the Balancers", color: "Blue", icon: "the-will-of-balance.png", group: "nightlord",
+    effects: ["Improved Melee Attack Power", "Improved Skill Attack Power", "Continuous FP Recovery"],
+    source: "Defeat Balancers — Weapon-Bequeathed Harmonia (first clear, DLC)" },
 
   // ── Everdark Sovereigns · Collector Signboard ────────────────────────────
   { name: "Dark Night of the Baron", color: "Red", icon: "dark-night-of-the-baron.png", group: "everdark",
@@ -96,12 +102,6 @@ export const uniqueRelics: UniqueRelic[] = [
   { name: "Besmirched Frame", color: "Blue", icon: "besmirched-frame.png", group: "shop",
     effects: ["Taking attacks improves attack power", "Faith +3"],
     source: "Small Jar Bazaar; triggers the Revenant unlock events" },
-  { name: "The Night of Dregs", color: "Red", icon: "the-night-of-dregs.png", group: "shop",
-    effects: ["Status Ailment Gauges Slowly Increase Attack Power", "Attacks Inflict Rot when Damage is Taken", "Rot in Vicinity Causes Continuous HP Recovery"],
-    source: "Collector Signboard (DLC)" },
-  { name: "The Will of the Balancers", color: "Blue", icon: "the-will-of-balance.png", group: "shop",
-    effects: ["Improved Melee Attack Power", "Improved Skill Attack Power", "Continuous FP Recovery"],
-    source: "Collector Signboard (DLC)" },
 
   // ── Character relics · Remembrance quests & DLC ──────────────────────────
   // Wylder
@@ -180,7 +180,7 @@ export const uniqueRelics: UniqueRelic[] = [
     effects: ["[Scholar] Allies targeted by Character Skill gain boosted attack", "[Scholar] Prevent slowing of Character Skill progress", "Character Skill Cooldown Reduction +3"],
     source: "Collector Signboard (DLC)" },
   // Undertaker (DLC)
-  { name: "Leather Monocle Case", color: "Yellow", icon: "leather-monocle-case.png", group: "character", character: "Undertaker",
+  { name: "Leather Monocle Case", color: "Blue", icon: "leather-monocle-case.png", group: "character", character: "Undertaker",
     effects: ["[Undertaker] Physical attacks boosted while assist effect from incantation is active for self", "Extend Spell Duration", "Physical Attack Up +2"],
     source: "Collector Signboard (DLC)" },
   { name: "Glass Necklace", color: "Green", icon: "glass-necklace.png", group: "character", character: "Undertaker",

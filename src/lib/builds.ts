@@ -6,20 +6,63 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import { characterSwaps } from "@/data/statSwaps";
-import { uniqueRelics } from "@/data/uniqueRelics";
+import { uniqueRelics, type UniqueRelicGroup } from "@/data/uniqueRelics";
 import { isCurseEffect } from "@/lib/effectMatch";
-import { SCENE_META } from "@/lib/statSwaps";
+import { SCENE_META, relicIcon } from "@/lib/statSwaps";
 import type { SlotColor } from "@/lib/chalices";
+
+/** The in-game relic appearances a custom relic can wear. */
+export const RELIC_LOOKS = [
+  "delicate",
+  "polished",
+  "grand",
+  "deep-delicate",
+  "deep-polished",
+  "deep-grand",
+] as const;
+export type RelicLook = (typeof RELIC_LOOKS)[number];
 
 export interface CustomRelic {
   id: string;
   /** Optional display name; falls back to "<Color> relic". */
   name: string;
   color: Exclude<SlotColor, "White">;
+  /** Icon appearance; unset relics get a stable pseudo-random default. */
+  look?: RelicLook;
   /** Up to 3 effect lines. */
   effects: string[];
   /** Per-line demerits (Deep relics): demerits[i] belongs to effects[i]. */
   demerits: string[];
+}
+
+/** Scene look per relic color (Drizzly=Blue, Tranquil=Green in-game). */
+const SCENE_BY_COLOR: Record<CustomRelic["color"], string> = {
+  Red: "burning",
+  Blue: "drizzly",
+  Green: "tranquil",
+  Yellow: "luminous",
+};
+
+/** Icon path for a given color + look combination. */
+export function relicLookIcon(color: CustomRelic["color"], look: RelicLook): string {
+  return `/icons/relics/${look}-${SCENE_BY_COLOR[color]}-scene.png`;
+}
+
+/**
+ * The look a relic renders with: its saved look, or — for relics saved
+ * before looks existed — a default picked from its id, so it stays the same
+ * across renders and sessions without touching the store.
+ */
+export function effectiveLook(relic: Pick<CustomRelic, "id" | "look">): RelicLook {
+  if (relic.look) return relic.look;
+  let h = 0;
+  for (let i = 0; i < relic.id.length; i++) h = (h * 31 + relic.id.charCodeAt(i)) >>> 0;
+  return RELIC_LOOKS[h % 3];
+}
+
+/** Icon path for a custom relic (its color's scene, in its look). */
+export function customRelicIcon(relic: Pick<CustomRelic, "id" | "look" | "color">): string {
+  return relicLookIcon(relic.color, effectiveLook(relic));
 }
 
 export type BuildSlot =
@@ -146,47 +189,126 @@ export function sameCustomRelic(
 // ── Build sharing ────────────────────────────────────────────────────────
 //  A build travels as a URL hash (#b=<payload>): the build itself plus any
 //  custom relics its slots reference. Fixed relics travel by name — they
-//  ship with the app. No server involved; the link *is* the data.
+//  ship with the app. No server involved; the link *is* the data, which is
+//  why it can't be a short opaque id. To keep it as small as possible, v2
+//  packs the build into positional arrays and deflates it (payloads starting
+//  with "z"); v1 links (bare base64 JSON) still decode.
 
 export interface SharedBuild {
   build: Omit<Build, "id" | "updatedAt">;
   relics: CustomRelic[];
 }
 
-/** Encode a build and the custom relics it uses into a URL-safe string. */
-export function encodeSharedBuild(build: Build, store: BuildStore): string {
-  const used = new Set(
-    [...build.slots, ...build.deepSlots].flatMap((s) => (s?.kind === "custom" ? [s.id] : [])),
-  );
-  const payload = {
-    v: 1,
-    build: {
-      name: build.name,
-      character: build.character,
-      chalice: build.chalice,
-      slots: build.slots,
-      deepSlots: build.deepSlots,
-      notes: build.notes,
-    },
-    relics: store.customRelics.filter((r) => used.has(r.id)),
-  };
-  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+function toBase64Url(bytes: Uint8Array): string {
   let bin = "";
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
   return btoa(bin).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 }
 
-/** Decode a shared-build payload; null if it isn't one. */
-export function decodeSharedBuild(encoded: string): SharedBuild | null {
+function fromBase64Url(s: string): Uint8Array {
+  const bin = atob(s.replaceAll("-", "+").replaceAll("_", "/"));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+async function pipeThrough(
+  bytes: Uint8Array,
+  stream: CompressionStream | DecompressionStream,
+): Promise<Uint8Array> {
+  const res = new Response(new Blob([bytes as BlobPart]).stream().pipeThrough(stream));
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+/** "" = empty slot, "f<name>" = fixed relic, "c<id>" = custom relic. */
+type PackedSlot = string;
+
+interface V2Payload {
+  v: 2;
+  /** [name, character, chalice, slots, deepSlots] */
+  b: [string, string, string, PackedSlot[], PackedSlot[]];
+  /** [id, name, color, look, effects, demerits] per custom relic. */
+  r: [string, string, CustomRelic["color"], string, string[], string[]][];
+}
+
+const packSlot = (s: BuildSlot): PackedSlot =>
+  !s ? "" : s.kind === "fixed" ? `f${s.name}` : `c${s.id}`;
+
+const unpackSlot = (s: unknown): BuildSlot => {
+  if (typeof s !== "string" || s === "") return null;
+  if (s[0] === "f") return { kind: "fixed", name: s.slice(1) };
+  if (s[0] === "c") return { kind: "custom", id: s.slice(1) };
+  return null;
+};
+
+/** Encode a build and the custom relics it uses into a URL-safe string. */
+export async function encodeSharedBuild(build: Build, store: BuildStore): Promise<string> {
+  const used = new Set(
+    [...build.slots, ...build.deepSlots].flatMap((s) => (s?.kind === "custom" ? [s.id] : [])),
+  );
+  const payload: V2Payload = {
+    v: 2,
+    b: [
+      build.name,
+      build.character,
+      build.chalice,
+      build.slots.map(packSlot),
+      build.deepSlots.map(packSlot),
+    ],
+    r: store.customRelics
+      .filter((r) => used.has(r.id))
+      .map((r) => [r.id, r.name, r.color, r.look ?? "", r.effects, r.demerits ?? []]),
+  };
+  const bytes = new TextEncoder().encode(JSON.stringify(payload));
+  // Old browsers without CompressionStream ship the JSON as-is (still v2).
+  if (typeof CompressionStream === "undefined") return toBase64Url(bytes);
+  return `z${toBase64Url(await pipeThrough(bytes, new CompressionStream("deflate-raw")))}`;
+}
+
+function unpackV2(d: V2Payload): SharedBuild | null {
+  const [name, character, chalice, slots, deepSlots] = d.b ?? [];
+  if (
+    typeof name !== "string" ||
+    typeof character !== "string" ||
+    typeof chalice !== "string" ||
+    !Array.isArray(slots) ||
+    slots.length !== 3 ||
+    !Array.isArray(deepSlots) ||
+    deepSlots.length !== 3 ||
+    !Array.isArray(d.r)
+  ) {
+    return null;
+  }
+  return {
+    build: {
+      name,
+      character,
+      chalice,
+      slots: slots.map(unpackSlot) as SlotTriple,
+      deepSlots: deepSlots.map(unpackSlot) as SlotTriple,
+      notes: "",
+    },
+    relics: d.r.map(([id, rName, color, look, effects, demerits]) => ({
+      id: String(id),
+      name: String(rName ?? ""),
+      color,
+      ...(look ? { look: look as RelicLook } : {}),
+      effects: Array.isArray(effects) ? effects : [],
+      demerits: Array.isArray(demerits) ? demerits : [],
+    })),
+  };
+}
+
+/** Decode a shared-build payload (v1 or v2); null if it isn't one. */
+export async function decodeSharedBuild(encoded: string): Promise<SharedBuild | null> {
   try {
-    const bin = atob(encoded.replaceAll("-", "+").replaceAll("_", "/"));
-    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
-    const d = JSON.parse(new TextDecoder().decode(bytes)) as {
-      v?: number;
-      build?: SharedBuild["build"];
-      relics?: CustomRelic[];
-    };
-    const b = d.build;
+    const bytes = encoded.startsWith("z")
+      ? await pipeThrough(fromBase64Url(encoded.slice(1)), new DecompressionStream("deflate-raw"))
+      : fromBase64Url(encoded);
+    const d = JSON.parse(new TextDecoder().decode(bytes)) as
+      | V2Payload
+      | { v?: number; build?: SharedBuild["build"]; relics?: CustomRelic[] };
+    if (d.v === 2) return unpackV2(d as V2Payload);
+    const b = (d as { build?: SharedBuild["build"] }).build;
+    const relics = (d as { relics?: CustomRelic[] }).relics;
     if (
       d.v !== 1 ||
       !b ||
@@ -195,11 +317,11 @@ export function decodeSharedBuild(encoded: string): SharedBuild | null {
       b.slots.length !== 3 ||
       !Array.isArray(b.deepSlots) ||
       b.deepSlots.length !== 3 ||
-      !Array.isArray(d.relics)
+      !Array.isArray(relics)
     ) {
       return null;
     }
-    return { build: b, relics: d.relics.map(migrateRelicLines) };
+    return { build: b, relics: relics.map(migrateRelicLines) };
   } catch {
     return null;
   }
@@ -210,6 +332,10 @@ export function decodeSharedBuild(encoded: string): SharedBuild | null {
 export interface FixedRelicOption {
   name: string;
   color: Exclude<SlotColor, "White">;
+  /** Icon path under /public. */
+  icon: string;
+  /** Where the relic comes from: "swap" = signboard stat swap; the rest mirror uniqueRelics. */
+  group: "swap" | UniqueRelicGroup;
   /** Exclusive character, or undefined for all Nightfarers. */
   character?: string;
   effects: string[];
@@ -224,6 +350,8 @@ const signboardRelics: FixedRelicOption[] = characterSwaps.flatMap((c) =>
     return [{
       name: `Grand ${scene} Scene (${c.name} ${swap.label})`,
       color: meta.color as FixedRelicOption["color"],
+      icon: relicIcon(swap.relic),
+      group: "swap" as const,
       character: c.name,
       effects: [`[${c.name}] ${swap.label} stat swap`],
     }];
@@ -235,6 +363,8 @@ export const fixedRelics: FixedRelicOption[] = [
   ...uniqueRelics.map((r) => ({
     name: r.name,
     color: r.color as FixedRelicOption["color"],
+    icon: `/icons/relics/${r.icon}`,
+    group: r.group,
     character: r.character,
     effects: r.effects,
   })),
@@ -245,9 +375,17 @@ export const fixedRelics: FixedRelicOption[] = [
  * Fixed relics that fit a slot of the given color — every character's relics
  * are included (people do run other Nightfarers' relics); the current
  * character's own and the all-Nightfarer ones sort first.
+ *
+ * Exception: a normal-slot signboard swap relic carries nothing but another
+ * character's stat swap, so those only show for their own character. Deep
+ * swap relics can roll extra effects worth borrowing, so deep slots see all.
  */
-export function fixedRelicsFor(character: string, slotColor: SlotColor): FixedRelicOption[] {
-  const fits = fixedRelics.filter((r) => slotColor === "White" || r.color === slotColor);
+export function fixedRelicsFor(character: string, slotColor: SlotColor, deep = false): FixedRelicOption[] {
+  const fits = fixedRelics.filter(
+    (r) =>
+      (slotColor === "White" || r.color === slotColor) &&
+      (deep || r.group !== "swap" || r.character === character),
+  );
   const rank = (r: FixedRelicOption) => (!r.character ? 0 : r.character === character ? 1 : 2);
   return fits.sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
 }
