@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRef, useState, useEffect } from "react";
 import { characterChalices, grailChalices } from "@/data/chalices";
 import { Dropdown } from "@/components/Dropdown";
+import { MultiSelect } from "@/components/MultiSelect";
 import { asset } from "@/lib/assets";
 import {
   EMPTY_SLOTS,
@@ -22,6 +23,7 @@ import {
   relicLookIcon,
   sameCustomRelic,
   saveStore,
+  sortedTags,
   type Build,
   type BuildSlot,
   type BuildStore,
@@ -56,15 +58,26 @@ export function BuildsManager() {
   const [view, setView] = useState<"builds" | "sharedBuilds" | "relics">("builds");
   // Character filter for the build list — "" shows all Nightfarers.
   const [character, setCharacter] = useState("");
+  // Tag filter — empty means all builds; otherwise any selected tag matches.
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [managingTags, setManagingTags] = useState(false);
   const [editing, setEditing] = useState<Build | null>(null);
   const [shared, setShared] = useState<SharedBuild | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setStore(loadStore());
-    // A share link carries a build in the hash — offer it for import.
+    // A share link carries a build in the hash — offer it for import. The
+    // hash is cleared as soon as it's read: the offer lives in state (the
+    // Builds-tab banner) until kept, dismissed, or the page is left, and a
+    // reload won't re-trigger it.
     const m = window.location.hash.match(/^#b=(.+)$/);
-    if (m) decodeSharedBuild(m[1]).then(setShared);
+    if (m) {
+      decodeSharedBuild(m[1]).then((sb) => {
+        setShared(sb);
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+      });
+    }
   }, []);
 
   if (!store) {
@@ -88,6 +101,33 @@ export function BuildsManager() {
       customRelics: s.customRelics.map((r) => (r.id === relic.id ? relic : r)),
     }));
 
+  // ── Tag registry management ────────────────────────────────────────────
+  const createTag = (name: string) => {
+    const tag = name.trim();
+    if (tag) update((s) => ({ ...s, tags: sortedTags([...s.tags, tag]) }));
+  };
+  const retagBuilds = (builds: Build[], fn: (tags: string[]) => string[]) =>
+    builds.map((b) => (b.tags?.length ? { ...b, tags: fn(b.tags) } : b));
+  const renameTag = (from: string, to: string) => {
+    const tag = to.trim();
+    if (!tag || tag === from) return;
+    update((s) => ({
+      ...s,
+      tags: sortedTags(s.tags.map((t) => (t === from ? tag : t))),
+      builds: retagBuilds(s.builds, (tags) => sortedTags(tags.map((t) => (t === from ? tag : t)))),
+    }));
+    setTagFilter((f) => sortedTags(f.map((t) => (t === from ? tag : t))));
+  };
+  const deleteTag = (tag: string) => {
+    if (!window.confirm(`Delete the tag "${tag}"? It will be removed from all builds.`)) return;
+    update((s) => ({
+      ...s,
+      tags: s.tags.filter((t) => t !== tag),
+      builds: retagBuilds(s.builds, (tags) => tags.filter((t) => t !== tag)),
+    }));
+    setTagFilter((f) => f.filter((t) => t !== tag));
+  };
+
   if (editing) {
     return (
       <BuildEditor
@@ -108,6 +148,7 @@ export function BuildsManager() {
         onCancel={() => setEditing(null)}
         onAddCustomRelic={addCustomRelic}
         onUpdateCustomRelic={updateCustomRelic}
+        onCreateTag={createTag}
       />
     );
   }
@@ -120,6 +161,7 @@ export function BuildsManager() {
     .sort((a, b) => b.updatedAt - a.updatedAt);
   const builds = ownBuilds
     .filter((b) => !character || b.character === character)
+    .filter((b) => tagFilter.length === 0 || tagFilter.some((t) => b.tags?.includes(t)))
     .sort((a, b) => b.updatedAt - a.updatedAt);
 
   const newBuildCharacter = character || characterChalices[0].name;
@@ -151,10 +193,7 @@ export function BuildsManager() {
     }));
   };
 
-  const dismissShared = () => {
-    setShared(null);
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
-  };
+  const dismissShared = () => setShared(null);
 
   const importShared = () => {
     if (!shared) return;
@@ -223,7 +262,10 @@ export function BuildsManager() {
         })}
       </div>
 
-      {/* Share-link banner — shown on any tab so an opened link is never missed. */}
+      {view === "builds" && (
+        <>
+      {/* Share-link banner — lives on this tab; browse other tabs and come
+          back to it any time until it's kept, dismissed, or the page left. */}
       {shared && (
         <section className="frame mb-5 rounded-md bg-night-850 p-4" style={{ borderColor: "#c9a227" }}>
           <div className="flex flex-wrap items-center gap-2">
@@ -252,14 +294,12 @@ export function BuildsManager() {
           <div className="mt-3 max-w-2xl">
             <BuildCard
               build={{ ...shared.build, id: "shared-preview", updatedAt: 0 }}
-              store={{ version: 3, builds: [], customRelics: shared.relics }}
+              store={{ version: 3, builds: [], customRelics: shared.relics, tags: [] }}
             />
           </div>
         </section>
       )}
 
-      {view === "builds" && (
-        <>
       {/* Toolbar */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <Dropdown
@@ -272,8 +312,29 @@ export function BuildsManager() {
           })}
           className="w-52"
         />
+        {store.tags.length > 0 && (
+          <MultiSelect
+            values={tagFilter}
+            options={store.tags.map((t) => ({ value: t, label: t }))}
+            onChange={setTagFilter}
+            placeholder="All tags"
+            className="w-44"
+          />
+        )}
         <button type="button" onClick={startNew} className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600">
           + New build
+        </button>
+        <button
+          type="button"
+          onClick={() => setManagingTags((m) => !m)}
+          aria-pressed={managingTags}
+          className={`frame rounded-md px-3 py-1.5 font-body text-sm ${
+            managingTags
+              ? "bg-night-700 text-gold-bright"
+              : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
+          }`}
+        >
+          Manage tags
         </button>
         <button type="button" onClick={exportJson} className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment">
           Export JSON
@@ -297,9 +358,21 @@ export function BuildsManager() {
         </span>
       </div>
 
+      {managingTags && (
+        <TagManager
+          tags={store.tags}
+          usage={(tag) => ownBuilds.filter((b) => b.tags?.includes(tag)).length}
+          onCreate={createTag}
+          onRename={renameTag}
+          onDelete={deleteTag}
+        />
+      )}
+
       {builds.length === 0 ? (
         <p className="font-body text-sm text-parchment-faint">
-          No builds {character ? `for ${character}` : ""} yet — create one, or import a backup.
+          {tagFilter.length > 0
+            ? "No builds match the selected tags."
+            : `No builds ${character ? `for ${character} ` : ""}yet — create one, or import a backup.`}
         </p>
       ) : (
         <div className="grid gap-3 xl:grid-cols-2">
@@ -689,6 +762,15 @@ function BuildCard({
           <p className="font-body text-xs text-parchment-faint">
             {build.character} · {build.chalice}
           </p>
+          {(build.tags?.length ?? 0) > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {build.tags!.map((t) => (
+                <span key={t} className="rounded border border-night-600 bg-night-900 px-1.5 py-0.5 font-body text-[10px] text-parchment-faint">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         {onDelete && (
           <div className="flex gap-1.5">
@@ -710,6 +792,115 @@ function BuildCard({
         </div>
       )}
     </article>
+  );
+}
+
+/**
+ * Tag registry editor: create, rename (type in place, Enter/blur commits),
+ * and delete. Renames and deletes ripple through every build's tags.
+ */
+function TagManager({
+  tags,
+  usage,
+  onCreate,
+  onRename,
+  onDelete,
+}: {
+  tags: string[];
+  usage: (tag: string) => number;
+  onCreate: (name: string) => void;
+  onRename: (from: string, to: string) => void;
+  onDelete: (tag: string) => void;
+}) {
+  const [newTag, setNewTag] = useState("");
+  const create = () => {
+    if (newTag.trim()) {
+      onCreate(newTag);
+      setNewTag("");
+    }
+  };
+  return (
+    <section className="frame mb-5 rounded-md bg-night-850 p-4">
+      <h3 className="font-display text-sm font-semibold text-parchment">Tags</h3>
+      <p className="mt-0.5 font-body text-xs text-parchment-faint">
+        Tag builds from the build editor, then filter the list by tag here. Renaming or
+        deleting a tag updates every build that uses it.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          value={newTag}
+          onChange={(e) => setNewTag(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              create();
+            }
+          }}
+          placeholder="New tag"
+          className="frame w-40 rounded bg-night-900 px-2 py-1.5 font-body text-sm text-parchment placeholder:text-parchment-faint"
+        />
+        <button
+          type="button"
+          onClick={create}
+          disabled={!newTag.trim()}
+          className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment disabled:opacity-40"
+        >
+          + Add
+        </button>
+      </div>
+      {tags.length > 0 && (
+        <ul className="mt-3 space-y-1.5">
+          {tags.map((t) => (
+            <TagRow key={t} tag={t} count={usage(t)} onRename={onRename} onDelete={onDelete} />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function TagRow({
+  tag,
+  count,
+  onRename,
+  onDelete,
+}: {
+  tag: string;
+  count: number;
+  onRename: (from: string, to: string) => void;
+  onDelete: (tag: string) => void;
+}) {
+  const [draft, setDraft] = useState(tag);
+  const commit = () => {
+    if (draft.trim() && draft.trim() !== tag) onRename(tag, draft);
+    else setDraft(tag);
+  };
+  return (
+    <li className="flex items-center gap-2">
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          if (e.key === "Escape") setDraft(tag);
+        }}
+        aria-label={`Rename tag ${tag}`}
+        className="frame w-40 rounded bg-night-900 px-2 py-1 font-body text-sm text-parchment"
+      />
+      <span className="font-body text-xs text-parchment-faint">
+        {count === 1 ? "1 build" : `${count} builds`}
+      </span>
+      <button
+        type="button"
+        onClick={() => onDelete(tag)}
+        className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300"
+      >
+        Delete
+      </button>
+    </li>
   );
 }
 
@@ -893,6 +1084,7 @@ function BuildEditor({
   onCancel,
   onAddCustomRelic,
   onUpdateCustomRelic,
+  onCreateTag,
 }: {
   initial: Build;
   store: BuildStore;
@@ -900,11 +1092,22 @@ function BuildEditor({
   onCancel: () => void;
   onAddCustomRelic: (r: CustomRelic) => void;
   onUpdateCustomRelic: (r: CustomRelic) => void;
+  onCreateTag: (name: string) => void;
 }) {
   const [build, setBuild] = useState<Build>(initial);
   const [newRelicAt, setNewRelicAt] = useState<SlotRef | null>(null);
+  const [newTag, setNewTag] = useState("");
   const chalices = chalicesFor(build.character);
   const chalice = chalices.find((c) => c.name === build.chalice) ?? chalices[0];
+
+  // Create the tag in the registry and put it on this build in one step.
+  const addNewTag = () => {
+    const tag = newTag.trim();
+    if (!tag) return;
+    onCreateTag(tag);
+    setBuild((b) => ({ ...b, tags: sortedTags([...(b.tags ?? []), tag]) }));
+    setNewTag("");
+  };
 
   const setSlot = (at: SlotRef, slot: BuildSlot) => {
     setBuild((b) => {
@@ -1066,6 +1269,45 @@ function BuildEditor({
           onApply={applyGroup}
           onSwapChalice={(name) => setBuild((b) => ({ ...b, chalice: name }))}
         />
+      </div>
+
+      {/* Tags — pick from your registry, or create one right here. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {store.tags.length > 0 && (
+          <MultiSelect
+            values={build.tags ?? []}
+            options={store.tags.map((t) => ({ value: t, label: t }))}
+            onChange={(tags) => setBuild((b) => ({ ...b, tags }))}
+            placeholder="Tags"
+            className="w-44"
+          />
+        )}
+        <input
+          type="text"
+          value={newTag}
+          onChange={(e) => setNewTag(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addNewTag();
+            }
+          }}
+          placeholder="New tag"
+          className="frame w-36 rounded bg-night-900 px-2 py-2 font-body text-sm text-parchment placeholder:text-parchment-faint"
+        />
+        <button
+          type="button"
+          onClick={addNewTag}
+          disabled={!newTag.trim()}
+          className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment disabled:opacity-40"
+        >
+          + Add tag
+        </button>
+        {(build.tags ?? []).map((t) => (
+          <span key={t} className="rounded border border-night-600 bg-night-900 px-1.5 py-0.5 font-body text-xs text-parchment-muted">
+            {t}
+          </span>
+        ))}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">

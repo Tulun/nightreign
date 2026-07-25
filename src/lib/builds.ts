@@ -82,6 +82,8 @@ export interface Build {
   /** Deep of Night slots — same chalice, its Deep layout. Often left empty. */
   deepSlots: SlotTriple;
   notes: string;
+  /** User-defined tags for filtering, drawn from BuildStore.tags. */
+  tags?: string[];
   updatedAt: number;
   /** True for builds imported from a share link — view-only, not editable. */
   shared?: boolean;
@@ -97,11 +99,13 @@ export interface BuildStore {
   version: 3;
   builds: Build[];
   customRelics: CustomRelic[];
+  /** User-managed tag registry for organizing builds (kept sorted). */
+  tags: string[];
 }
 
 const STORAGE_KEY = "nightreign-builds";
 
-export const EMPTY_STORE: BuildStore = { version: 3, builds: [], customRelics: [] };
+export const EMPTY_STORE: BuildStore = { version: 3, builds: [], customRelics: [], tags: [] };
 
 export const EMPTY_SLOTS: SlotTriple = [null, null, null];
 
@@ -127,15 +131,32 @@ function migrateRelicLines(relic: CustomRelic): CustomRelic {
 
 /** Validate/migrate a parsed store of any known version; null if unusable. */
 export function normalizeStore(data: unknown): BuildStore | null {
-  const d = data as { version?: number; builds?: Build[]; customRelics?: CustomRelic[] };
+  const d = data as {
+    version?: number;
+    builds?: Build[];
+    customRelics?: CustomRelic[];
+    tags?: unknown[];
+  };
   if (!d || !Array.isArray(d.builds) || !Array.isArray(d.customRelics)) return null;
   if (d.version !== 1 && d.version !== 2 && d.version !== 3) return null;
+  // v1 builds predate Deep of Night slots — give them empty ones.
+  const builds = d.builds.map((b) => ({ ...b, deepSlots: b.deepSlots ?? [...EMPTY_SLOTS] as SlotTriple }));
+  const declared = Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === "string") : [];
   return {
     version: 3,
     customRelics: d.customRelics.map(migrateRelicLines),
-    // v1 builds predate Deep of Night slots — give them empty ones.
-    builds: d.builds.map((b) => ({ ...b, deepSlots: b.deepSlots ?? [...EMPTY_SLOTS] as SlotTriple })),
+    builds,
+    // Registry = declared tags plus any a build references (pre-tags stores
+    // declare none), so every tag in use survives a merge or hand edit.
+    tags: sortedTags([...declared, ...builds.flatMap((b) => b.tags ?? [])]),
   };
+}
+
+/** Dedupe + alphabetize a tag list (the registry's canonical form). */
+export function sortedTags(tags: string[]): string[] {
+  return Array.from(new Set(tags.map((t) => t.trim()).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b),
+  );
 }
 
 /** Load the store from localStorage (call client-side only). */
@@ -169,6 +190,7 @@ export function mergeStores(current: BuildStore, imported: BuildStore): BuildSto
     version: 3,
     builds: mergeById(current.builds, imported.builds),
     customRelics: mergeById(current.customRelics, imported.customRelics),
+    tags: sortedTags([...current.tags, ...imported.tags]),
   };
 }
 
