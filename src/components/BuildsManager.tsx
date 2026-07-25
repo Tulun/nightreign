@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, useEffect } from "react";
+import { Fragment, useRef, useState, useEffect } from "react";
 import { characterChalices, grailChalices } from "@/data/chalices";
 import { Dropdown } from "@/components/Dropdown";
 import { MultiSelect } from "@/components/MultiSelect";
@@ -334,7 +334,7 @@ export function BuildsManager() {
               </button>
             </div>
           </div>
-          <div className="mt-3 max-w-2xl">
+          <div className="mt-3 max-w-4xl">
             <BuildCard
               build={{ ...shared.build, id: "shared-preview", updatedAt: 0 }}
               store={{ version: 3, builds: [], customRelics: shared.relics, tags: [] }}
@@ -457,7 +457,9 @@ export function BuildsManager() {
             : `No builds ${character ? `for ${character} ` : ""}yet — create one, or import a backup.`}
         </p>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
+        // Single column: cards lay normal and Deep of Night side by side
+        // internally, so they want the full page width.
+        <div className="grid gap-3">
           {builds.map((b) => (
             <BuildCard key={b.id} build={b} store={store} onEdit={() => setEditing(b)} onDelete={() => deleteBuild(b.id)} />
           ))}
@@ -478,7 +480,7 @@ export function BuildsManager() {
               &ldquo;Keep (view only)&rdquo;.
             </p>
           ) : (
-            <div className="grid gap-3 xl:grid-cols-2">
+            <div className="grid gap-3">
               {sharedBuilds.map((b) => (
                 <BuildCard key={b.id} build={b} store={store} onDelete={() => deleteBuild(b.id)} />
               ))}
@@ -837,6 +839,8 @@ function BuildCard({
         </div>
       );
     });
+  const normalRows = renderSlots(build.slots, chalice?.slots);
+  const deepRows = hasDeep ? renderSlots(build.deepSlots, chalice?.deep) : [];
 
   return (
     <article className="frame rounded-md bg-night-800 p-4">
@@ -846,15 +850,7 @@ function BuildCard({
           <p className="font-body text-xs text-parchment-faint">
             {build.character} · {build.chalice}
           </p>
-          {(build.tags?.length ?? 0) > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1">
-              {build.tags!.map((t) => (
-                <span key={t} className="rounded border border-night-600 bg-night-900 px-1.5 py-0.5 font-body text-[10px] text-parchment-faint">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
+          {/* Tags render below, on the grid's top row beside "Deep of Night". */}
         </div>
         {onDelete && (
           <div className="flex gap-1.5">
@@ -889,15 +885,48 @@ function BuildCard({
           ))}
         </div>
       )}
-      <div className={`mt-4 space-y-4 ${view === "deep" ? "hidden sm:block" : ""}`}>
-        {renderSlots(build.slots, chalice?.slots)}
-      </div>
-      {hasDeep && (
-        <div className={`mt-4 border-t border-night-700 pt-3 ${view === "normal" ? "hidden sm:block" : ""}`}>
-          <p className="eyebrow mb-2 text-gold-dim">Deep of Night</p>
-          <div className="space-y-4">{renderSlots(build.deepSlots, chalice?.deep)}</div>
+      {/* Desktop: a two-column grid — tags and the Deep of Night header share
+          the top row, then each row pairs a normal slot with its deep
+          neighbor so the two sets stay lined up. Mobile: the toggle above
+          picks which set shows. */}
+      <div className={`mt-3 ${hasDeep ? "sm:grid sm:grid-cols-2 sm:gap-x-3" : ""}`}>
+        <div>
+          {(build.tags?.length ?? 0) > 0 && (
+            <div className="flex flex-wrap gap-1 pb-2">
+              {build.tags!.map((t) => (
+                <span key={t} className="rounded border border-night-600 bg-night-900 px-2 py-0.5 font-body text-xs text-parchment">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+        {hasDeep && (
+          <p
+            className={`eyebrow pb-2 text-gold-dim sm:border-l sm:border-night-700 sm:pl-4 ${
+              view === "normal" ? "hidden sm:block" : ""
+            }`}
+          >
+            Deep of Night
+          </p>
+        )}
+        {[0, 1, 2].map((i) => (
+          <Fragment key={i}>
+            <div className={`${i < 2 ? "pb-4" : ""} ${view === "deep" ? "hidden sm:block" : ""}`}>
+              {normalRows[i]}
+            </div>
+            {hasDeep && (
+              <div
+                className={`${i < 2 ? "pb-4" : ""} sm:border-l sm:border-night-700 sm:pl-4 ${
+                  view === "normal" ? "hidden sm:block" : ""
+                }`}
+              >
+                {deepRows[i]}
+              </div>
+            )}
+          </Fragment>
+        ))}
+      </div>
     </article>
   );
 }
