@@ -1,0 +1,48 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "Defeating enemies fills more of the Art gauge +1",
+        "Physical Attack Up +3",
+        "Improved Fire Damage Negation +1"
+      ],
+      "demerits": [
+        "Reduced Intelligence and Dexterity",
+        "Near Death Reduces Max HP",
+        "Lower Attack When Below Max HP"
+      ],
+      "notes": "relic is Deep Grand Burning Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "Items confer effects to all nearby allies",
+        "Improved Blood Loss Resistance +1",
+        "Increased Maximum HP"
+      ],
+      "demerits": [
+        null,
+        null,
+        "Taking Damage Causes Blood Loss Buildup"
+      ],
+      "notes": "relic is Deep Grand Tranquil Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "[Scholar] Improved Endurance and Dexterity, Reduced Intelligence and Arcane",
+        "Improved Affinity Attack Power"
+      ],
+      "demerits": [
+        null,
+        null
+      ],
+      "notes": "relic is Deep Polished Luminous Scene (name not shown on screen)"
+    }
+  ]
+}

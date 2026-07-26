@@ -1,0 +1,50 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "color": "Blue",
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks +1",
+        "Improved Sorceries +1",
+        "Increased Maximum HP"
+      ],
+      "demerits": [
+        "Reduced Strength and Intelligence",
+        "Reduced Dexterity and Faith",
+        "Taking Damage Cause Blood Loss Buildup"
+      ],
+      "notes": "relic is Deep Grand Drizzly Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "[Undertaker] Improved Dexterity, Reduced Vigor and Faith",
+        "Physical Attack Up +3",
+        "Improved Affinity Damage Negation +1"
+      ],
+      "demerits": [
+        null,
+        "Reduced Dexterity and Faith",
+        "Reduced Rune Acquisition"
+      ],
+      "notes": "relic is Deep Grand Tranquil Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "[Undertaker] Executing Art readies Character Skill",
+        "Max stamina increased for each great enemy defeated at a Great Encampment",
+        "Dormant Power Discovers Fists"
+      ],
+      "demerits": [
+        null,
+        null,
+        null
+      ],
+      "notes": "relic is Deep Grand Tranquil Scene (name not shown on screen)"
+    }
+  ]
+}

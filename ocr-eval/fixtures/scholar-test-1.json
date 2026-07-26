@@ -1,0 +1,35 @@
+{
+  "deep": false,
+  "relics": [
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks",
+        "Small pouch in possesion at start of expeditions",
+        "Changes compatible armament's skill to Hoarfrost Stomp at start of expedition"
+      ],
+      "notes": "relic is Grand Luminous Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "[Scholar] Allies targeted by Character Skill gain boosted attack",
+        "Attack power increased for each Night Invader defeated",
+        "Improved Madness Resistance"
+      ],
+      "notes": "relic is Grand Tranquil Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "[Scholar] Continuous damage inflicted on targets threaded by Ultimate Art ",
+        "Defeating enemies fills more of the Art gauge ",
+        "Lightning Attack Power Up +2"
+      ],
+      "notes": "relic is The Night of Dregs (name not shown on screen)"
+    }
+  ]
+}

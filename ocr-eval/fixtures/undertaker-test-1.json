@@ -1,0 +1,35 @@
+{
+  "deep": false,
+  "relics": [
+    {
+      "name": null,
+      "color": "Blue",
+      "effects": [
+        "[Undertaker] Physical attacks boosted while assist effect from incanation is active for self",
+        "Extended Spell Duration",
+        "Physical Attack Up +2"
+      ],
+      "notes": "relic is Leather Monocle Case (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "[Undertaker] Activating Ultimate Art increases attack power",
+        "Successive Attacks Boost Attack Power",
+        "Ultimate Art Auto Charge +3"
+      ],
+      "notes": "relic is Glass Necklace (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "Improved Godslayer Incantations",
+        "Attack power increased for each Night Invader defeated",
+        "Vigor +3"
+      ],
+      "notes": "relic is Grand Tranquil Scene (name not shown on screen)"
+    }
+  ]
+}
