@@ -10,10 +10,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { characterChalices } from "@/data/chalices";
 import { BuildCard } from "@/components/builds/BuildCard";
+import { Dropdown } from "@/components/Dropdown";
+import { MultiSelect } from "@/components/MultiSelect";
 import { listProfiles, pullCloudStore, setProfileName, type UserProfile } from "@/lib/cloudSync";
 import { useAuth } from "@/lib/useAuth";
-import { EMPTY_STORE, type BuildStore } from "@/lib/builds";
+import { EMPTY_STORE, sortedTags, type Build, type BuildStore } from "@/lib/builds";
 
 /**
  * Initial-letter tile. Deliberately not the Google photo: profiles publish
@@ -27,6 +30,96 @@ function Avatar({ name, size }: { name: string; size: number }) {
     >
       <span className="font-display font-bold text-gold">{name.charAt(0).toUpperCase()}</span>
     </span>
+  );
+}
+
+/**
+ * One user's public builds with browse filters: their Nightfarers (only the
+ * ones they have builds for) and the tags in use on those builds. Mounted
+ * with key={uid}, so filters reset when switching profiles.
+ */
+function ProfileBuilds({ store }: { store: BuildStore }) {
+  const [character, setCharacter] = useState("");
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [tagMode, setTagMode] = useState<"any" | "all">("any");
+
+  const visible = store.builds.filter((b) => !b.shared && b.public !== false);
+  if (visible.length === 0) {
+    return <p className="font-body text-sm text-parchment-faint">No synced builds yet.</p>;
+  }
+
+  // Filter options come from the builds themselves, not the owner's tag
+  // registry — only what's actually on a visible build shows here.
+  const characters = characterChalices
+    .map((c) => ({ name: c.name, count: visible.filter((b) => b.character === c.name).length }))
+    .filter((c) => c.count > 0);
+  const tags = sortedTags(visible.flatMap((b) => b.tags ?? []));
+  const matchesTags = (b: Build) =>
+    tagFilter.length === 0 ||
+    (tagMode === "any"
+      ? tagFilter.some((t) => b.tags?.includes(t))
+      : tagFilter.every((t) => b.tags?.includes(t)));
+  const builds = visible
+    .filter((b) => !character || b.character === character)
+    .filter(matchesTags)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+
+  return (
+    <div>
+      {(characters.length > 1 || tags.length > 0) && (
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          {characters.length > 1 && (
+            <Dropdown
+              value={character}
+              onChange={setCharacter}
+              placeholder="All Nightfarers"
+              options={characters.map((c) => ({ value: c.name, label: `${c.name} (${c.count})` }))}
+              className="w-52"
+            />
+          )}
+          {tags.length > 0 && (
+            <MultiSelect
+              values={tagFilter}
+              options={tags.map((t) => ({ value: t, label: t }))}
+              onChange={setTagFilter}
+              placeholder="All tags"
+              className="w-44"
+              showValues
+            />
+          )}
+          {/* Match any (OR) vs all (AND) of the selected tags. */}
+          {tagFilter.length > 1 && (
+            <div className="flex overflow-hidden rounded-md border border-night-600" role="group" aria-label="Tag match mode">
+              {(["any", "all"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setTagMode(m)}
+                  aria-pressed={tagMode === m}
+                  title={m === "any" ? "Builds with at least one selected tag (OR)" : "Builds with every selected tag (AND)"}
+                  className={`px-2.5 py-1.5 font-body text-xs transition-colors ${
+                    tagMode === m
+                      ? "bg-night-700 text-gold-bright"
+                      : "bg-night-900 text-parchment-muted hover:text-parchment"
+                  }`}
+                >
+                  {m === "any" ? "Match any" : "Match all"}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {builds.length === 0 ? (
+        <p className="font-body text-sm text-parchment-faint">No builds match the filters.</p>
+      ) : (
+        <div className="grid gap-3">
+          {builds.map((b) => (
+            <BuildCard key={b.id} build={b} store={store} expandable />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -82,9 +175,6 @@ export function CommunityUsers() {
   // ── Profile view: one user's public builds, read-only ──────────────────
   if (selectedUid) {
     const selected = profiles.find((p) => p.uid === selectedUid);
-    const builds = selectedStore?.builds
-      .filter((b) => !b.shared && b.public !== false)
-      .sort((a, b) => b.updatedAt - a.updatedAt);
     return (
       <div>
         <button
@@ -110,16 +200,10 @@ export function CommunityUsers() {
                 </p>
               </div>
             </div>
-            {!builds ? (
+            {!selectedStore ? (
               <p className="font-body text-sm text-parchment-faint">Loading builds…</p>
-            ) : builds.length === 0 ? (
-              <p className="font-body text-sm text-parchment-faint">No synced builds yet.</p>
             ) : (
-              <div className="grid gap-3">
-                {builds.map((b) => (
-                  <BuildCard key={b.id} build={b} store={selectedStore!} expandable />
-                ))}
-              </div>
+              <ProfileBuilds key={selectedUid} store={selectedStore} />
             )}
           </>
         )}
