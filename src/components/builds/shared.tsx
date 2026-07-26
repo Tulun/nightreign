@@ -16,6 +16,7 @@ import {
   DEEP_EFFECT_VOCABULARY,
   NORMAL_EFFECT_VOCABULARY,
 } from "@/lib/effectMatch";
+import { lineTextFromWords } from "@/lib/ocrClean";
 import { dominantIconColor, iconSampleRegion } from "@/lib/relicColor";
 
 export const RELIC_COLORS: CustomRelic["color"][] = ["Red", "Blue", "Green", "Yellow"];
@@ -194,7 +195,10 @@ export async function ocrLines(file: File, onProgress: (status: string) => void)
   await worker.terminate();
   const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
     (b.paragraphs ?? []).flatMap((p) =>
-      (p.lines ?? []).map((l) => ({ text: l.text ?? "", bbox: l.bbox ?? null })),
+      (p.lines ?? []).map((l) => ({
+        text: lineTextFromWords(l.words ?? [], l.text ?? ""),
+        bbox: l.bbox ?? null,
+      })),
     ),
   );
   if (lines.length > 0) return lines;

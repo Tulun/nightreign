@@ -266,9 +266,11 @@ export function similarity(a: string, b: string): number {
   const nb = normalize(b);
   if (!na || !nb) return 0;
   if (na === nb) return 1;
-  // A vocab entry fully contained in a longer OCR line is a near-certain hit.
-  if (na.length >= 12 && nb.includes(na)) return 0.95;
-  if (nb.length >= 12 && na.includes(nb)) return 0.95;
+  // One string fully contained in the other is a strong hit, scaled by how
+  // much of the longer one it covers — so a short entry ("HP Restoration")
+  // buried in a long line can't outscore the line's real, longer effect.
+  if (na.length >= 12 && nb.includes(na)) return 0.9 + 0.1 * (na.length / nb.length);
+  if (nb.length >= 12 && na.includes(nb)) return 0.9 + 0.1 * (nb.length / na.length);
   const dist = levenshtein(na, nb);
   return 1 - dist / Math.max(na.length, nb.length);
 }
@@ -311,6 +313,24 @@ function bestMatch(line: string, vocab: string[], minScore: number): EffectMatch
   return top;
 }
 
+/**
+ * Snap a matched effect to the "+N" tier the OCR line actually shows. Fuzzy
+ * matching happily lands on a sibling tier (or the tierless base) when the
+ * suffix is a single noisy character — but the digit after "+" in the line
+ * is the ground truth whenever the corresponding vocabulary entry exists.
+ */
+function rescueTierSuffix(line: string, top: EffectMatch): EffectMatch {
+  // Only rescue toward a digit the line actually shows — a missing "+N" is
+  // usually OCR failing to read the suffix, not proof the effect is tierless.
+  const digits = Array.from(line.matchAll(/\+\s?(\d)\b/g));
+  if (digits.length === 0) return top;
+  const want = `${top.effect.replace(/ \+\d$/, "")} +${digits[digits.length - 1][1]}`;
+  if (want !== top.effect && CANONICAL_BY_KEY.has(nameKey(want))) {
+    return { ...top, effect: canonicalEffectName(want) };
+  }
+  return top;
+}
+
 /** Like bestMatch, but over canonical names + aliases, resolving aliases. */
 function bestEffectMatch(line: string, minScore: number): EffectMatch | null {
   let top: EffectMatch | null = null;
@@ -320,7 +340,20 @@ function bestEffectMatch(line: string, minScore: number): EffectMatch | null {
       top = { effect: entry.canonical, score, line };
     }
   }
-  return top;
+  return top ? rescueTierSuffix(line, top) : null;
+}
+
+/**
+ * How much a piece of OCR text looks like real screen text — its best match
+ * against the effect vocabulary or the relic names. Used to pick the right
+ * segment of a noise-polluted line (see ocrClean.ts).
+ */
+export function screenTextScore(s: string): number {
+  if (s.trim().length < 8) return 0;
+  return Math.max(
+    bestEffectMatch(s, 0.3)?.score ?? 0,
+    bestMatch(s, RELIC_NAME_VOCABULARY, 0.3)?.score ?? 0,
+  );
 }
 
 /** Best match for ANY line against a vocabulary — e.g. spotting a chalice name. */
@@ -363,6 +396,45 @@ export interface ParsedRelicGroup {
 }
 
 /**
+ * Re-join effects that wrap onto a second screen line ("[Raider] Damage
+ * taken while using Character Skill" / "improves attack power and stamina").
+ * A pair is joined only when the joined text matches an effect better than
+ * either half does alone — a complete line never gains from a join, so
+ * whole effects and their neighbors are left untouched. Relic-name lines
+ * head their groups and are never absorbed into a join.
+ */
+function joinWrappedLines(lines: string[]): string[] {
+  const match = (s: string) => (s.length < 8 ? null : bestEffectMatch(s, 0.3));
+  // A demerit renders as its own line under its effect — joining across it
+  // would swallow the curse, so a curse-matching half is never joined.
+  const isCurseLine = (m: EffectMatch | null) => m != null && m.score >= 0.55 && CURSE_EFFECTS.has(m.effect);
+  const out: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const a = lines[i].trim();
+    const b = i + 1 < lines.length ? lines[i + 1].trim() : "";
+    if (!b || (a.length >= 8 && bestMatch(a, RELIC_NAME_VOCABULARY, 0.62))) {
+      out.push(a);
+      continue;
+    }
+    const mA = match(a);
+    const mB = match(b);
+    const joined = `${a} ${b}`;
+    const mJ = joined.length < 8 ? null : bestEffectMatch(joined, 0.3);
+    if (
+      mJ && mJ.score >= 0.8 &&
+      mJ.score > (mA?.score ?? 0) && mJ.score > (mB?.score ?? 0) &&
+      !isCurseLine(mA) && !isCurseLine(mB)
+    ) {
+      out.push(joined);
+      i++;
+    } else {
+      out.push(a);
+    }
+  }
+  return out;
+}
+
+/**
  * Cluster OCR lines into relic groups. A line matching a relic name starts a
  * new group; effect lines attach to the current group (max 3 per relic, as in
  * game). A curse line is the demerit of the effect directly above it. Returns
@@ -376,7 +448,7 @@ export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGro
     return g;
   };
 
-  for (const raw of lines) {
+  for (const raw of joinWrappedLines(lines)) {
     const line = raw.trim();
     if (line.length < 8) continue;
     const asName = bestMatch(line, RELIC_NAME_VOCABULARY, 0.62);

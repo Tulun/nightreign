@@ -20,6 +20,7 @@ import {
   resolveEffectAlias,
   similarity,
 } from "@/lib/effectMatch";
+import { lineTextFromWords } from "@/lib/ocrClean";
 import { dominantIconColor, iconSampleRegion, type IconBox, type RelicColor } from "@/lib/relicColor";
 
 const ROOT = path.join(__dirname, "..");
@@ -28,7 +29,7 @@ const CACHE_DIR = path.join(ROOT, "ocr-eval", ".cache");
 
 // Bump when OCR settings change (engine params, preprocessing, tesseract
 // version) so cached OCR results from the old settings are not reused.
-const OCR_CONFIG_KEY = "tesseract7-eng-v1";
+const OCR_CONFIG_KEY = "tesseract7-eng-v3-segment-scored";
 
 // ── Expected-output fixture format ───────────────────────────────────────
 
@@ -99,7 +100,7 @@ function validateFixture(fx: Fixture, file: string): string[] {
   return errors;
 }
 
-// ── OCR (mirrors ocrLines in BuildsManager.tsx) ──────────────────────────
+// ── OCR (mirrors ocrLines in src/components/builds/shared.tsx) ───────────
 
 interface OcrLine {
   text: string;
@@ -112,7 +113,10 @@ async function ocrLines(worker: Worker, imagePath: string): Promise<OcrLine[]> {
   const { data } = await worker.recognize(imagePath, {}, { text: true, blocks: true });
   const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
     (b.paragraphs ?? []).flatMap((p) =>
-      (p.lines ?? []).map((l) => ({ text: l.text ?? "", bbox: l.bbox ?? null })),
+      (p.lines ?? []).map((l) => ({
+        text: lineTextFromWords(l.words ?? [], l.text ?? ""),
+        bbox: l.bbox ?? null,
+      })),
     ),
   );
   if (lines.length > 0) return lines;
@@ -400,8 +404,13 @@ async function main() {
     const allDeep = groups.some((g) => g.deep);
     const img = decodeImage(imagePath);
     const colors = groups.map((g) => {
-      const first = g.effects[0]?.line ?? null;
-      const box = first ? lines.find((l) => l.text.trim() === first.trim())?.bbox ?? null : null;
+      // A joined wrapped line has no single OCR line with identical text, so
+      // fall back to the line the joined text starts with.
+      const first = g.effects[0]?.line.trim() ?? null;
+      const box = first
+        ? (lines.find((l) => l.text.trim() === first) ??
+            lines.find((l) => l.text.trim().length >= 8 && first.startsWith(l.text.trim())))?.bbox ?? null
+        : null;
       if (!box || !img) return null;
       const region = iconSampleRegion(box, img.height);
       if (!region) return null;

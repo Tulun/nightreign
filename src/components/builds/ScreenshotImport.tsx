@@ -75,8 +75,13 @@ export function ScreenshotPoolImport({
       const guessed = await guessGroupColors(
         file,
         found.map((g) => {
-          const first = g.effects[0]?.line ?? null;
-          const box = first ? ocr.find((l) => l.text.trim() === first.trim())?.bbox ?? null : null;
+          // A joined wrapped line has no single OCR line with identical
+          // text, so fall back to the line the joined text starts with.
+          const first = g.effects[0]?.line.trim() ?? null;
+          const box = first
+            ? (ocr.find((l) => l.text.trim() === first) ??
+                ocr.find((l) => l.text.trim().length >= 8 && first.startsWith(l.text.trim())))?.bbox ?? null
+            : null;
           return { firstLine: first, bbox: box };
         }),
       );
@@ -322,8 +327,13 @@ export function ScreenshotBuildImport({
       const colors = await guessGroupColors(
         file,
         found.map((g) => {
-          const first = g.effects[0]?.line ?? null;
-          const box = first ? ocr.find((l) => l.text.trim() === first.trim())?.bbox ?? null : null;
+          // A joined wrapped line has no single OCR line with identical
+          // text, so fall back to the line the joined text starts with.
+          const first = g.effects[0]?.line.trim() ?? null;
+          const box = first
+            ? (ocr.find((l) => l.text.trim() === first) ??
+                ocr.find((l) => l.text.trim().length >= 8 && first.startsWith(l.text.trim())))?.bbox ?? null
+            : null;
           return { firstLine: first, bbox: box };
         }),
       );
