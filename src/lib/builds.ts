@@ -107,6 +107,12 @@ export interface Build {
    */
   subtitle?: string;
   updatedAt: number;
+  /**
+   * Community-profile visibility: undefined/true = shown on your profile,
+   * false = hidden. Nothing sets it to false yet — every build is public
+   * until a private/public toggle ships.
+   */
+  public?: boolean;
   /** True for builds imported from a share link — view-only, not editable. */
   shared?: boolean;
   /**

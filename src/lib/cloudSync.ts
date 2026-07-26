@@ -14,6 +14,7 @@
 import {
   Timestamp,
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -28,7 +29,6 @@ import { normalizeStore, sortedTags, type BuildStore } from "@/lib/builds";
 export interface UserProfile {
   uid: string;
   displayName: string;
-  photoURL: string | null;
   buildCount: number;
   /** Last sync, ms epoch — null for a profile that has never synced. */
   updatedAt: number | null;
@@ -38,16 +38,17 @@ const profileDoc = (uid: string) => doc(db, "users", uid);
 const storeDoc = (uid: string) => doc(db, "users", uid, "data", "builds");
 
 /**
- * Refresh the directory profile's photo/counts. Deliberately leaves
- * displayName alone: the site-visible name is user-owned (see
- * ensureProfileName / setProfileName), so a nickname chosen for privacy is
- * never clobbered back to the Google account name by a sync.
+ * Refresh the directory profile's counts. Deliberately publishes nothing
+ * from the Google account — no name, no photo, no email. The site-visible
+ * name is user-owned (see ensureProfileName / setProfileName), so a
+ * nickname chosen for privacy can never be clobbered by a sync; the
+ * deleteField scrubs any photo an older version of this code published.
  */
 export async function upsertProfile(user: User, store: BuildStore): Promise<void> {
   await setDoc(
     profileDoc(user.uid),
     {
-      photoURL: user.photoURL ?? null,
+      photoURL: deleteField(),
       // Shared (view-only) imports are someone else's work — not counted.
       buildCount: store.builds.filter((b) => !b.shared).length,
       updatedAt: serverTimestamp(),
@@ -56,20 +57,26 @@ export async function upsertProfile(user: User, store: BuildStore): Promise<void
   );
 }
 
+/** Neutral default handle — the profile is anonymous until a nickname is set. */
+const defaultHandle = (uid: string) => `Nightfarer-${uid.slice(0, 4)}`;
+
 /**
- * First-sign-in default for the site-visible name: the Google account name,
- * but only when the profile doesn't have a name yet. (No email fallback —
- * an address is exactly what shouldn't leak into a shared directory.)
+ * Make sure the profile has a site-visible name that is NOT the real one.
+ * A missing name gets the neutral handle — never the Google account name,
+ * so the real identity stays out of Firestore even as a default. A name
+ * matching the Google account name (published by an older version of the
+ * sync) is treated as a leak and reset the same way; the side effect is
+ * that a nickname deliberately identical to the account name won't stick,
+ * which is the right trade for a directory that may end up public.
  */
 export async function ensureProfileName(user: User): Promise<void> {
   const snap = await getDoc(profileDoc(user.uid));
   const existing = snap.data()?.displayName;
-  if (typeof existing === "string" && existing.trim()) return;
-  await setDoc(
-    profileDoc(user.uid),
-    { displayName: user.displayName ?? "Nightfarer" },
-    { merge: true },
-  );
+  const googleName = (user.displayName ?? "").trim();
+  const leaked =
+    typeof existing === "string" && !!googleName && existing.trim() === googleName;
+  if (typeof existing === "string" && existing.trim() && !leaked) return;
+  await setDoc(profileDoc(user.uid), { displayName: defaultHandle(user.uid) }, { merge: true });
 }
 
 /** Set the site-visible name (nickname) shown in the directory. */
@@ -104,14 +111,12 @@ export async function listProfiles(): Promise<UserProfile[]> {
     .map((d) => {
       const data = d.data() as {
         displayName?: string;
-        photoURL?: string | null;
         buildCount?: number;
         updatedAt?: Timestamp;
       };
       return {
         uid: d.id,
-        displayName: data.displayName ?? "Nightfarer",
-        photoURL: data.photoURL ?? null,
+        displayName: data.displayName ?? defaultHandle(d.id),
         buildCount: data.buildCount ?? 0,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toMillis() : null,
       };

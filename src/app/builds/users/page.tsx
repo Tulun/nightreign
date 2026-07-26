@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { CommunityUsers } from "@/components/builds/CommunityUsers";
 
@@ -21,7 +22,11 @@ export default function BuildsUsersPage() {
         </Link>
       </header>
 
-      <CommunityUsers />
+      {/* useSearchParams (the ?u= profile selection) requires a Suspense
+          boundary to statically export. */}
+      <Suspense fallback={<p className="font-body text-sm text-parchment-faint">Loading users…</p>}>
+        <CommunityUsers />
+      </Suspense>
     </div>
   );
 }
