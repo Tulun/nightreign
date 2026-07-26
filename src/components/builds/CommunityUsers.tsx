@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { BuildCard } from "@/components/builds/BuildCard";
-import { listProfiles, pullCloudStore, type UserProfile } from "@/lib/cloudSync";
+import { listProfiles, pullCloudStore, setProfileName, type UserProfile } from "@/lib/cloudSync";
 import { signInWithGoogle, useAuth } from "@/lib/useAuth";
 import { EMPTY_STORE, type BuildStore } from "@/lib/builds";
 
@@ -36,6 +36,9 @@ export function CommunityUsers() {
   // The selected user's synced store; their builds resolve against it.
   const [selectedStore, setSelectedStore] = useState<BuildStore | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Inline editor for your own directory name (nickname).
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -138,8 +141,86 @@ export function CommunityUsers() {
     return <p className="font-body text-sm text-parchment-faint">Loading users…</p>;
   }
 
+  const me = profiles.find((p) => p.uid === user.uid);
+  const saveName = async () => {
+    const name = nameDraft?.trim();
+    if (!name || !me || name === me.displayName) {
+      setNameDraft(null);
+      return;
+    }
+    setSavingName(true);
+    try {
+      await setProfileName(user.uid, name);
+      setProfiles((ps) => ps?.map((p) => (p.uid === user.uid ? { ...p, displayName: name } : p)) ?? ps);
+      setNameDraft(null);
+    } catch (err) {
+      console.error("Saving name failed:", err);
+      setError("Couldn't save your name — try again in a moment.");
+    } finally {
+      setSavingName(false);
+    }
+  };
+
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div>
+      {/* Your public identity — swap the Google name for a nickname any time. */}
+      {me && (
+        <section className="frame mb-5 flex flex-wrap items-center gap-2 rounded-md bg-night-850 px-4 py-3">
+          {nameDraft === null ? (
+            <>
+              <p className="font-body text-sm text-parchment-muted">
+                You appear here as <span className="font-semibold text-parchment">{me.displayName}</span>.
+              </p>
+              <button
+                type="button"
+                onClick={() => setNameDraft(me.displayName)}
+                className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright"
+              >
+                Change name
+              </button>
+              <span className="basis-full font-body text-xs text-parchment-faint">
+                Pick a nickname if you&rsquo;d rather not show your real name — it replaces it
+                everywhere on the site.
+              </span>
+            </>
+          ) : (
+            <>
+              <label htmlFor="nickname" className="font-body text-sm text-parchment-muted">
+                Shown as
+              </label>
+              <input
+                id="nickname"
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void saveName();
+                  if (e.key === "Escape") setNameDraft(null);
+                }}
+                maxLength={40}
+                autoFocus
+                className="frame w-48 rounded-md border border-night-600 bg-night-900 px-2 py-1 font-body text-sm text-parchment focus:border-gold-dim focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => void saveName()}
+                disabled={savingName || !nameDraft.trim()}
+                className="frame rounded-md bg-night-700 px-3 py-1 font-body text-sm text-gold-bright hover:bg-night-600 disabled:opacity-50"
+              >
+                {savingName ? "Saving…" : "Save"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setNameDraft(null)}
+                className="frame rounded-md bg-night-800 px-3 py-1 font-body text-sm text-parchment-muted hover:text-parchment"
+              >
+                Cancel
+              </button>
+            </>
+          )}
+        </section>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2">
       {profiles.map((p) => (
         <button
           key={p.uid}
@@ -162,6 +243,7 @@ export function CommunityUsers() {
           </span>
         </button>
       ))}
+      </div>
     </div>
   );
 }

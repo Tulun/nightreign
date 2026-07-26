@@ -12,7 +12,13 @@
 import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { useAuth } from "@/lib/useAuth";
-import { mergeWithCloud, pullCloudStore, pushCloudStore, upsertProfile } from "@/lib/cloudSync";
+import {
+  ensureProfileName,
+  mergeWithCloud,
+  pullCloudStore,
+  pushCloudStore,
+  upsertProfile,
+} from "@/lib/cloudSync";
 import type { BuildStore } from "@/lib/builds";
 
 export type SyncStatus = "local" | "syncing" | "synced" | "error";
@@ -45,7 +51,9 @@ export function useCloudSync(
     setStatus("syncing");
     (async () => {
       try {
-        const cloud = await pullCloudStore(user.uid);
+        // Give first-time accounts a directory name (never overwrites a
+        // chosen nickname); runs alongside the store pull.
+        const [cloud] = await Promise.all([pullCloudStore(user.uid), ensureProfileName(user)]);
         if (cancelled) return; // superseded by a newer local edit or sign-out
         const merged = cloud ? mergeWithCloud(store, cloud) : store;
         const mergedJson = JSON.stringify(merged);

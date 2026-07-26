@@ -37,12 +37,16 @@ export interface UserProfile {
 const profileDoc = (uid: string) => doc(db, "users", uid);
 const storeDoc = (uid: string) => doc(db, "users", uid, "data", "builds");
 
-/** Create/refresh the directory profile (name, photo, build count). */
+/**
+ * Refresh the directory profile's photo/counts. Deliberately leaves
+ * displayName alone: the site-visible name is user-owned (see
+ * ensureProfileName / setProfileName), so a nickname chosen for privacy is
+ * never clobbered back to the Google account name by a sync.
+ */
 export async function upsertProfile(user: User, store: BuildStore): Promise<void> {
   await setDoc(
     profileDoc(user.uid),
     {
-      displayName: user.displayName ?? user.email ?? "Nightfarer",
       photoURL: user.photoURL ?? null,
       // Shared (view-only) imports are someone else's work — not counted.
       buildCount: store.builds.filter((b) => !b.shared).length,
@@ -50,6 +54,27 @@ export async function upsertProfile(user: User, store: BuildStore): Promise<void
     },
     { merge: true },
   );
+}
+
+/**
+ * First-sign-in default for the site-visible name: the Google account name,
+ * but only when the profile doesn't have a name yet. (No email fallback —
+ * an address is exactly what shouldn't leak into a shared directory.)
+ */
+export async function ensureProfileName(user: User): Promise<void> {
+  const snap = await getDoc(profileDoc(user.uid));
+  const existing = snap.data()?.displayName;
+  if (typeof existing === "string" && existing.trim()) return;
+  await setDoc(
+    profileDoc(user.uid),
+    { displayName: user.displayName ?? "Nightfarer" },
+    { merge: true },
+  );
+}
+
+/** Set the site-visible name (nickname) shown in the directory. */
+export async function setProfileName(uid: string, name: string): Promise<void> {
+  await setDoc(profileDoc(uid), { displayName: name.trim() }, { merge: true });
 }
 
 /** Write the store (and a matching profile refresh) to the account. */
