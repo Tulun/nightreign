@@ -100,6 +100,11 @@ export interface Build {
   notes: string;
   /** User-defined tags for filtering, drawn from BuildStore.tags. */
   tags?: string[];
+  /**
+   * User-added subtitle shown under the name — mainly for re-labeling a
+   * poorly titled shared build. Never travels with the share link.
+   */
+  subtitle?: string;
   updatedAt: number;
   /** True for builds imported from a share link — view-only, not editable. */
   shared?: boolean;
