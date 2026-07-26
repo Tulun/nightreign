@@ -123,10 +123,11 @@ effect recall, spurious count, name/demerit/color accuracy.
 
 ## What lives where
 
-- `ocr-eval/fixtures/` — screenshots + expected JSON. **Committed to git**;
-  they are the eval set, and it only gets more trustworthy as it grows. When
-  the importer misreads a screenshot in real use, that screenshot (with its
-  corrected output) is a perfect new fixture.
+- `ocr-eval/fixtures/` — screenshots + expected JSON. **Committed to git**
+  (nothing in `ocr-eval/` ships with the app; the site only bundles `src/`
+  and `public/`); they are the eval set, and it only gets more trustworthy as
+  it grows. When the importer misreads a screenshot in real use, that
+  screenshot (with its corrected output) is a perfect new fixture.
 - `ocr-eval/.cache/` — tesseract language data + cached OCR output.
   Gitignored; safe to delete anytime.
 - `scripts/ocr-eval.ts` — the harness. It imports the production matching

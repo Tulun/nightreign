@@ -1,0 +1,31 @@
+{
+  "deep": false,
+  "relics": [
+    {
+      "name": "Grand Drizzly Scene",
+      "color": "Blue",
+      "effects": [
+        "Defeating enemies while Art is active ups attack power",
+        "Changes compatible armament's skill to Hoarfrost Stomp at start of expedition",
+        "Faith +2"
+      ]
+    },
+    {
+      "name": "Polished Luminous Scene",
+      "color": "Yellow",
+      "effects": [
+        "Attack power increased for each Night Invader defeated",
+        "Defeating enemies fills more of the Art gauge"
+      ]
+    },
+    {
+      "name": "Dark Night of the Wise",
+      "color": "Green",
+      "effects": [
+        "Increased Maximum FP",
+        "FP Restoration upon Successive Attacks",
+        "Max FP increased for each Sorcerer's Rise unlocked"
+      ]
+    }
+  ]
+}
