@@ -1,0 +1,14 @@
+{
+  "deep": false,
+  "relics": [
+    {
+      "name": "Grand Burning Scene",
+      "color": "Red",
+      "effects": [
+        "[Raider] Damage taken while Character Skill improves attack power and stamina",
+        "Improved Damage Negation at Low HP",
+        "Physical Attack Up"
+      ]
+}
+  ]
+}

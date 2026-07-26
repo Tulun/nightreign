@@ -1,0 +1,50 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "[Raider] Hit With Character Skill to Reduce Enemy Attack Power",
+        "Improved Attack Power with 3+ Collosal Weapons Equipped",
+        "Defeating enemies fills more of the Art gauge +1"
+      ],
+      "demerits": [
+        null,
+        null,
+        "Repeated Evasions Lower Damage Negations"
+      ],
+      "notes": "relic is Deep Grand Burning Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks",
+        "Physical Attack Power +3",
+        "Improved Affinity Damage Negation"
+      ],
+      "demerits": [
+        null,
+        "Reduced Strength and Intelligence",
+        null
+      ],
+      "notes": "relic is Deep Grand Luminous Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "Dormant Power Helps Discover Great Hammers",
+        "Successful guarding fills more of the Art gauge",
+        "Poise +3"
+      ],
+      "demerits": [
+        null,
+        null,
+        null
+      ],
+      "notes": "relic is Deep Grand Luminous Scene (name not shown on screen)"
+    }
+  ]
+}

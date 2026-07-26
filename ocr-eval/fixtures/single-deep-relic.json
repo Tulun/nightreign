@@ -1,0 +1,14 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": "Deep Grand Tranquil Scene",
+      "color": "Green",
+      "effects": [
+        "FP Restoration upon Curved Greatsword Attacks",
+        "Dormant Power Helps Discover Staves",
+        "Slowly restore HP for self and nearby allies when HP is low"
+      ]
+    }
+  ]
+}
