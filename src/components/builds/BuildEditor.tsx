@@ -1,0 +1,375 @@
+"use client";
+
+// ─────────────────────────────────────────────────────────────────────────
+//  Editor view: full-width build editor with searchable relic pickers,
+//  Deep of Night slots, tags, and the whole-screenshot importer.
+// ─────────────────────────────────────────────────────────────────────────
+
+import { useRef, useState } from "react";
+import { characterChalices } from "@/data/chalices";
+import { MultiSelect } from "@/components/MultiSelect";
+import {
+  fixedRelics,
+  matchFixedByEffects,
+  newId,
+  sameCustomRelic,
+  sortedTags,
+  type Build,
+  type BuildSlot,
+  type BuildStore,
+  type CustomRelic,
+  type SlotTriple,
+} from "@/lib/builds";
+import type { Chalice } from "@/lib/chalices";
+import { CustomRelicEditor } from "./CustomRelicEditor";
+import { RelicPicker } from "./RelicBrowser";
+import { ScreenshotBuildImport } from "./ScreenshotImport";
+import {
+  chalicesFor,
+  colorFromRelicName,
+  resolveSlot,
+  EffectDatalists,
+  EffectLines,
+  RelicLineInputs,
+  SlotIconImg,
+  type SlotRef,
+} from "./shared";
+
+export function BuildEditor({
+  initial,
+  store,
+  onSave,
+  onCancel,
+  onAddCustomRelic,
+  onUpdateCustomRelic,
+  onCreateTag,
+}: {
+  initial: Build;
+  store: BuildStore;
+  onSave: (b: Build) => void;
+  onCancel: () => void;
+  onAddCustomRelic: (r: CustomRelic) => void;
+  onUpdateCustomRelic: (r: CustomRelic) => void;
+  onCreateTag: (name: string) => void;
+}) {
+  const [build, setBuild] = useState<Build>(initial);
+  const [newRelicAt, setNewRelicAt] = useState<SlotRef | null>(null);
+  const [newTag, setNewTag] = useState("");
+  const chalices = chalicesFor(build.character);
+  const chalice = chalices.find((c) => c.name === build.chalice) ?? chalices[0];
+
+  // Create the tag in the registry and put it on this build in one step.
+  const addNewTag = () => {
+    const tag = newTag.trim();
+    if (!tag) return;
+    onCreateTag(tag);
+    setBuild((b) => ({ ...b, tags: sortedTags([...(b.tags ?? []), tag]) }));
+    setNewTag("");
+  };
+
+  const setSlot = (at: SlotRef, slot: BuildSlot) => {
+    setBuild((b) => {
+      const key = at.deep ? "deepSlots" : "slots";
+      const slots = [...b[key]] as SlotTriple;
+      slots[at.index] = slot;
+      return { ...b, [key]: slots };
+    });
+    // Filling a slot supersedes its pending new-relic form.
+    setNewRelicAt((cur) => (cur && cur.deep === at.deep && cur.index === at.index ? null : cur));
+  };
+
+  // Reuse an identical pool relic instead of adding a duplicate — the same
+  // relic imported twice (or owned twice) is one pool entry slotted twice.
+  // The ref also covers relics added earlier in the same batch (Apply all),
+  // before the parent's state update lands.
+  const pendingRelics = useRef<CustomRelic[]>([]);
+  const addOrReuseRelic = (relic: CustomRelic): string => {
+    const existing =
+      store.customRelics.find((r) => sameCustomRelic(r, relic)) ??
+      pendingRelics.current.find((r) => sameCustomRelic(r, relic));
+    if (existing) return existing.id;
+    pendingRelics.current.push(relic);
+    onAddCustomRelic(relic);
+    return relic.id;
+  };
+
+  const applyGroup = (
+    group: {
+      name: string | null;
+      effects: string[];
+      demerits: string[];
+      color?: CustomRelic["color"] | null;
+    },
+    at: SlotRef,
+  ) => {
+    const slotColor = (at.deep ? chalice.deep : chalice.slots)[at.index];
+    // Deep slots never take fixed relics — every Depth relic is a custom
+    // roll, even when it shares a name with a fixed one.
+    if (!at.deep) {
+      const byName = group.name ? fixedRelics.find((r) => r.name === group.name) : null;
+      // No name from OCR? The effects can still give the relic away: an
+      // effect that can't roll pins it to its fixed relic outright; an exact
+      // copy of a fixed relic's effect set might just be a lucky roll — ask.
+      const byEffects = byName ? null : matchFixedByEffects(group.effects);
+      const fixed =
+        byName ??
+        (byEffects &&
+        (byEffects.certain ||
+          window.confirm(
+            `These effects exactly match ${byEffects.relic.name}. Slot that relic?\n\n(Cancel keeps it as a custom relic that happens to have the same effects.)`,
+          ))
+          ? byEffects.relic
+          : null);
+      if (fixed) {
+        setSlot(at, { kind: "fixed", name: fixed.name });
+        return;
+      }
+    }
+    // A colored slot dictates the relic's color; the sampled icon color only
+    // decides for White slots (the screenshot's blue cast makes it easy to
+    // misread, so the slot is the better authority).
+    const color =
+      (slotColor !== "White" ? (slotColor as CustomRelic["color"]) : null) ??
+      group.color ??
+      colorFromRelicName(group.name) ??
+      "Red";
+    const id = addOrReuseRelic({
+      id: newId(),
+      name: group.name ?? "",
+      color,
+      effects: group.effects.slice(0, 3),
+      demerits: group.demerits.slice(0, 3),
+      deep: at.deep,
+    });
+    setSlot(at, { kind: "custom", id });
+  };
+
+  const slotSection = (deep: boolean) => {
+    const colors = deep ? chalice.deep : chalice.slots;
+    return colors.map((slotColor, index) => {
+      const at: SlotRef = { deep, index };
+      const isNewHere = newRelicAt?.deep === deep && newRelicAt.index === index;
+      const value = deep ? build.deepSlots[index] : build.slots[index];
+      const resolved = resolveSlot(value, store);
+      const customRelic =
+        value?.kind === "custom" ? store.customRelics.find((r) => r.id === value.id) : undefined;
+      return (
+        <div key={index} className="frame rounded-md bg-night-900/60 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <SlotIconImg color={slotColor} size={26} />
+            <RelicPicker
+              character={build.character}
+              slotColor={slotColor}
+              deep={deep}
+              store={store}
+              value={value}
+              onChange={(slot) => setSlot(at, slot)}
+              onNewRelic={() => setNewRelicAt(isNewHere ? null : at)}
+            />
+          </div>
+          {customRelic ? (
+            // Custom relics stay editable line by line, right in the slot.
+            <RelicLineInputs
+              relic={customRelic}
+              onUpdate={onUpdateCustomRelic}
+              className="mt-2"
+              showDemerits={deep}
+            />
+          ) : (
+            resolved && <EffectLines lines={resolved.lines} className="mt-1.5 space-y-0.5" />
+          )}
+          {isNewHere && (
+            <CustomRelicEditor
+              slotColor={slotColor}
+              deep={deep}
+              onSave={(relic) => {
+                setSlot(at, { kind: "custom", id: addOrReuseRelic(relic) });
+                setNewRelicAt(null);
+              }}
+              onCancel={() => setNewRelicAt(null)}
+            />
+          )}
+        </div>
+      );
+    });
+  };
+
+  return (
+    <div>
+      <button type="button" onClick={onCancel} className="mb-4 font-body text-sm text-parchment-muted hover:text-gold-bright">
+        ← All builds
+      </button>
+
+      {/* Character first, then chalice and slots follow from it. */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        {characterChalices.map((c) => {
+          const active = c.name === build.character;
+          return (
+            <button
+              key={c.name}
+              type="button"
+              onClick={() =>
+                setBuild((b) =>
+                  b.character === c.name
+                    ? b
+                    : { ...b, character: c.name, chalice: chalicesFor(c.name)[0].name },
+                )
+              }
+              aria-pressed={active}
+              className={`frame rounded-md px-3 py-1.5 font-body text-sm transition-colors ${
+                active
+                  ? "bg-night-700 text-gold-bright"
+                  : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
+              }`}
+              style={active ? { borderColor: "#c9a227" } : undefined}
+            >
+              {c.name}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          type="text"
+          value={build.name}
+          onChange={(e) => setBuild((b) => ({ ...b, name: e.target.value }))}
+          placeholder="Build name"
+          className="frame w-64 rounded bg-night-900 px-3 py-2 font-display text-lg text-parchment placeholder:text-parchment-faint"
+        />
+        {/* Swapping chalices keeps slotted relics — colors are the user's call. */}
+        <ChalicePicker
+          chalices={chalices}
+          value={chalice}
+          onChange={(name) => setBuild((b) => ({ ...b, chalice: name }))}
+        />
+        <ScreenshotBuildImport
+          chalice={chalice}
+          chalices={chalices}
+          onApply={applyGroup}
+          onSwapChalice={(name) => setBuild((b) => ({ ...b, chalice: name }))}
+        />
+      </div>
+
+      {/* Tags — pick from your registry, or create one right here. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {store.tags.length > 0 && (
+          <MultiSelect
+            values={build.tags ?? []}
+            options={store.tags.map((t) => ({ value: t, label: t }))}
+            onChange={(tags) => setBuild((b) => ({ ...b, tags }))}
+            placeholder="Tags"
+            className="w-44"
+          />
+        )}
+        <input
+          type="text"
+          value={newTag}
+          onChange={(e) => setNewTag(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addNewTag();
+            }
+          }}
+          placeholder="New tag"
+          className="frame w-36 rounded bg-night-900 px-2 py-2 font-body text-sm text-parchment placeholder:text-parchment-faint"
+        />
+        <button
+          type="button"
+          onClick={addNewTag}
+          disabled={!newTag.trim()}
+          className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment disabled:opacity-40"
+        >
+          + Add tag
+        </button>
+        {(build.tags ?? []).map((t) => (
+          <span key={t} className="rounded border border-night-600 bg-night-900 px-1.5 py-0.5 font-body text-xs text-parchment-muted">
+            {t}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <section>
+          <h3 className="eyebrow mb-2">Relic Slots</h3>
+          <div className="space-y-3">{slotSection(false)}</div>
+        </section>
+        <section>
+          <h3 className="eyebrow mb-2 text-gold-dim">Deep of Night Slots</h3>
+          <div className="space-y-3">{slotSection(true)}</div>
+        </section>
+      </div>
+
+      <div className="mt-5 flex gap-2">
+        <button type="button" onClick={() => onSave(build)} className="frame rounded-md bg-night-700 px-5 py-2 font-body text-sm text-gold-bright hover:bg-night-600">
+          Save build
+        </button>
+        <button type="button" onClick={onCancel} className="frame rounded-md bg-night-800 px-5 py-2 font-body text-sm text-parchment-muted hover:text-parchment">
+          Cancel
+        </button>
+      </div>
+
+      <EffectDatalists />
+    </div>
+  );
+}
+
+function ChalicePicker({ chalices, value, onChange }: { chalices: Chalice[]; value: Chalice; onChange: (name: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="frame flex items-center gap-2 rounded-md bg-night-900 px-3 py-2 font-body text-sm text-parchment hover:bg-night-800"
+      >
+        <span>{value.name}</span>
+        <span className="flex items-center gap-0.5">
+          {value.slots.map((s, i) => (
+            <SlotIconImg key={i} color={s} size={16} />
+          ))}
+        </span>
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-parchment-faint" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 z-40 mt-1 max-h-80 w-[26rem] max-w-[90vw] overflow-y-auto rounded-md border border-night-500 bg-night-850 p-1 shadow-lift">
+            {chalices.map((c) => {
+              const active = c.name === value.name;
+              return (
+                <button
+                  key={c.name}
+                  type="button"
+                  onClick={() => { onChange(c.name); setOpen(false); }}
+                  className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left font-body text-sm ${
+                    active ? "bg-night-700 text-gold-bright" : "text-parchment-muted hover:bg-night-800 hover:text-parchment"
+                  }`}
+                >
+                  <span className="truncate">{c.name}</span>
+                  <span className="flex shrink-0 items-center gap-0.5">
+                    {c.slots.map((s, i) => (
+                      <SlotIconImg key={`n${i}`} color={s} size={16} />
+                    ))}
+                    <span className="mx-1 h-4 w-px bg-night-600" aria-hidden="true" />
+                    {c.deep.map((s, i) => (
+                      <span key={`d${i}`} className="opacity-60">
+                        <SlotIconImg color={s} size={16} />
+                      </span>
+                    ))}
+                  </span>
+                </button>
+              );
+            })}
+            <p className="px-2 py-1 font-body text-[0.65rem] text-parchment-faint">
+              Bright icons: normal slots · dimmed: Deep of Night
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

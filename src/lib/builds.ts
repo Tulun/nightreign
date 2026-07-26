@@ -195,12 +195,18 @@ export function loadStore(): BuildStore {
   }
 }
 
-/** Persist the store to localStorage (call client-side only). */
-export function saveStore(store: BuildStore): void {
+/**
+ * Persist the store to localStorage (call client-side only). Returns false
+ * when the write failed (quota exceeded or storage unavailable) — the
+ * in-memory state is then ahead of what's on disk, and the caller should
+ * warn the user rather than let edits silently evaporate on reload.
+ */
+export function saveStore(store: BuildStore): boolean {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    return true;
   } catch {
-    // Quota exceeded or storage unavailable — nothing sensible to do.
+    return false;
   }
 }
 

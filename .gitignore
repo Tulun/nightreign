@@ -7,3 +7,6 @@
 npm-debug.log*
 .env*.local
 next-env.d.ts
+
+# OCR eval harness: tesseract lang data + cached OCR results
+/ocr-eval/.cache/

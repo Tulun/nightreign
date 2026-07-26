@@ -1,0 +1,412 @@
+// ─────────────────────────────────────────────────────────────────────────
+//  OCR eval harness: runs the screenshot-import pipeline (tesseract OCR →
+//  effect matching → relic grouping → icon color sampling) against fixture
+//  screenshots with verified expected output, and scores the results.
+//
+//  Usage:  npm run ocr:eval [-- --verbose] [-- --no-cache] [-- --filter <s>]
+//  Fixtures live in ocr-eval/fixtures/ — see ocr-eval/README.md.
+// ─────────────────────────────────────────────────────────────────────────
+
+import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import jpeg from "jpeg-js";
+import { PNG } from "pngjs";
+import {
+  CURSE_VOCABULARY,
+  EFFECT_VOCABULARY,
+  RELIC_NAME_VOCABULARY,
+  parseRelicGroups,
+  similarity,
+} from "@/lib/effectMatch";
+import { dominantIconColor, iconSampleRegion, type IconBox, type RelicColor } from "@/lib/relicColor";
+
+const ROOT = path.join(__dirname, "..");
+const FIXTURES_DIR = path.join(ROOT, "ocr-eval", "fixtures");
+const CACHE_DIR = path.join(ROOT, "ocr-eval", ".cache");
+
+// Bump when OCR settings change (engine params, preprocessing, tesseract
+// version) so cached OCR results from the old settings are not reused.
+const OCR_CONFIG_KEY = "tesseract7-eng-v1";
+
+// ── Expected-output fixture format ───────────────────────────────────────
+
+const COLORS: RelicColor[] = ["Red", "Blue", "Green", "Yellow"];
+
+interface ExpectedRelic {
+  /** Relic display name, or null if the name is cropped out of the shot. */
+  name: string | null;
+  /** Omit (or null) to leave the color unscored for this relic. */
+  color?: RelicColor | null;
+  effects: string[];
+  /** demerits[i] belongs to effects[i]; omit when the relic has none. */
+  demerits?: (string | null)[];
+  notes?: string;
+}
+
+interface Fixture {
+  /** True when the screenshot shows Deep relics. */
+  deep?: boolean;
+  /** Relics in screenshot order, top to bottom. */
+  relics: ExpectedRelic[];
+  notes?: string;
+}
+
+/** Reject fixture typos: every expected line must be an exact vocab entry. */
+function validateFixture(fx: Fixture, file: string): string[] {
+  const errors: string[] = [];
+  const check = (value: string, vocab: string[], what: string) => {
+    if (vocab.includes(value)) return;
+    const nearest = vocab
+      .map((v) => ({ v, s: similarity(value, v) }))
+      .sort((a, b) => b.s - a.s)[0];
+    errors.push(
+      `${file}: ${what} "${value}" is not an exact vocabulary entry` +
+        (nearest && nearest.s > 0.6 ? ` — did you mean "${nearest.v}"?` : ""),
+    );
+  };
+  if (!Array.isArray(fx.relics)) return [`${file}: missing "relics" array`];
+  fx.relics.forEach((r, i) => {
+    if (r.name != null) check(r.name, RELIC_NAME_VOCABULARY, `relic ${i + 1} name`);
+    if (r.color != null && !COLORS.includes(r.color)) {
+      errors.push(`${file}: relic ${i + 1} color "${r.color}" must be one of ${COLORS.join("/")}`);
+    }
+    (r.effects ?? []).forEach((e) => check(e, EFFECT_VOCABULARY, `relic ${i + 1} effect`));
+    (r.demerits ?? []).forEach((d) => {
+      if (d != null && d !== "") check(d, CURSE_VOCABULARY, `relic ${i + 1} demerit`);
+    });
+  });
+  return errors;
+}
+
+// ── OCR (mirrors ocrLines in BuildsManager.tsx) ──────────────────────────
+
+interface OcrLine {
+  text: string;
+  bbox: IconBox | null;
+}
+
+type Worker = import("tesseract.js").Worker;
+
+async function ocrLines(worker: Worker, imagePath: string): Promise<OcrLine[]> {
+  const { data } = await worker.recognize(imagePath, {}, { text: true, blocks: true });
+  const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
+    (b.paragraphs ?? []).flatMap((p) =>
+      (p.lines ?? []).map((l) => ({ text: l.text ?? "", bbox: l.bbox ?? null })),
+    ),
+  );
+  if (lines.length > 0) return lines;
+  return data.text.split("\n").map((text) => ({ text, bbox: null }));
+}
+
+/** OCR with a disk cache — tuning the matcher shouldn't re-OCR every run. */
+async function cachedOcrLines(
+  getWorker: () => Promise<Worker>,
+  imagePath: string,
+  useCache: boolean,
+): Promise<OcrLine[]> {
+  const bytes = readFileSync(imagePath);
+  const key = createHash("sha1").update(OCR_CONFIG_KEY).update(bytes).digest("hex");
+  const cacheFile = path.join(CACHE_DIR, `${key}.json`);
+  if (useCache && existsSync(cacheFile)) {
+    return JSON.parse(readFileSync(cacheFile, "utf8")) as OcrLine[];
+  }
+  const lines = await ocrLines(await getWorker(), imagePath);
+  mkdirSync(CACHE_DIR, { recursive: true });
+  writeFileSync(cacheFile, JSON.stringify(lines));
+  return lines;
+}
+
+// ── Image decoding for icon color sampling ───────────────────────────────
+
+interface RgbaImage {
+  width: number;
+  height: number;
+  data: Uint8Array;
+}
+
+function decodeImage(imagePath: string): RgbaImage | null {
+  const buf = readFileSync(imagePath);
+  try {
+    if (/\.png$/i.test(imagePath)) {
+      const png = PNG.sync.read(buf);
+      return { width: png.width, height: png.height, data: png.data };
+    }
+    return jpeg.decode(buf, { useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 2048 });
+  } catch {
+    return null;
+  }
+}
+
+function cropRgba(img: RgbaImage, region: { x0: number; y0: number; width: number; height: number }): Uint8Array {
+  const x0 = Math.round(region.x0);
+  const y0 = Math.round(region.y0);
+  const w = Math.round(region.width);
+  const h = Math.round(region.height);
+  const out = new Uint8Array(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    const src = ((y0 + y) * img.width + x0) * 4;
+    out.set(img.data.subarray(src, src + w * 4), y * w * 4);
+  }
+  return out;
+}
+
+// ── Scoring ──────────────────────────────────────────────────────────────
+
+interface RelicDiff {
+  index: number;
+  expectedName: string | null;
+  nameOk: boolean;
+  parsedName: string | null;
+  matched: string[];
+  missed: string[];
+  spurious: string[];
+  demeritsOk: number;
+  demeritsTotal: number;
+  demeritDiffs: string[];
+  /** "right" | "unread" | "wrong" | "unscored" */
+  colorResult: "right" | "unread" | "wrong" | "unscored";
+  expectedColor: RelicColor | null;
+  parsedColor: RelicColor | null;
+}
+
+interface FixtureResult {
+  file: string;
+  expectedRelics: number;
+  parsedRelics: number;
+  deepOk: boolean;
+  diffs: RelicDiff[];
+}
+
+const tally = {
+  fixtures: 0,
+  effectsExpected: 0,
+  effectsMatched: 0,
+  effectsSpurious: 0,
+  namesExpected: 0,
+  namesOk: 0,
+  demeritsExpected: 0,
+  demeritsOk: 0,
+  colorsRight: 0,
+  colorsUnread: 0,
+  colorsWrong: 0,
+  deepOk: 0,
+};
+
+function scoreFixture(
+  file: string,
+  fx: Fixture,
+  groups: ReturnType<typeof parseRelicGroups>,
+  allDeep: boolean,
+  colors: (RelicColor | null)[],
+): FixtureResult {
+  const count = Math.max(fx.relics.length, groups.length);
+  const diffs: RelicDiff[] = [];
+  for (let i = 0; i < count; i++) {
+    const exp = fx.relics[i] ?? { name: null, effects: [], demerits: [] };
+    const got = groups[i];
+    const gotEffects = got ? got.effects.map((e) => e.effect) : [];
+    const expEffects = exp.effects ?? [];
+    const matched = expEffects.filter((e) => gotEffects.includes(e));
+    const missed = expEffects.filter((e) => !gotEffects.includes(e));
+    const spurious = gotEffects.filter((e) => !expEffects.includes(e));
+
+    // Demerits are compared per matched effect (a demerit rides its line).
+    const expDem = new Map(expEffects.map((e, j) => [e, exp.demerits?.[j] || null]));
+    const gotDem = new Map(gotEffects.map((e, j) => [e, (got?.demerits[j] ?? null) || null]));
+    let demOk = 0;
+    const demDiffs: string[] = [];
+    for (const e of matched) {
+      const want = expDem.get(e) ?? null;
+      const have = gotDem.get(e) ?? null;
+      if (want === have) demOk += 1;
+      else demDiffs.push(`"${e}": expected demerit ${want ?? "none"}, got ${have ?? "none"}`);
+    }
+
+    const expectedColor = exp.color ?? null;
+    const parsedColor = got ? colors[i] ?? null : null;
+    const colorResult: RelicDiff["colorResult"] =
+      expectedColor == null ? "unscored"
+      : parsedColor == null ? "unread"
+      : parsedColor === expectedColor ? "right"
+      : "wrong";
+
+    diffs.push({
+      index: i,
+      expectedName: exp.name ?? null,
+      parsedName: got?.name ?? null,
+      nameOk: (exp.name ?? null) === (got?.name ?? null),
+      matched,
+      missed,
+      spurious,
+      demeritsOk: demOk,
+      demeritsTotal: matched.length,
+      demeritDiffs: demDiffs,
+      colorResult,
+      expectedColor,
+      parsedColor,
+    });
+
+    tally.effectsExpected += expEffects.length;
+    tally.effectsMatched += matched.length;
+    tally.effectsSpurious += spurious.length;
+    if (i < fx.relics.length) {
+      tally.namesExpected += 1;
+      if ((exp.name ?? null) === (got?.name ?? null)) tally.namesOk += 1;
+    }
+    tally.demeritsExpected += matched.length;
+    tally.demeritsOk += demOk;
+    if (colorResult === "right") tally.colorsRight += 1;
+    else if (colorResult === "unread") tally.colorsUnread += 1;
+    else if (colorResult === "wrong") tally.colorsWrong += 1;
+  }
+  const deepOk = allDeep === (fx.deep ?? false);
+  if (deepOk) tally.deepOk += 1;
+  tally.fixtures += 1;
+  return { file, expectedRelics: fx.relics.length, parsedRelics: groups.length, deepOk, diffs };
+}
+
+// ── Reporting ────────────────────────────────────────────────────────────
+
+const pct = (n: number, d: number) => (d === 0 ? "—" : `${Math.round((n / d) * 100)}%`);
+
+function printFixture(r: FixtureResult, fx: Fixture) {
+  const effExpected = fx.relics.reduce((n, x) => n + x.effects.length, 0);
+  const effMatched = r.diffs.reduce((n, d) => n + d.matched.length, 0);
+  const effSpurious = r.diffs.reduce((n, d) => n + d.spurious.length, 0);
+  const namesOk = r.diffs.slice(0, r.expectedRelics).filter((d) => d.nameOk).length;
+  const colors = r.diffs.map((d) => d.colorResult);
+  const colorStr = colors.every((c) => c === "unscored")
+    ? "unscored"
+    : `${colors.filter((c) => c === "right").length}✓ ${colors.filter((c) => c === "unread").length}– ${colors.filter((c) => c === "wrong").length}✗`;
+
+  console.log(`\n── ${r.file} ${"─".repeat(Math.max(3, 58 - r.file.length))}`);
+  console.log(
+    `  relics ${r.parsedRelics}/${r.expectedRelics} · names ${namesOk}/${r.expectedRelics}` +
+      ` · effects ${effMatched}/${effExpected}${effSpurious ? ` (+${effSpurious} spurious)` : ""}` +
+      ` · colors ${colorStr} · deep ${r.deepOk ? "✓" : "✗"}`,
+  );
+  for (const d of r.diffs) {
+    const label = d.expectedName ?? d.parsedName ?? "(unnamed)";
+    const issues: string[] = [];
+    if (!d.nameOk) issues.push(`name: expected ${d.expectedName ?? "none"}, got ${d.parsedName ?? "none"}`);
+    for (const e of d.missed) issues.push(`missed   ${e}`);
+    for (const e of d.spurious) issues.push(`spurious ${e}`);
+    issues.push(...d.demeritDiffs);
+    if (d.colorResult === "wrong") issues.push(`color: expected ${d.expectedColor}, got ${d.parsedColor}`);
+    if (d.colorResult === "unread") issues.push(`color: expected ${d.expectedColor}, couldn't read it`);
+    if (issues.length > 0) {
+      console.log(`  relic ${d.index + 1} (${label}):`);
+      for (const line of issues) console.log(`    ${line}`);
+    }
+  }
+}
+
+// ── Main ─────────────────────────────────────────────────────────────────
+
+async function main() {
+  const argv = process.argv.slice(2);
+  const verbose = argv.includes("--verbose") || argv.includes("-v");
+  const useCache = !argv.includes("--no-cache");
+  const filterIdx = argv.indexOf("--filter");
+  const filter = filterIdx >= 0 ? argv[filterIdx + 1] : null;
+
+  if (!existsSync(FIXTURES_DIR)) {
+    console.error(`No fixtures directory at ${FIXTURES_DIR} — see ocr-eval/README.md`);
+    process.exit(1);
+  }
+  const images = readdirSync(FIXTURES_DIR)
+    .filter((f) => /\.(png|jpe?g)$/i.test(f))
+    .filter((f) => !filter || f.includes(filter))
+    .sort();
+  if (images.length === 0) {
+    console.error("No fixture screenshots found — add <name>.png + <name>.json to ocr-eval/fixtures/ (see ocr-eval/README.md)");
+    process.exit(1);
+  }
+
+  // The tesseract worker is created lazily: fully-cached runs never load it.
+  let worker: Worker | null = null;
+  const getWorker = async () => {
+    if (!worker) {
+      const { createWorker } = await import("tesseract.js");
+      worker = await createWorker("eng", 1, { cachePath: CACHE_DIR });
+    }
+    return worker;
+  };
+
+  const results: FixtureResult[] = [];
+  const fixtures = new Map<string, Fixture>();
+  let fixtureErrors = 0;
+
+  for (const image of images) {
+    const base = image.replace(/\.(png|jpe?g)$/i, "");
+    const jsonPath = path.join(FIXTURES_DIR, `${base}.json`);
+    if (!existsSync(jsonPath)) {
+      console.error(`✗ ${image}: no ${base}.json next to it — skipping`);
+      fixtureErrors += 1;
+      continue;
+    }
+    let fx: Fixture;
+    try {
+      fx = JSON.parse(readFileSync(jsonPath, "utf8")) as Fixture;
+    } catch (e) {
+      console.error(`✗ ${base}.json: invalid JSON (${(e as Error).message}) — skipping`);
+      fixtureErrors += 1;
+      continue;
+    }
+    const errors = validateFixture(fx, `${base}.json`);
+    if (errors.length > 0) {
+      for (const err of errors) console.error(`✗ ${err}`);
+      fixtureErrors += 1;
+      continue;
+    }
+
+    const imagePath = path.join(FIXTURES_DIR, image);
+    process.stdout.write(`reading ${image}…\n`);
+    const lines = await cachedOcrLines(getWorker, imagePath, useCache);
+    if (verbose) {
+      console.log(`  OCR lines (${lines.length}):`);
+      for (const l of lines) console.log(`    | ${l.text.trimEnd()}`);
+    }
+
+    // Same pipeline as ScreenshotPoolImport in BuildsManager.tsx.
+    const texts = lines.map((l) => l.text);
+    const groups = parseRelicGroups(texts);
+    const allDeep = groups.some((g) => g.deep);
+    const img = decodeImage(imagePath);
+    const colors = groups.map((g) => {
+      const first = g.effects[0]?.line ?? null;
+      const box = first ? lines.find((l) => l.text.trim() === first.trim())?.bbox ?? null : null;
+      if (!box || !img) return null;
+      const region = iconSampleRegion(box, img.height);
+      if (!region) return null;
+      return dominantIconColor(cropRgba(img, region));
+    });
+
+    results.push(scoreFixture(image, fx, groups, allDeep, colors));
+    fixtures.set(image, fx);
+  }
+
+  if (worker) await (worker as Worker).terminate();
+
+  for (const r of results) printFixture(r, fixtures.get(r.file)!);
+
+  const colorsScored = tally.colorsRight + tally.colorsUnread + tally.colorsWrong;
+  console.log(`\n${"━".repeat(64)}`);
+  console.log(`TOTALS · ${tally.fixtures} fixture${tally.fixtures === 1 ? "" : "s"}${fixtureErrors ? ` (${fixtureErrors} skipped with errors)` : ""}`);
+  console.log(`  effects   ${tally.effectsMatched}/${tally.effectsExpected} matched (${pct(tally.effectsMatched, tally.effectsExpected)}) · ${tally.effectsSpurious} spurious`);
+  console.log(`  names     ${tally.namesOk}/${tally.namesExpected} (${pct(tally.namesOk, tally.namesExpected)})`);
+  console.log(`  demerits  ${tally.demeritsOk}/${tally.demeritsExpected} (${pct(tally.demeritsOk, tally.demeritsExpected)})`);
+  console.log(
+    colorsScored === 0
+      ? "  colors    unscored (no fixture sets expected colors)"
+      : `  colors    ${tally.colorsRight} right · ${tally.colorsUnread} unread · ${tally.colorsWrong} wrong (${pct(tally.colorsRight, colorsScored)} of scored)`,
+  );
+  console.log(`  deep flag ${tally.deepOk}/${tally.fixtures}`);
+  if (fixtureErrors > 0) process.exitCode = 1;
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
