@@ -175,10 +175,10 @@ export function MyRelics({
               <RelicImg src={customRelicIcon(r)} alt={r.color} size={36} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="min-w-0 truncate font-body text-sm font-semibold text-parchment">
+                  <p className="min-w-0 truncate font-body text-base font-semibold text-parchment">
                     {r.name || `${r.color} relic`}
                     {r.deep && (
-                      <span className="ml-1.5 rounded border border-gold-dim/40 px-1 py-px align-middle font-body text-[10px] font-normal uppercase tracking-wide text-gold-dim">
+                      <span className="ml-1.5 rounded border border-gold-dim/40 px-1 py-px align-middle font-body text-xs font-normal uppercase tracking-wide text-gold-dim">
                         Deep
                       </span>
                     )}
@@ -194,6 +194,7 @@ export function MyRelics({
                 </div>
                 <EffectLines
                   divided
+                  size="base"
                   className="mt-1.5"
                   lines={r.effects
                     .map((text, i) => ({ text, demerit: r.demerits?.[i]?.trim() || undefined }))

@@ -95,19 +95,19 @@ export function EffectLines({
 }: {
   lines: ResolvedLine[];
   className?: string;
-  /** "sm" for reading surfaces (build cards); "xs" for dense pickers. */
-  size?: "xs" | "sm";
+  /** "base" for primary reading surfaces (relic cards); "sm" for build cards; "xs" for dense pickers. */
+  size?: "xs" | "sm" | "base";
   /** Rule between lines, so each effect reads separately at a glance. */
   divided?: boolean;
 }) {
+  const sizeClass =
+    size === "base" ? "text-base leading-relaxed" : size === "sm" ? "text-sm leading-relaxed" : "text-xs leading-snug";
   return (
     <ul className={`${divided ? "divide-y divide-night-700" : ""} ${className ?? ""}`}>
       {lines.map((l, i) => (
         <li
           key={`${l.text}-${i}`}
-          className={`font-body text-parchment-muted ${
-            size === "sm" ? "text-sm leading-relaxed" : "text-xs leading-snug"
-          } ${divided ? "py-1.5 first:pt-0 last:pb-0" : ""}`}
+          className={`font-body text-parchment-muted ${sizeClass} ${divided ? "py-1.5 first:pt-0 last:pb-0" : ""}`}
         >
           {l.text}
           {l.demerit && <span className="block pl-3 text-red-300/80">{l.demerit}</span>}
