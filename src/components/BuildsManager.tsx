@@ -878,7 +878,7 @@ function BuildCard({
     const url = `${window.location.origin}${window.location.pathname}#b=${await encodeSharedBuild(build, store)}`;
     // The link is the data (no server), so messaging apps can't preview the
     // build — lead with a description line so the paste says what it is.
-    const text = `${build.name || "Unnamed build"} — ${build.character} · ${build.chalice}\n${url}`;
+    const text = `${build.name || "Unnamed build"} — ${build.character} · ${build.chalice}\n\n${url}`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
