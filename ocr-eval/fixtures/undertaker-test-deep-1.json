@@ -12,7 +12,7 @@
       "demerits": [
         "Reduced Strength and Intelligence",
         "Reduced Dexterity and Faith",
-        "Taking Damage Cause Blood Loss Buildup"
+        "Taking Damage Causes Blood Loss Buildup"
       ],
       "notes": "relic is Deep Grand Drizzly Scene (name not shown on screen)"
     },
@@ -37,7 +37,7 @@
       "effects": [
         "[Undertaker] Executing Art readies Character Skill",
         "Max stamina increased for each great enemy defeated at a Great Encampment",
-        "Dormant Power Discovers Fists"
+        "Dormant Power Helps Discover Fists"
       ],
       "demerits": [
         null,

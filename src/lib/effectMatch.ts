@@ -128,7 +128,21 @@ const EFFECT_ALIASES: Record<string, string> = {
   "Max FP increased for each Sorcerer's Rise unlocked":
     "Max FP permanently increased after releasing Sorcerer's Rise mechanism",
   "Reduced Damage Negation After Evading": "Repeated Evasions Lower Damage Negation",
+  "Extended Spell Duration": "Extend Spell Duration",
+  "Taking Damage Causes Frost Buildup": "Taking Damage Causes Frostbite Buildup",
+  "Max stamina increased for each great enemy defeated at a Great Encampment":
+    "Max Stamina increased per Great Encampment boss",
+  "[Raider] Hit With Character Skill to Reduce Enemy Attack Power":
+    "[Raider] Hit With Skill to Reduce Enemy Attack Power",
+  "[Undertaker] Attack power increased by landing the final blow of a chain attack":
+    "Undertaker: Attack Power Increased by Landing Chain Attack",
 };
+
+/** "Great Hammer" → "Great Hammers", "Torch" → "Torches"; "Staves" stays. */
+function pluralizeWeapon(w: string): string {
+  if (w.endsWith("s")) return w;
+  return /(ch|sh|x)$/.test(w) ? `${w}es` : `${w}s`;
+}
 
 // The game spells out "and" where the catalogue writes "&" (in either stat
 // order — it shows "Reduced Intelligence and Dexterity" for the catalogue's
@@ -148,6 +162,21 @@ for (const name of EFFECT_VOCABULARY) {
   if (afflicted) {
     EFFECT_ALIASES[`Attack power up when facing ${afflicted[1].toLowerCase()}-afflicted enemy${afflicted[2] ?? ""}`] = name;
   }
+  // The game pluralizes the weapon class where the catalogue is singular —
+  // "Improved Attack Power with 3+ Colossal Weapons Equipped", "Dormant
+  // Power Helps Discover Great Hammers" / "… Fists" (all verified in-game).
+  const equipped = name.match(/^Improved Attack Power with 3\+ (.+) Equipped$/);
+  if (equipped && pluralizeWeapon(equipped[1]) !== equipped[1]) {
+    EFFECT_ALIASES[`Improved Attack Power with 3+ ${pluralizeWeapon(equipped[1])} Equipped`] = name;
+  }
+  const dormant = name.match(/^Dormant Power Helps Discover (.+?)( \+\d)?$/);
+  if (dormant && pluralizeWeapon(dormant[1]) !== dormant[1]) {
+    EFFECT_ALIASES[`Dormant Power Helps Discover ${pluralizeWeapon(dormant[1])}${dormant[2] ?? ""}`] = name;
+  }
+  // Deep relics display the base tier with no suffix where the catalogue
+  // writes "+0" ("Improved Affinity Attack Power" — verified in-game).
+  const base = name.match(/^(.+) \+0$/);
+  if (base && !CANONICAL_BY_KEY.has(nameKey(base[1]))) EFFECT_ALIASES[base[1]] = name;
 }
 
 const LOWER_ALIASES = new Map(

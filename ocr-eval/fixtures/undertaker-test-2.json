@@ -15,7 +15,7 @@
       "name": null,
       "color": "Yellow",
       "effects": [
-        "[Undertaker] Attack power increased by landing final blow of a chain attack",
+        "[Undertaker] Attack power increased by landing the final blow of a chain attack",
         "Attack power increased for each Night Invader defeated",
         "Changes compatible armament's skill to Sacred Blade at start of expedition"
       ],
@@ -25,7 +25,7 @@
       "name": null,
       "color": "Blue",
       "effects": [
-        "[Undertaker] Physical attacks boosted while assist effect from incanation is active for self",
+        "[Undertaker] Physical attacks boosted while assist effect from incantation is active for self",
         "Extended Spell Duration",
         "Physical Attack Up +2"
       ],

@@ -51,7 +51,7 @@ export const deepRelics: DeepRelic[] = [
   { name: "HP Restored When Using Medicinal Boluses, etc. +1", effect: "Replenishes 80 HP from certain consumables", category: "regen", stack: "tiers" },
   { name: "Improved Flask HP Restoration", effect: "Increases HP gained from flasks by 1.1x", category: "regen", stack: "yes" },
   { name: "Defeating enemies fills more of the Art gauge +1", effect: "As the base effect, with a larger gauge fill", category: "regen", stack: "yes", note: "Seen in-game on a Deep relic; exact numbers untested." },
-  { name: "Successful guarding fills more of the Art gauge +1", effect: "Guarding hits fills the Art gauge", category: "regen", stack: "yes", note: "Seen in-game on a Deep relic; exact numbers untested." },
+  { name: "Successful guarding fills more of the Art gauge +0/1", effect: "Guarding hits fills the Art gauge", category: "regen", stack: "yes", note: "Both tiers seen in-game on Deep relics (+0 shows no suffix); exact numbers untested." },
 
   // ── Character (skills & stat-swaps) ─────────────────────────────────────────
   { name: "[Wylder] Character Skill Inflicts Blood Loss", effect: "Skill inflicts 60 (impact) / 55 (pull) bleed on hit", category: "character", stack: "no" },
