@@ -17,6 +17,7 @@ import {
   EFFECT_VOCABULARY,
   RELIC_NAME_VOCABULARY,
   parseRelicGroups,
+  resolveEffectAlias,
   similarity,
 } from "@/lib/effectMatch";
 import { dominantIconColor, iconSampleRegion, type IconBox, type RelicColor } from "@/lib/relicColor";
@@ -52,11 +53,25 @@ interface Fixture {
   notes?: string;
 }
 
-/** Reject fixture typos: every expected line must be an exact vocab entry. */
+/**
+ * Reject fixture typos, canonicalizing as it goes: every expected line must
+ * be a vocab entry or a known in-game alias phrasing (case-insensitive
+ * either way); accepted lines are rewritten to their canonical entry so
+ * scoring compares canonical names.
+ */
 function validateFixture(fx: Fixture, file: string): string[] {
   const errors: string[] = [];
-  const check = (value: string, vocab: string[], what: string) => {
-    if (vocab.includes(value)) return;
+  const lower = (vocab: string[]) => new Map(vocab.map((v) => [v.toLowerCase(), v]));
+  const lowerVocabs = {
+    effects: lower(EFFECT_VOCABULARY),
+    curses: lower(CURSE_VOCABULARY),
+    names: lower(RELIC_NAME_VOCABULARY),
+  };
+  const check = (value: string, kind: keyof typeof lowerVocabs, what: string): string | null => {
+    const resolved = resolveEffectAlias(value);
+    const canonical = lowerVocabs[kind].get(resolved.toLowerCase());
+    if (canonical) return canonical;
+    const vocab = Array.from(lowerVocabs[kind].values());
     const nearest = vocab
       .map((v) => ({ v, s: similarity(value, v) }))
       .sort((a, b) => b.s - a.s)[0];
@@ -64,17 +79,22 @@ function validateFixture(fx: Fixture, file: string): string[] {
       `${file}: ${what} "${value}" is not an exact vocabulary entry` +
         (nearest && nearest.s > 0.6 ? ` — did you mean "${nearest.v}"?` : ""),
     );
+    return null;
   };
   if (!Array.isArray(fx.relics)) return [`${file}: missing "relics" array`];
   fx.relics.forEach((r, i) => {
-    if (r.name != null) check(r.name, RELIC_NAME_VOCABULARY, `relic ${i + 1} name`);
+    if (r.name != null) {
+      r.name = check(r.name, "names", `relic ${i + 1} name`) ?? r.name;
+    }
     if (r.color != null && !COLORS.includes(r.color)) {
       errors.push(`${file}: relic ${i + 1} color "${r.color}" must be one of ${COLORS.join("/")}`);
     }
-    (r.effects ?? []).forEach((e) => check(e, EFFECT_VOCABULARY, `relic ${i + 1} effect`));
-    (r.demerits ?? []).forEach((d) => {
-      if (d != null && d !== "") check(d, CURSE_VOCABULARY, `relic ${i + 1} demerit`);
-    });
+    r.effects = (r.effects ?? []).map((e) => check(e, "effects", `relic ${i + 1} effect`) ?? e);
+    if (r.demerits) {
+      r.demerits = r.demerits.map((d) =>
+        d == null || d === "" ? d : check(d, "curses", `relic ${i + 1} demerit`) ?? d,
+      );
+    }
   });
   return errors;
 }
@@ -156,6 +176,8 @@ function cropRgba(img: RgbaImage, region: { x0: number; y0: number; width: numbe
 interface RelicDiff {
   index: number;
   expectedName: string | null;
+  /** False when the fixture says the name isn't visible (name: null). */
+  nameScored: boolean;
   nameOk: boolean;
   parsedName: string | null;
   matched: string[];
@@ -235,6 +257,7 @@ function scoreFixture(
       index: i,
       expectedName: exp.name ?? null,
       parsedName: got?.name ?? null,
+      nameScored: i < fx.relics.length && exp.name != null,
       nameOk: (exp.name ?? null) === (got?.name ?? null),
       matched,
       missed,
@@ -250,9 +273,9 @@ function scoreFixture(
     tally.effectsExpected += expEffects.length;
     tally.effectsMatched += matched.length;
     tally.effectsSpurious += spurious.length;
-    if (i < fx.relics.length) {
+    if (i < fx.relics.length && exp.name != null) {
       tally.namesExpected += 1;
-      if ((exp.name ?? null) === (got?.name ?? null)) tally.namesOk += 1;
+      if (exp.name === (got?.name ?? null)) tally.namesOk += 1;
     }
     tally.demeritsExpected += matched.length;
     tally.demeritsOk += demOk;
@@ -274,7 +297,8 @@ function printFixture(r: FixtureResult, fx: Fixture) {
   const effExpected = fx.relics.reduce((n, x) => n + x.effects.length, 0);
   const effMatched = r.diffs.reduce((n, d) => n + d.matched.length, 0);
   const effSpurious = r.diffs.reduce((n, d) => n + d.spurious.length, 0);
-  const namesOk = r.diffs.slice(0, r.expectedRelics).filter((d) => d.nameOk).length;
+  const namesScored = r.diffs.filter((d) => d.nameScored);
+  const namesOk = namesScored.filter((d) => d.nameOk).length;
   const colors = r.diffs.map((d) => d.colorResult);
   const colorStr = colors.every((c) => c === "unscored")
     ? "unscored"
@@ -282,14 +306,15 @@ function printFixture(r: FixtureResult, fx: Fixture) {
 
   console.log(`\n── ${r.file} ${"─".repeat(Math.max(3, 58 - r.file.length))}`);
   console.log(
-    `  relics ${r.parsedRelics}/${r.expectedRelics} · names ${namesOk}/${r.expectedRelics}` +
+    `  relics ${r.parsedRelics}/${r.expectedRelics} · names ${namesScored.length === 0 ? "–" : `${namesOk}/${namesScored.length}`}` +
       ` · effects ${effMatched}/${effExpected}${effSpurious ? ` (+${effSpurious} spurious)` : ""}` +
       ` · colors ${colorStr} · deep ${r.deepOk ? "✓" : "✗"}`,
   );
   for (const d of r.diffs) {
     const label = d.expectedName ?? d.parsedName ?? "(unnamed)";
     const issues: string[] = [];
-    if (!d.nameOk) issues.push(`name: expected ${d.expectedName ?? "none"}, got ${d.parsedName ?? "none"}`);
+    if (d.nameScored && !d.nameOk) issues.push(`name: expected ${d.expectedName ?? "none"}, got ${d.parsedName ?? "none"}`);
+    if (!d.nameScored && d.parsedName != null) issues.push(`name: parser read "${d.parsedName}" but the fixture marks the name as not visible`);
     for (const e of d.missed) issues.push(`missed   ${e}`);
     for (const e of d.spurious) issues.push(`spurious ${e}`);
     issues.push(...d.demeritDiffs);

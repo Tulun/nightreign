@@ -309,7 +309,7 @@ export function BuildsManager() {
       {storageBanner}
 
       {/* Builds / My Relics view switch */}
-      <div className="mb-5 flex gap-1 border-b border-night-700">
+      <div className="mb-5 flex flex-wrap gap-1 border-b border-night-700">
         {(
           [
             { key: "builds", label: "Builds", count: ownBuilds.length },
@@ -335,12 +335,20 @@ export function BuildsManager() {
             </button>
           );
         })}
-        <Link
-          href="/builds/users"
-          className="-mb-px ml-auto rounded-t-md border-b-2 border-transparent px-4 py-2 font-display text-sm font-semibold text-parchment-muted hover:text-parchment"
-        >
-          Community →
-        </Link>
+        <div className="ml-auto flex">
+          <Link
+            href="/builds/party"
+            className="-mb-px rounded-t-md border-b-2 border-transparent px-4 py-2 font-display text-sm font-semibold text-parchment-muted hover:text-parchment"
+          >
+            Party Planner
+          </Link>
+          <Link
+            href="/builds/users"
+            className="-mb-px rounded-t-md border-b-2 border-transparent px-4 py-2 font-display text-sm font-semibold text-parchment-muted hover:text-parchment"
+          >
+            Community Builds →
+          </Link>
+        </div>
       </div>
 
       {view === "builds" && (

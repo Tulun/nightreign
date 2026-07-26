@@ -1,0 +1,34 @@
+{
+  "deep": false,
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "Improved Melee Attack Power",
+        "Improved Skill Attack Power",
+        "Occasionally Nullify Attacks When Damage Negation is Lowered"
+      ],
+      "notes": "relic is The Will of Balance (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Blue",
+      "effects": [
+        "Increased Maximum HP",
+        "Continuous HP Recovery",
+        "Slowly restore HP for Self and Nearby Allies when HP is Low"
+      ],
+      "notes": "relic is Dark Night of the Fathom (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Executor] Character Skill Boosts Attack but Lowers Damage Negation While Attacking",
+        "Raised stamina recovery for nearby allies, but not for self",
+        "Attack power increased for each Night Invader defeated"
+      ],
+      "notes": "scene relic; color omitted (photo too ambiguous to verify)"
+    }
+  ]
+}

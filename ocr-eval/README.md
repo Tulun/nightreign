@@ -54,9 +54,15 @@ ocr-eval/fixtures/
 
 List the relics **in screenshot order, top to bottom** — scoring aligns the
 parser's output to yours by position. Every string must be an **exact** entry
-from the app's vocabulary (the same names the relic-creation dropdowns offer);
-the harness rejects the fixture with a "did you mean …?" suggestion if a name
-doesn't match exactly, so typos can't silently skew the scores.
+from the app's vocabulary (the same names the relic-creation dropdowns offer)
+**or the exact in-game phrasing** where the two differ — the game writes
+"Reduced Strength and Intelligence" and "[Duchess] …" where the catalogue
+writes "Reduced Strength & Intelligence" and "Duchess: …"; those known
+phrasings (the alias table in `src/lib/effectMatch.ts`) are accepted and
+resolved to their catalogue entry. Anything else is rejected with a "did you
+mean …?" suggestion, so typos can't silently skew the scores. Transcribe what
+the screenshot says — if a real in-game line is rejected, that's a missing
+alias worth adding, not a fixture problem.
 
 ```json
 {
@@ -73,11 +79,45 @@ doesn't match exactly, so typos can't silently skew the scores.
     {
       "name": "Delicate Tranquil Scene",
       "color": "Green",
-      "effects": ["Boosts Stamina Recovery Speed"]
+      "effects": ["Critical Hit Boosts Stamina Recovery Speed"]
     }
   ]
 }
 ```
+
+A **Deep relic** screenshot adds two things: `"deep": true` at the top level,
+and a `demerits` array per relic where entry *i* is the curse attached to
+effect *i* (`null` for lines without one — in game, a curse renders as the
+red line directly under its effect):
+
+```json
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": "Deep Grand Burning Scene",
+      "color": "Red",
+      "effects": [
+        "Fire Attack Power Up +3",
+        "Increased Maximum HP",
+        "Improved Affinity Attack Power +2"
+      ],
+      "demerits": [null, "Reduced Vigor & Arcane", null]
+    },
+    {
+      "name": "Deep Delicate Drizzly Scene",
+      "color": "Blue",
+      "effects": ["Physical Attack Up +4"],
+      "demerits": ["Reduced Strength & Faith"]
+    }
+  ]
+}
+```
+
+Here the first relic's only curse sits under its *second* effect line, so it
+lands in the middle demerit slot with `null` on both sides. Note the tier
+suffixes (`+3`, `+4`) and the deep scene names (`Deep <size> <scene> Scene`)
+— both must match the vocabulary exactly, and remember Drizzly=Blue.
 
 Field notes:
 

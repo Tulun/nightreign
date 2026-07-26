@@ -1,0 +1,35 @@
+{
+  "deep": false,
+  "relics": [
+    {
+      "name": null,
+      "color": "Blue",
+      "effects": [
+        "Starting armament deals holy damage",
+        "Changes compatible armament's skill to Seppuku at start of expedition",
+        "Vigor +2"
+      ],
+      "notes": "relic is Grand Drizzly Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "[Executor] While Character Skill is active, unlocking use of cursed sword restores HP",
+        "Attack power increased for each Night Invader defeated",
+        "Stamina Recovery upon Landing Attacks"
+      ],
+      "notes": "relic is Grand Luminous Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "Status Ailment Gauges Slowly Increase Attack Power",
+        "Attacks Inflict Rot when Damage is Taken",
+        "Rot in Vicinity Causes Continuous HP Recovery"
+      ],
+      "notes": "relic is The Night of Dregs (name not shown on screen)"
+    }
+  ]
+}

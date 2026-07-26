@@ -78,7 +78,7 @@ export const uniqueRelics: UniqueRelic[] = [
     effects: ["Taking attacks improves attack power", "Gesture “Crossed Legs” Builds Up Madness", "Madness Continually Recovers FP"],
     source: "Collector Signboard, after Everdark Libra" },
   { name: "Dark Night of the Fathom", color: "Blue", icon: "night-of-the-fathom.png", group: "everdark",
-    effects: ["Increased Maximum HP", "Continuous HP Recovery", "Slowly restore HP for you and nearby allies at low HP"],
+    effects: ["Increased Maximum HP", "Continuous HP Recovery", "Slowly restore HP for self and nearby allies when HP is low"],
     source: "Collector Signboard, after Everdark Augur" },
   { name: "Dark Night of the Miasma", color: "Green", icon: "night-of-the-miasma.png", group: "everdark",
     effects: ["Frostbite in Vicinity Conceals Self", "Starting armament inflicts frost", "Improved Physical Damage Negation"],

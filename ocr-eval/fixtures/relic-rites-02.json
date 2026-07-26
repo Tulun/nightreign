@@ -1,0 +1,50 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "HP Restoration upon Thrusting Sword Attacks",
+        "Dormant Power Helps Discover Staves",
+        "Stamina Recovery upon Landing Attacks"
+      ],
+      "demerits": [
+        null,
+        null,
+        null
+      ],
+      "notes": "relic is Deep Grand Burning Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Blue",
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks +1",
+        "Improved Sorceries +1",
+        "Increased Maximum HP"
+      ],
+      "demerits": [
+        "Reduced Strength and Intelligence",
+        "Reduced Dexterity and Faith",
+        "Taking Damage Causes Blood Loss Buildup"
+      ],
+      "notes": "relic is Deep Grand Drizzly Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "FP Restoration upon Thrusting Sword Attacks",
+        "Magic Attack Power Up +3",
+        "Increased Maximum HP"
+      ],
+      "demerits": [
+        null,
+        "Reduced Strength and Intelligence",
+        "Lower Attack When Below Max HP"
+      ],
+      "notes": "relic is Deep Grand Luminous Scene (name not shown on screen)"
+    }
+  ]
+}

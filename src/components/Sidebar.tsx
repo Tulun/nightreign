@@ -20,6 +20,8 @@ const groups: NavGroup[] = [
       { label: "Merchant Inventories", href: "/town-map" },
       { label: "Great Hollow", href: "/great-hollow" },
       { label: "Builds", href: "/builds" },
+      { label: "Community Builds", href: "/builds/users" },
+      { label: "Party Planner", href: "/builds/party" },
     ],
   },
   {
@@ -69,8 +71,15 @@ const groups: NavGroup[] = [
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
-  const inGroup = (g: NavGroup) =>
-    g.items.some((it) => pathname === it.href || pathname.startsWith(it.href + "/"));
+  const matches = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  // Some routes nest (/builds/users under /builds) — only the deepest
+  // matching item lights up.
+  const activeHref = groups
+    .flatMap((g) => g.items)
+    .filter((it) => !it.soon && matches(it.href))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
+  const inGroup = (g: NavGroup) => g.items.some((it) => matches(it.href));
 
   // Titled groups start collapsed, except the one holding the current page.
   const [open, setOpen] = useState<Record<string, boolean>>(() => {
@@ -126,8 +135,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
             {expanded && (
             <ul className="space-y-1 pt-1">
               {group.items.map((s) => {
-                const active =
-                  !s.soon && (pathname === s.href || pathname.startsWith(s.href + "/"));
+                const active = !s.soon && s.href === activeHref;
 
                 if (s.soon) {
                   return (

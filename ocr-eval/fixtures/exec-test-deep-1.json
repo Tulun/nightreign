@@ -1,0 +1,48 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "[Executor] Slowly Restore HP upon Ability Activation",
+        "Improved Affinity Damage Negation +1"
+      ],
+      "demerits": [
+        null,
+        "All Resistances Down"
+      ],
+      "notes": "relic is Deep Polished Burning Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Blue",
+      "effects": [
+        "Attack power up when facing poison-afflicted enemy +1",
+        "Twiggy Cracked Tear in possession at start of expedition",
+        "Improved Physical Damage Negation +1"
+      ],
+      "demerits": [
+        "Near Death Reduces Max HP",
+        null,
+        "Taking Damage Causes Sleep Buildup"
+      ],
+      "notes": "relic is Deep Grand Drizzly Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "HP Restoration upon Thrusting Counterattack +1",
+        "Physical Attack Up +4",
+        "Improved Poison Resistance"
+      ],
+      "demerits": [
+        "Reduced Flask HP Restoration",
+        "All Resistances Down",
+        null
+      ],
+      "notes": "relic is Deep Grand Tranquil Scene (name not shown on screen)"
+    }
+  ]
+}

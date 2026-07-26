@@ -1,0 +1,50 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks +1",
+        "Improved Poison Resistance +1",
+        "Improved Affinity Attack Power +1"
+      ],
+      "demerits": [
+        "Poison Buildup When Below Max HP",
+        null,
+        "Reduced Rune Acquisition"
+      ],
+      "notes": "relic is Deep Grand Luminous Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "Successful guarding fills more of the Art gauge +1",
+        "Improved Guard Counters +1",
+        "Defeating enemies fills more of the Art gauge +1"
+      ],
+      "demerits": [
+        "Reduced Damage Negation After Evading",
+        "Reduced Strength and Intelligence",
+        "Reduced Flask HP Restoration"
+      ],
+      "notes": "relic is Deep Grand Luminous Scene (name not shown on screen)"
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "[Executor] Slowly Restore HP upon Ability Activation",
+        "Improved Poise & Damage Negation When Knocked Back by Damage",
+        "Improved Physical Damage Negation +1"
+      ],
+      "demerits": [
+        null,
+        null,
+        "Reduced Intelligence and Dexterity"
+      ],
+      "notes": "relic is Deep Grand Tranquil Scene (name not shown on screen)"
+    }
+  ]
+}

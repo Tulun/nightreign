@@ -50,6 +50,9 @@ const NAME_GROUPS: [string, string[]][] = [
   ["Attack Power Up vs Frost/Poison/Rot-Afflicted Enemy", AFFLICTED],
   ["Sleep/Madness in Vicinity Improves Attack Power",
     ["Sleep", "Madness"].map((s) => `${s} in Vicinity Improves Attack Power`)],
+  // The game shows these as separate per-spell-type lines ("Improved
+  // Sorceries +1" — seen on a Deep relic in-game).
+  ["Improved Sorceries/Incantations", ["Improved Sorceries", "Improved Incantations"]],
   ["Improved [Consumable] Damage",
     ["Improved Throwing Pot Damage", "Improved Throwing Knife Damage",
      "Improved Throwing Stone Damage", "Improved Perfuming Arts Damage"]],
@@ -79,16 +82,40 @@ function expandName(name: string): string[] {
   });
 }
 
-/** Every effect name a relic can carry, templates expanded, deduplicated. */
-export const EFFECT_VOCABULARY: string[] = Array.from(
-  new Set(
-    [
-      ...relicEffects.map((e) => e.name),
-      ...deepRelics.map((e) => e.name),
-      ...uniqueRelics.flatMap((r) => r.effects),
-    ].flatMap(expandName),
-  ),
-).sort();
+/** Case/punctuation-insensitive key for spotting duplicate spellings. */
+function nameKey(s: string): string {
+  return normalize(s.replace(/ & /g, " and "));
+}
+
+/**
+ * The same effect is spelled differently across sources (wiki title case vs
+ * in-game sentence case, wiki "Duchess:" vs the game's "[Duchess]").
+ * Collapse to one spelling per effect, preferring the in-game style.
+ */
+function preferName(a: string, b: string): string {
+  if (a.startsWith("[") !== b.startsWith("[")) return a.startsWith("[") ? a : b;
+  const lowers = (s: string) => (s.match(/[a-z]/g) ?? []).length;
+  return lowers(b) > lowers(a) ? b : a;
+}
+
+const CANONICAL_BY_KEY = new Map<string, string>();
+for (const name of [
+  ...relicEffects.map((e) => e.name),
+  ...deepRelics.map((e) => e.name),
+  ...uniqueRelics.flatMap((r) => r.effects),
+].flatMap(expandName)) {
+  const key = nameKey(name);
+  const existing = CANONICAL_BY_KEY.get(key);
+  CANONICAL_BY_KEY.set(key, existing ? preferName(existing, name) : name);
+}
+
+/** Canonical spelling for any known effect-name variant; unknown text passes through. */
+export function canonicalEffectName(name: string): string {
+  return CANONICAL_BY_KEY.get(nameKey(name)) ?? name;
+}
+
+/** Every effect name a relic can carry — templates expanded, deduplicated. */
+export const EFFECT_VOCABULARY: string[] = Array.from(new Set(CANONICAL_BY_KEY.values())).sort();
 
 /**
  * In-game phrasings that differ from the catalogue's names. Matching against
@@ -98,29 +125,64 @@ export const EFFECT_VOCABULARY: string[] = Array.from(
 const EFFECT_ALIASES: Record<string, string> = {
   "Attack power increased for each Night Invader defeated":
     "Attack power up after defeating a Night Invader",
+  "Max FP increased for each Sorcerer's Rise unlocked":
+    "Max FP permanently increased after releasing Sorcerer's Rise mechanism",
+  "Reduced Damage Negation After Evading": "Repeated Evasions Lower Damage Negation",
 };
+
+// The game spells out "and" where the catalogue writes "&" (in either stat
+// order — it shows "Reduced Intelligence and Dexterity" for the catalogue's
+// "Reduced Dexterity & Intelligence"), and tags character effects
+// "[Duchess] …" where the catalogue writes "Duchess: …" — accept the
+// in-game phrasing for every such entry (verified in-game).
+for (const name of EFFECT_VOCABULARY) {
+  if (name.includes(" & ")) EFFECT_ALIASES[name.replace(/ & /g, " and ")] = name;
+  const pair = name.match(/^Reduced ([A-Za-z]+) & ([A-Za-z]+)$/);
+  if (pair) EFFECT_ALIASES[`Reduced ${pair[2]} and ${pair[1]}`] = name;
+  const prefixed = name.match(/^([A-Z][a-z]+): (.+)$/);
+  if (prefixed) EFFECT_ALIASES[`[${prefixed[1]}] ${prefixed[2]}`] = name;
+  // Deep tiers of the afflicted-enemy effects: catalogue "Attack Power Up vs
+  // Poison-Afflicted Enemy +1", game "Attack power up when facing
+  // poison-afflicted enemy +1".
+  const afflicted = name.match(/^Attack Power Up vs ([A-Za-z]+)-Afflicted Enemy( \+\d)?$/);
+  if (afflicted) {
+    EFFECT_ALIASES[`Attack power up when facing ${afflicted[1].toLowerCase()}-afflicted enemy${afflicted[2] ?? ""}`] = name;
+  }
+}
+
+const LOWER_ALIASES = new Map(
+  Object.entries(EFFECT_ALIASES).map(([text, canonical]) => [text.toLowerCase(), canonical]),
+);
+
+/** Canonical name for an in-game alias phrasing (case-insensitive); other text passes through. */
+export function resolveEffectAlias(name: string): string {
+  const target = EFFECT_ALIASES[name] ?? LOWER_ALIASES.get(name.toLowerCase());
+  return canonicalEffectName(target ?? name);
+}
 
 /** Match targets: canonical names plus alias phrasings that map back to them. */
 const MATCH_ENTRIES: { text: string; canonical: string }[] = [
   ...EFFECT_VOCABULARY.map((v) => ({ text: v, canonical: v })),
-  ...Object.entries(EFFECT_ALIASES).map(([text, canonical]) => ({ text, canonical })),
+  ...Object.entries(EFFECT_ALIASES).map(([text, canonical]) => ({ text, canonical: canonicalEffectName(canonical) })),
 ];
 
+const expandCanonical = (name: string) => expandName(name).map(canonicalEffectName);
+
 const NORMAL_EFFECT_NAMES = new Set<string>(
-  [...relicEffects.map((e) => e.name), ...uniqueRelics.flatMap((r) => r.effects)].flatMap(expandName),
+  [...relicEffects.map((e) => e.name), ...uniqueRelics.flatMap((r) => r.effects)].flatMap(expandCanonical),
 );
 
 /** Effects that only exist on Deep relics — seeing one marks a relic as Deep. */
 export const DEEP_ONLY_EFFECTS = new Set<string>(
   deepRelics
     .filter((d) => !d.crossover)
-    .flatMap((d) => expandName(d.name))
+    .flatMap((d) => expandCanonical(d.name))
     .filter((name) => !NORMAL_EFFECT_NAMES.has(name)),
 );
 
 /** Deep relic curses — they trail a Deep relic's effects as a fourth line. */
 const CURSE_EFFECTS = new Set<string>(
-  deepRelics.filter((d) => d.category === "curse").flatMap((d) => expandName(d.name)),
+  deepRelics.filter((d) => d.category === "curse").flatMap((d) => expandCanonical(d.name)),
 );
 
 // Per-kind vocabularies for relic creation: a rolled relic can only carry
@@ -128,12 +190,12 @@ const CURSE_EFFECTS = new Set<string>(
 
 /** Effects legal on rolled normal relics — the normal pool minus fixed-only. */
 export const NORMAL_EFFECT_VOCABULARY: string[] = Array.from(
-  new Set(relicEffects.filter((e) => e.category !== "unrollable").flatMap((e) => expandName(e.name))),
+  new Set(relicEffects.filter((e) => e.category !== "unrollable").flatMap((e) => expandCanonical(e.name))),
 ).sort();
 
 /** Effects legal on Deep relics (stat swaps included), without the curses. */
 export const DEEP_EFFECT_VOCABULARY: string[] = Array.from(
-  new Set(deepRelics.filter((d) => d.category !== "curse").flatMap((d) => expandName(d.name))),
+  new Set(deepRelics.filter((d) => d.category !== "curse").flatMap((d) => expandCanonical(d.name))),
 ).sort();
 
 /** Deep relic curses — the only legal demerit lines. */

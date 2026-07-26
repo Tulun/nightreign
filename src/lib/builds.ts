@@ -290,8 +290,8 @@ async function pipeThrough(
 /** "" = empty slot, "f<name>" = fixed relic, "c<id>" = custom relic. */
 type PackedSlot = string;
 
-interface V2Payload {
-  v: 2;
+/** A build's positional wire form — shared by build links and party links. */
+export interface PackedBuild {
   /** [name, character, chalice, slots, deepSlots] */
   b: [string, string, string, PackedSlot[], PackedSlot[]];
   /**
@@ -299,6 +299,10 @@ interface V2Payload {
    * deep (0/1) was added later, so older links omit it and get inferDeep.
    */
   r: [string, string, CustomRelic["color"], string, string[], string[], (0 | 1)?][];
+}
+
+interface V2Payload extends PackedBuild {
+  v: 2;
 }
 
 const packSlot = (s: BuildSlot): PackedSlot =>
@@ -311,8 +315,11 @@ const unpackSlot = (s: unknown): BuildSlot => {
   return null;
 };
 
-/** Encode a build and the custom relics it uses into a URL-safe string. */
-export async function encodeSharedBuild(build: Build, store: BuildStore): Promise<string> {
+/**
+ * Snapshot a build for travel: only the wire fields (no id/timestamps, notes
+ * and labels stay home) plus the custom relics its slots actually use.
+ */
+export function toSharedBuild(build: Build, store: BuildStore): SharedBuild {
   const used = new Set(
     [...build.slots, ...build.deepSlots].flatMap((s) => (s?.kind === "custom" ? [s.id] : [])),
   );
@@ -320,26 +327,63 @@ export async function encodeSharedBuild(build: Build, store: BuildStore): Promis
   // re-sharing one must draw from those; the pool covers everything else.
   const byId = new Map<string, CustomRelic>();
   for (const r of [...store.customRelics, ...(build.relics ?? [])]) byId.set(r.id, r);
-  const payload: V2Payload = {
-    v: 2,
-    b: [
-      build.name,
-      build.character,
-      build.chalice,
-      build.slots.map(packSlot),
-      build.deepSlots.map(packSlot),
-    ],
-    r: Array.from(byId.values())
-      .filter((r) => used.has(r.id))
-      .map((r) => [r.id, r.name, r.color, r.look ?? "", r.effects, r.demerits ?? [], r.deep ? 1 : 0]),
+  return {
+    build: {
+      name: build.name,
+      character: build.character,
+      chalice: build.chalice,
+      slots: build.slots,
+      deepSlots: build.deepSlots,
+      notes: "",
+    },
+    relics: Array.from(byId.values()).filter((r) => used.has(r.id)),
   };
-  const bytes = new TextEncoder().encode(JSON.stringify(payload));
-  // Old browsers without CompressionStream ship the JSON as-is (still v2).
+}
+
+/** Pack a snapshot into the positional wire form. */
+export function packSharedBuild(sb: SharedBuild): PackedBuild {
+  return {
+    b: [
+      sb.build.name,
+      sb.build.character,
+      sb.build.chalice,
+      sb.build.slots.map(packSlot),
+      sb.build.deepSlots.map(packSlot),
+    ],
+    r: sb.relics.map((r) => [r.id, r.name, r.color, r.look ?? "", r.effects, r.demerits ?? [], r.deep ? 1 : 0]),
+  };
+}
+
+/**
+ * JSON → deflate-raw → base64url, "z"-prefixed. Old browsers without
+ * CompressionStream ship the JSON as bare base64url (no prefix).
+ */
+export async function compressJson(value: unknown): Promise<string> {
+  const bytes = new TextEncoder().encode(JSON.stringify(value));
   if (typeof CompressionStream === "undefined") return toBase64Url(bytes);
   return `z${toBase64Url(await pipeThrough(bytes, new CompressionStream("deflate-raw")))}`;
 }
 
-function unpackV2(d: V2Payload): SharedBuild | null {
+/** Inverse of compressJson; null when the payload doesn't decode or parse. */
+export async function decompressJson(encoded: string): Promise<unknown> {
+  try {
+    const bytes = encoded.startsWith("z")
+      ? await pipeThrough(fromBase64Url(encoded.slice(1)), new DecompressionStream("deflate-raw"))
+      : fromBase64Url(encoded);
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch {
+    return null;
+  }
+}
+
+/** Encode a build and the custom relics it uses into a URL-safe string. */
+export async function encodeSharedBuild(build: Build, store: BuildStore): Promise<string> {
+  const payload: V2Payload = { v: 2, ...packSharedBuild(toSharedBuild(build, store)) };
+  return compressJson(payload);
+}
+
+/** Unpack the positional wire form; null when it's malformed. */
+export function unpackSharedBuild(d: PackedBuild): SharedBuild | null {
   const [name, character, chalice, slots, deepSlots] = d.b ?? [];
   if (
     typeof name !== "string" ||
@@ -379,35 +423,30 @@ function unpackV2(d: V2Payload): SharedBuild | null {
 
 /** Decode a shared-build payload (v1 or v2); null if it isn't one. */
 export async function decodeSharedBuild(encoded: string): Promise<SharedBuild | null> {
-  try {
-    const bytes = encoded.startsWith("z")
-      ? await pipeThrough(fromBase64Url(encoded.slice(1)), new DecompressionStream("deflate-raw"))
-      : fromBase64Url(encoded);
-    const d = JSON.parse(new TextDecoder().decode(bytes)) as
-      | V2Payload
-      | { v?: number; build?: SharedBuild["build"]; relics?: CustomRelic[] };
-    if (d.v === 2) return unpackV2(d as V2Payload);
-    const b = (d as { build?: SharedBuild["build"] }).build;
-    const relics = (d as { relics?: CustomRelic[] }).relics;
-    if (
-      d.v !== 1 ||
-      !b ||
-      typeof b.character !== "string" ||
-      !Array.isArray(b.slots) ||
-      b.slots.length !== 3 ||
-      !Array.isArray(b.deepSlots) ||
-      b.deepSlots.length !== 3 ||
-      !Array.isArray(relics)
-    ) {
-      return null;
-    }
-    return {
-      build: b,
-      relics: relics.map(migrateRelicLines).map((r) => ({ ...r, deep: r.deep ?? inferDeep(r) })),
-    };
-  } catch {
+  const d = (await decompressJson(encoded)) as
+    | V2Payload
+    | { v?: number; build?: SharedBuild["build"]; relics?: CustomRelic[] }
+    | null;
+  if (!d || typeof d !== "object") return null;
+  if (d.v === 2) return unpackSharedBuild(d as V2Payload);
+  const b = (d as { build?: SharedBuild["build"] }).build;
+  const relics = (d as { relics?: CustomRelic[] }).relics;
+  if (
+    d.v !== 1 ||
+    !b ||
+    typeof b.character !== "string" ||
+    !Array.isArray(b.slots) ||
+    b.slots.length !== 3 ||
+    !Array.isArray(b.deepSlots) ||
+    b.deepSlots.length !== 3 ||
+    !Array.isArray(relics)
+  ) {
     return null;
   }
+  return {
+    build: b,
+    relics: relics.map(migrateRelicLines).map((r) => ({ ...r, deep: r.deep ?? inferDeep(r) })),
+  };
 }
 
 // ── Fixed relic options ──────────────────────────────────────────────────
