@@ -43,7 +43,7 @@ function ProfileBuilds({ store }: { store: BuildStore }) {
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [tagMode, setTagMode] = useState<"any" | "all">("any");
 
-  const visible = store.builds.filter((b) => !b.shared && b.public !== false);
+  const visible = store.builds.filter((b) => b.public !== false);
   if (visible.length === 0) {
     return <p className="font-body text-sm text-parchment-faint">No synced builds yet.</p>;
   }
@@ -196,7 +196,7 @@ export function CommunityUsers() {
                 <h3 className="font-display text-xl font-semibold text-parchment">{selected.displayName}</h3>
                 <p className="font-body text-xs text-parchment-faint">
                   {selected.uid === user?.uid ? "This is you. " : ""}
-                  Builds are view-only — ask for a share link to keep one.
+                  Builds are view-only — nothing here joins your own collection.
                 </p>
               </div>
             </div>

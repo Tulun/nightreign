@@ -101,11 +101,6 @@ export interface Build {
   notes: string;
   /** User-defined tags for filtering, drawn from BuildStore.tags. */
   tags?: string[];
-  /**
-   * User-added subtitle shown under the name — mainly for re-labeling a
-   * poorly titled shared build. Never travels with the share link.
-   */
-  subtitle?: string;
   updatedAt: number;
   /**
    * Community-profile visibility: undefined/true = shown on your profile,
@@ -113,12 +108,10 @@ export interface Build {
    * until a private/public toggle ships.
    */
   public?: boolean;
-  /** True for builds imported from a share link — view-only, not editable. */
-  shared?: boolean;
   /**
-   * Build-scoped custom relics for shared imports. Slots of a shared build
-   * resolve against these instead of the user's pool, so viewing a friend's
-   * build never adds their relics to your collection.
+   * Build-scoped custom relics. Never set on stored builds — the party
+   * planner renders its member snapshots as transient Builds, and their
+   * slots resolve against these instead of the viewer's pool.
    */
   relics?: CustomRelic[];
 }
@@ -167,8 +160,12 @@ export function normalizeStore(data: unknown): BuildStore | null {
   };
   if (!d || !Array.isArray(d.builds) || !Array.isArray(d.customRelics)) return null;
   if (d.version !== 1 && d.version !== 2 && d.version !== 3) return null;
-  // v1 builds predate Deep of Night slots — give them empty ones.
-  const builds = d.builds.map((b) => ({ ...b, deepSlots: b.deepSlots ?? [...EMPTY_SLOTS] as SlotTriple }));
+  // v1 builds predate Deep of Night slots — give them empty ones. View-only
+  // imports from the retired share-link feature (shared: true) are dropped:
+  // they were someone else's work, and nothing can display them anymore.
+  const builds = d.builds
+    .filter((b) => !(b as { shared?: boolean }).shared)
+    .map((b) => ({ ...b, deepSlots: b.deepSlots ?? [...EMPTY_SLOTS] as SlotTriple }));
   const declared = Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === "string") : [];
   return {
     version: 3,
@@ -255,13 +252,12 @@ export function sameCustomRelic(
   return a.color === b.color && lines(a) === lines(b);
 }
 
-// ── Build sharing ────────────────────────────────────────────────────────
-//  A build travels as a URL hash (#b=<payload>): the build itself plus any
+// ── Build snapshots (party planner) ──────────────────────────────────────
+//  A self-contained copy of a build for travel: the build itself plus any
 //  custom relics its slots reference. Fixed relics travel by name — they
-//  ship with the app. No server involved; the link *is* the data, which is
-//  why it can't be a short opaque id. To keep it as small as possible, v2
-//  packs the build into positional arrays and deflates it (payloads starting
-//  with "z"); v1 links (bare base64 JSON) still decode.
+//  ship with the app. The party planner stores one per member slot, and
+//  party links pack them into positional arrays deflated into the URL hash
+//  (see party.ts) — no server involved, the link *is* the data.
 
 export interface SharedBuild {
   build: Omit<Build, "id" | "updatedAt">;
@@ -290,7 +286,7 @@ async function pipeThrough(
 /** "" = empty slot, "f<name>" = fixed relic, "c<id>" = custom relic. */
 type PackedSlot = string;
 
-/** A build's positional wire form — shared by build links and party links. */
+/** A build's positional wire form, as it rides in party links. */
 export interface PackedBuild {
   /** [name, character, chalice, slots, deepSlots] */
   b: [string, string, string, PackedSlot[], PackedSlot[]];
@@ -299,10 +295,6 @@ export interface PackedBuild {
    * deep (0/1) was added later, so older links omit it and get inferDeep.
    */
   r: [string, string, CustomRelic["color"], string, string[], string[], (0 | 1)?][];
-}
-
-interface V2Payload extends PackedBuild {
-  v: 2;
 }
 
 const packSlot = (s: BuildSlot): PackedSlot =>
@@ -323,8 +315,8 @@ export function toSharedBuild(build: Build, store: BuildStore): SharedBuild {
   const used = new Set(
     [...build.slots, ...build.deepSlots].flatMap((s) => (s?.kind === "custom" ? [s.id] : [])),
   );
-  // A shared (view-only) build resolves its slots from its own relics, so
-  // re-sharing one must draw from those; the pool covers everything else.
+  // A build that carries its own relics (a party-member snapshot) resolves
+  // slots from those; the pool covers everything else.
   const byId = new Map<string, CustomRelic>();
   for (const r of [...store.customRelics, ...(build.relics ?? [])]) byId.set(r.id, r);
   return {
@@ -376,12 +368,6 @@ export async function decompressJson(encoded: string): Promise<unknown> {
   }
 }
 
-/** Encode a build and the custom relics it uses into a URL-safe string. */
-export async function encodeSharedBuild(build: Build, store: BuildStore): Promise<string> {
-  const payload: V2Payload = { v: 2, ...packSharedBuild(toSharedBuild(build, store)) };
-  return compressJson(payload);
-}
-
 /** Unpack the positional wire form; null when it's malformed. */
 export function unpackSharedBuild(d: PackedBuild): SharedBuild | null {
   const [name, character, chalice, slots, deepSlots] = d.b ?? [];
@@ -418,34 +404,6 @@ export function unpackSharedBuild(d: PackedBuild): SharedBuild | null {
       // Links minted before the deep flag omit it — fall back to inference.
       return { ...relic, deep: deep === undefined ? inferDeep(relic) : deep === 1 };
     }),
-  };
-}
-
-/** Decode a shared-build payload (v1 or v2); null if it isn't one. */
-export async function decodeSharedBuild(encoded: string): Promise<SharedBuild | null> {
-  const d = (await decompressJson(encoded)) as
-    | V2Payload
-    | { v?: number; build?: SharedBuild["build"]; relics?: CustomRelic[] }
-    | null;
-  if (!d || typeof d !== "object") return null;
-  if (d.v === 2) return unpackSharedBuild(d as V2Payload);
-  const b = (d as { build?: SharedBuild["build"] }).build;
-  const relics = (d as { relics?: CustomRelic[] }).relics;
-  if (
-    d.v !== 1 ||
-    !b ||
-    typeof b.character !== "string" ||
-    !Array.isArray(b.slots) ||
-    b.slots.length !== 3 ||
-    !Array.isArray(b.deepSlots) ||
-    b.deepSlots.length !== 3 ||
-    !Array.isArray(relics)
-  ) {
-    return null;
-  }
-  return {
-    build: b,
-    relics: relics.map(migrateRelicLines).map((r) => ({ ...r, deep: r.deep ?? inferDeep(r) })),
   };
 }
 

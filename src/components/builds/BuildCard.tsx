@@ -1,19 +1,11 @@
 "use client";
 
 // ─────────────────────────────────────────────────────────────────────────
-//  List-view card for one saved build, plus the annotation panel for
-//  shared (view-only) builds.
+//  List-view card for one saved build.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { Fragment, useState } from "react";
-import { MultiSelect } from "@/components/MultiSelect";
-import {
-  encodeSharedBuild,
-  sortedTags,
-  type Build,
-  type BuildStore,
-  type SlotTriple,
-} from "@/lib/builds";
+import { type Build, type BuildStore, type SlotTriple } from "@/lib/builds";
 import type { SlotColor } from "@/lib/chalices";
 import { chalicesFor, resolveSlot, EffectLines, RelicImg, SlotIconImg } from "./shared";
 
@@ -36,60 +28,35 @@ function Chevron({ open }: { open: boolean }) {
 }
 
 /**
- * One saved build. With onDelete it's an interactive card (Share, Delete,
- * plus Edit when onEdit is given — shared builds are view-only, so the
- * Shared Builds tab omits it); with neither it's a read-only preview
- * (shared-link banner). `expandable` cards start collapsed to a one-line
- * summary (relic icons + tags) and expand on click; `annotate` adds a Tags
- * button for putting your own tags and subtitle on a shared build.
+ * One saved build. With onDelete it's an interactive card (Delete, plus Edit
+ * when onEdit is given); with neither it's a read-only preview (community
+ * profiles, party views). `expandable` cards start collapsed to a one-line
+ * summary (relic icons + tags) and expand on click.
  */
 export function BuildCard({
   build,
   store,
   onEdit,
   onDelete,
-  annotate,
   expandable = false,
 }: {
   build: Build;
   store: BuildStore;
   onEdit?: () => void;
   onDelete?: () => void;
-  /** Shared-build annotation: edit tags + subtitle without the build editor. */
-  annotate?: {
-    tags: string[];
-    onCreateTag: (name: string) => void;
-    onChange: (patch: Partial<Pick<Build, "tags" | "subtitle">>) => void;
-  };
   expandable?: boolean;
 }) {
-  const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(!expandable);
-  const [annotating, setAnnotating] = useState(false);
   // Mobile-only: which slot set the card shows (desktop always shows both).
   const [view, setView] = useState<"normal" | "deep">("normal");
   const chalice = chalicesFor(build.character).find((c) => c.name === build.chalice);
   const hasDeep = build.deepSlots.some(Boolean);
-  // Shared (view-only) builds carry their own relics; slots resolve against
+  // Party-member snapshots carry their own relics; slots resolve against
   // those, not the user's pool.
   const relicStore = build.relics?.length
     ? { ...store, customRelics: [...store.customRelics, ...build.relics] }
     : store;
 
-  const share = async () => {
-    const url = `${window.location.origin}${window.location.pathname}#b=${await encodeSharedBuild(build, store)}`;
-    // The link is the data (no server), so messaging apps can't preview the
-    // build — lead with a description line so the paste says what it is.
-    const text = `${build.name || "Unnamed build"} — ${build.character} · ${build.chalice}\n\n${url}`;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard unavailable (permissions, http) — show the link instead.
-      window.prompt("Copy this link:", url);
-    }
-  };
   const renderSlots = (slots: SlotTriple, colors?: readonly SlotColor[]) =>
     slots.map((slot, i) => {
       const resolved = resolveSlot(slot, relicStore);
@@ -174,9 +141,6 @@ export function BuildCard({
               {build.name || "Unnamed build"}
             </h4>
           </div>
-          {build.subtitle?.trim() && (
-            <p className="font-body text-xs italic text-gold-dim">{build.subtitle}</p>
-          )}
           <p className="font-body text-xs text-parchment-faint">
             {build.character} · {build.chalice}
           </p>
@@ -198,23 +162,6 @@ export function BuildCard({
         </div>
         {onDelete && (
           <div className="flex shrink-0 flex-wrap justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-            {annotate && (
-              <button
-                type="button"
-                onClick={() => setAnnotating((a) => !a)}
-                aria-pressed={annotating}
-                className={`rounded border px-2 py-0.5 font-body text-xs ${
-                  annotating
-                    ? "border-gold-dim text-gold-bright"
-                    : "border-night-600 text-parchment-muted hover:text-gold-bright"
-                }`}
-              >
-                Tags
-              </button>
-            )}
-            <button type="button" onClick={share} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">
-              {copied ? "Copied ✓" : "Share"}
-            </button>
             {onEdit && (
               <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
             )}
@@ -222,15 +169,6 @@ export function BuildCard({
           </div>
         )}
       </div>
-      {annotate && annotating && (
-        <SharedBuildAnnotator
-          build={build}
-          registry={annotate.tags}
-          onCreateTag={annotate.onCreateTag}
-          onChange={annotate.onChange}
-          onDone={() => setAnnotating(false)}
-        />
-      )}
       {/* Mobile-only view toggle — the stacked sections mean a lot of
           scrolling on small screens, so show one set at a time there. */}
       {expanded && hasDeep && (
@@ -297,90 +235,5 @@ export function BuildCard({
       </div>
       )}
     </article>
-  );
-}
-
-/**
- * Inline annotation panel for a shared (view-only) build: your own subtitle
- * and tags, saved locally onto the build without touching its relics — the
- * friend's build stays exactly as shared, and neither label travels if you
- * re-share it.
- */
-function SharedBuildAnnotator({
-  build,
-  registry,
-  onCreateTag,
-  onChange,
-  onDone,
-}: {
-  build: Build;
-  registry: string[];
-  onCreateTag: (name: string) => void;
-  onChange: (patch: Partial<Pick<Build, "tags" | "subtitle">>) => void;
-  onDone: () => void;
-}) {
-  const [newTag, setNewTag] = useState("");
-  // Create the tag in the registry and put it on this build in one step.
-  const addNewTag = () => {
-    const tag = newTag.trim();
-    if (!tag) return;
-    onCreateTag(tag);
-    onChange({ tags: sortedTags([...(build.tags ?? []), tag]) });
-    setNewTag("");
-  };
-  return (
-    <div className="mt-3 rounded-md border border-night-600 bg-night-900/60 p-3">
-      <p className="font-body text-xs text-parchment-faint">
-        Your own labels for this build — a subtitle for poorly named shares, and tags for
-        grouping (by friend, by purpose). Saved on your device only.
-      </p>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <input
-          type="text"
-          value={build.subtitle ?? ""}
-          onChange={(e) => onChange({ subtitle: e.target.value })}
-          placeholder="Subtitle (e.g. who it's from, what it's for)"
-          className="frame w-72 max-w-full rounded bg-night-900 px-2 py-1.5 font-body text-sm text-parchment placeholder:text-parchment-faint"
-        />
-        {registry.length > 0 && (
-          <MultiSelect
-            values={build.tags ?? []}
-            options={registry.map((t) => ({ value: t, label: t }))}
-            onChange={(tags) => onChange({ tags: sortedTags(tags) })}
-            placeholder="Tags"
-            className="w-44"
-            showValues
-          />
-        )}
-        <input
-          type="text"
-          value={newTag}
-          onChange={(e) => setNewTag(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addNewTag();
-            }
-          }}
-          placeholder="New tag"
-          className="frame w-32 rounded bg-night-900 px-2 py-1.5 font-body text-sm text-parchment placeholder:text-parchment-faint"
-        />
-        <button
-          type="button"
-          onClick={addNewTag}
-          disabled={!newTag.trim()}
-          className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment disabled:opacity-40"
-        >
-          + Add tag
-        </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
-        >
-          Done
-        </button>
-      </div>
-    </div>
   );
 }

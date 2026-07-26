@@ -13,7 +13,6 @@ import { chalicesFor, EffectDatalists } from "@/components/builds/shared";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
-  decodeSharedBuild,
   loadStore,
   mergeStores,
   newId,
@@ -23,7 +22,6 @@ import {
   type Build,
   type BuildStore,
   type CustomRelic,
-  type SharedBuild,
   type SlotTriple,
 } from "@/lib/builds";
 import { useCloudSync } from "@/lib/useCloudSync";
@@ -37,7 +35,7 @@ import { useCloudSync } from "@/lib/useCloudSync";
  */
 export function BuildsManager() {
   const [store, setStore] = useState<BuildStore | null>(null);
-  const [view, setView] = useState<"builds" | "sharedBuilds" | "relics">("builds");
+  const [view, setView] = useState<"builds" | "relics">("builds");
   // Character filter for the build list — "" shows all Nightfarers.
   const [character, setCharacter] = useState("");
   // Tag filter — empty means all builds; otherwise builds matching any of
@@ -46,7 +44,6 @@ export function BuildsManager() {
   const [tagMode, setTagMode] = useState<"any" | "all">("any");
   const [managingTags, setManagingTags] = useState(false);
   const [editing, setEditing] = useState<Build | null>(null);
-  const [shared, setShared] = useState<SharedBuild | null>(null);
   // A localStorage write failed (quota, private mode, storage disabled) —
   // edits now live only in this tab, so warn until a write succeeds again.
   const [storageBroken, setStorageBroken] = useState(false);
@@ -55,17 +52,6 @@ export function BuildsManager() {
 
   useEffect(() => {
     setStore(loadStore());
-    // A share link carries a build in the hash — offer it for import. The
-    // hash is cleared as soon as it's read: the offer lives in state (the
-    // Builds-tab banner) until kept, dismissed, or the page is left, and a
-    // reload won't re-trigger it.
-    const m = window.location.hash.match(/^#b=(.+)$/);
-    if (m) {
-      decodeSharedBuild(m[1]).then((sb) => {
-        setShared(sb);
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
-      });
-    }
   }, []);
 
   // Persist every change (the post-load write just re-saves what was loaded,
@@ -160,19 +146,12 @@ export function BuildsManager() {
     );
   }
 
-  // Your own builds live in the Builds tab; view-only builds kept from
-  // friends' share links get their own Shared Builds tab. The tag filter
-  // applies to both tabs.
-  const ownBuilds = store.builds.filter((b) => !b.shared);
-  const allSharedBuilds = store.builds.filter((b) => b.shared);
+  const ownBuilds = store.builds;
   const matchesTagFilter = (b: Build) =>
     tagFilter.length === 0 ||
     (tagMode === "any"
       ? tagFilter.some((t) => b.tags?.includes(t))
       : tagFilter.every((t) => b.tags?.includes(t)));
-  const sharedBuilds = allSharedBuilds
-    .filter(matchesTagFilter)
-    .sort((a, b) => b.updatedAt - a.updatedAt);
   const builds = ownBuilds
     .filter((b) => !character || b.character === character)
     .filter(matchesTagFilter)
@@ -196,14 +175,6 @@ export function BuildsManager() {
     update((s) => ({ ...s, builds: s.builds.filter((b) => b.id !== id) }));
   };
 
-  // Annotation edits (tags/subtitle on shared builds) deliberately leave
-  // updatedAt alone so relabeling a build doesn't reshuffle the list.
-  const setBuildMeta = (id: string, patch: Partial<Pick<Build, "tags" | "subtitle">>) =>
-    update((s) => ({
-      ...s,
-      builds: s.builds.map((b) => (b.id === id ? { ...b, ...patch } : b)),
-    }));
-
   const deleteCustomRelic = (id: string) => {
     if (!window.confirm("Delete this relic? Builds using it will show an empty slot.")) return;
     const strip = (slots: SlotTriple): SlotTriple =>
@@ -213,24 +184,6 @@ export function BuildsManager() {
       customRelics: s.customRelics.filter((r) => r.id !== id),
       builds: s.builds.map((b) => ({ ...b, slots: strip(b.slots), deepSlots: strip(b.deepSlots) })),
     }));
-  };
-
-  const dismissShared = () => setShared(null);
-
-  const importShared = () => {
-    if (!shared) return;
-    // Saved as view-only: the friend's relics stay embedded in the build
-    // (you don't own them), so nothing is added to your relic pool.
-    const build: Build = {
-      ...shared.build,
-      id: newId(),
-      updatedAt: Date.now(),
-      shared: true,
-      relics: shared.relics,
-    };
-    update((s) => ({ ...s, builds: [...s.builds, build] }));
-    setView("sharedBuilds");
-    dismissShared();
   };
 
   const exportJson = () => {
@@ -253,8 +206,6 @@ export function BuildsManager() {
     }
   };
 
-  // Tag filter controls — shared between the Builds and Shared Builds tabs
-  // (they read the same tagFilter/tagMode state).
   const tagFilterControls = store.tags.length > 0 && (
     <>
       <MultiSelect
@@ -313,7 +264,6 @@ export function BuildsManager() {
         {(
           [
             { key: "builds", label: "Builds", count: ownBuilds.length },
-            { key: "sharedBuilds", label: "Shared Builds", count: allSharedBuilds.length },
             { key: "relics", label: "My Relics", count: store.customRelics.length },
           ] as const
         ).map((t) => {
@@ -353,42 +303,6 @@ export function BuildsManager() {
 
       {view === "builds" && (
         <>
-      {/* Share-link banner — lives on this tab; browse other tabs and come
-          back to it any time until it's kept, dismissed, or the page left. */}
-      {shared && (
-        <section className="frame mb-5 rounded-md bg-night-850 p-4" style={{ borderColor: "#c9a227" }}>
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-lg font-semibold text-parchment">Shared build</h3>
-            <span className="font-body text-xs text-parchment-faint">
-              This link carries a {shared.build.character} build — keep it in Shared Builds
-              (view only; its relics won&rsquo;t join your relic pool), or dismiss it.
-            </span>
-            <div className="ml-auto flex gap-2">
-              <button
-                type="button"
-                onClick={importShared}
-                className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
-              >
-                Keep (view only)
-              </button>
-              <button
-                type="button"
-                onClick={dismissShared}
-                className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:text-parchment"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-          <div className="mt-3 max-w-4xl">
-            <BuildCard
-              build={{ ...shared.build, id: "shared-preview", updatedAt: 0 }}
-              store={{ version: 3, builds: [], customRelics: shared.relics, tags: [] }}
-            />
-          </div>
-        </section>
-      )}
-
       {/* Toolbar */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <Dropdown
@@ -474,48 +388,6 @@ export function BuildsManager() {
           ))}
         </div>
       )}
-        </>
-      )}
-
-      {view === "sharedBuilds" && (
-        <>
-          <p className="mb-5 font-body text-xs text-parchment-faint">
-            Builds kept from friends&rsquo; share links — view only. Their relics stay out of
-            your relic pool; delete a build to remove it. Use each card&rsquo;s
-            &ldquo;Tags&rdquo; button to add your own tags or a subtitle without touching
-            the build itself.
-          </p>
-          {allSharedBuilds.length > 0 && tagFilterControls && (
-            <div className="mb-5 flex flex-wrap items-center gap-2">{tagFilterControls}</div>
-          )}
-          {tagFilterSummary}
-          {allSharedBuilds.length === 0 ? (
-            <p className="font-body text-sm text-parchment-faint">
-              No shared builds yet — open a share link from a friend and choose
-              &ldquo;Keep (view only)&rdquo;.
-            </p>
-          ) : sharedBuilds.length === 0 ? (
-            <p className="font-body text-sm text-parchment-faint">
-              No shared builds match the selected tags.
-            </p>
-          ) : (
-            <div className="grid gap-3">
-              {sharedBuilds.map((b) => (
-                <BuildCard
-                  key={b.id}
-                  build={b}
-                  store={store}
-                  expandable
-                  onDelete={() => deleteBuild(b.id)}
-                  annotate={{
-                    tags: store.tags,
-                    onCreateTag: createTag,
-                    onChange: (patch) => setBuildMeta(b.id, patch),
-                  }}
-                />
-              ))}
-            </div>
-          )}
         </>
       )}
 

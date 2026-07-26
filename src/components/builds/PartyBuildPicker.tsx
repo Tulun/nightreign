@@ -108,7 +108,7 @@ export function PartyBuildPicker({
   const visibleBuilds =
     owner && ownerStore
       ? ownerStore.builds
-          .filter((b) => !b.shared && b.public !== false)
+          .filter((b) => b.public !== false)
           .filter((b) => !character || b.character === character)
           .sort((a, b) => b.updatedAt - a.updatedAt)
       : [];
@@ -116,7 +116,7 @@ export function PartyBuildPicker({
     .map((c) => ({
       name: c.name,
       count: (ownerStore?.builds ?? []).filter(
-        (b) => b.character === c.name && !b.shared && b.public !== false,
+        (b) => b.character === c.name && b.public !== false,
       ).length,
     }))
     .filter((c) => c.count > 0);

@@ -49,8 +49,7 @@ export async function upsertProfile(user: User, store: BuildStore): Promise<void
     profileDoc(user.uid),
     {
       photoURL: deleteField(),
-      // Shared (view-only) imports are someone else's work — not counted.
-      buildCount: store.builds.filter((b) => !b.shared).length,
+      buildCount: store.builds.length,
       updatedAt: serverTimestamp(),
     },
     { merge: true },
