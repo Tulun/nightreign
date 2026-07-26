@@ -28,7 +28,11 @@ import {
 } from "@/lib/builds";
 
 export interface PartyMember {
-  /** Synced account the build came from; null for a build off this device. */
+  /**
+   * Synced account the build came from. The picker is cloud-only now, so
+   * this is always set on new picks; null survives only in legacy parties
+   * built from device-local builds.
+   */
   uid: string | null;
   /** The owner's directory name, frozen at pick time. */
   ownerName: string;

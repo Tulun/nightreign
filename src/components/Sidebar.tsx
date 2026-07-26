@@ -21,7 +21,7 @@ const groups: NavGroup[] = [
       { label: "Great Hollow", href: "/great-hollow" },
       { label: "Builds", href: "/builds" },
       { label: "Community Builds", href: "/builds/users" },
-      { label: "Party Planner", href: "/builds/party" },
+      { label: "Parties", href: "/builds/party" },
     ],
   },
   {

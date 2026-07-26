@@ -1,18 +1,20 @@
 "use client";
 
 // ─────────────────────────────────────────────────────────────────────────
-//  Two-step modal for filling a party slot: pick a player (your own device
-//  or anyone from the community directory), then pick one of their builds.
-//  The chosen build is snapshotted (toSharedBuild) so the party stays
-//  intact even if the owner later edits or deletes it.
+//  Two-step modal for filling a party slot: pick a player from the
+//  community directory, then pick one of their synced builds. Cloud-only
+//  on purpose — device-local builds are ignored, so every slot points at
+//  a real community profile. The chosen build is snapshotted
+//  (toSharedBuild) so the party stays intact even if the owner later
+//  edits or deletes it.
 // ─────────────────────────────────────────────────────────────────────────
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Dropdown } from "@/components/Dropdown";
 import { characterChalices } from "@/data/chalices";
 import { listProfiles, pullCloudStore, type UserProfile } from "@/lib/cloudSync";
 import { useAuth } from "@/lib/useAuth";
-import { EMPTY_STORE, loadStore, toSharedBuild, type Build, type BuildStore } from "@/lib/builds";
+import { EMPTY_STORE, toSharedBuild, type Build, type BuildStore } from "@/lib/builds";
 import type { PartyMember } from "@/lib/party";
 import { resolveSlot, RelicImg, SlotIconImg, chalicesFor } from "./shared";
 
@@ -62,13 +64,11 @@ export function PartyBuildPicker({
   const user = useAuth();
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Step 1 result — null while still on the player list. uid null = this device.
-  const [owner, setOwner] = useState<{ uid: string | null; name: string } | null>(null);
+  // Step 1 result — null while still on the player list.
+  const [owner, setOwner] = useState<{ uid: string; name: string } | null>(null);
   const [ownerStore, setOwnerStore] = useState<BuildStore | null>(null);
   const [q, setQ] = useState("");
   const [character, setCharacter] = useState("");
-  // Builds saved on this device (includes kept shared builds).
-  const local = useMemo(() => loadStore(), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,13 +83,9 @@ export function PartyBuildPicker({
     };
   }, []);
 
-  const selectOwner = (uid: string | null, name: string) => {
+  const selectOwner = (uid: string, name: string) => {
     setOwner({ uid, name });
     setCharacter("");
-    if (uid === null) {
-      setOwnerStore(local);
-      return;
-    }
     setOwnerStore(null);
     pullCloudStore(uid)
       .then((s) => setOwnerStore(s ?? EMPTY_STORE))
@@ -104,20 +100,15 @@ export function PartyBuildPicker({
     onPick({ uid: owner.uid, ownerName: owner.name, build: toSharedBuild(b, ownerStore) });
   };
 
-  // Your own entry pinned first; a synced account also appears in the
-  // directory below, but the device entry additionally offers kept shared
-  // builds and works signed out.
-  const myName = (user && profiles?.find((p) => p.uid === user.uid)?.displayName) || "Me";
   const filteredProfiles = (profiles ?? []).filter(
     (p) => !q.trim() || p.displayName.toLowerCase().includes(q.trim().toLowerCase()),
   );
 
-  // Step 2 list: someone else's profile shows only what their community
-  // profile shows; your own device shows everything saved here.
+  // Step 2 list: only what the player's community profile shows.
   const visibleBuilds =
     owner && ownerStore
       ? ownerStore.builds
-          .filter((b) => owner.uid === null || (!b.shared && b.public !== false))
+          .filter((b) => !b.shared && b.public !== false)
           .filter((b) => !character || b.character === character)
           .sort((a, b) => b.updatedAt - a.updatedAt)
       : [];
@@ -125,7 +116,7 @@ export function PartyBuildPicker({
     .map((c) => ({
       name: c.name,
       count: (ownerStore?.builds ?? []).filter(
-        (b) => b.character === c.name && (owner?.uid === null || (!b.shared && b.public !== false)),
+        (b) => b.character === c.name && !b.shared && b.public !== false,
       ).length,
     }))
     .filter((c) => c.count > 0);
@@ -185,27 +176,6 @@ export function PartyBuildPicker({
                 className="frame mb-3 w-full rounded bg-night-900 px-3 py-1.5 font-body text-sm text-parchment placeholder:text-parchment-faint focus:outline-none"
               />
               <div className="grid gap-2 sm:grid-cols-2">
-                {local.builds.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => selectOwner(null, myName)}
-                    className="frame flex items-center gap-3 rounded-md bg-night-800 p-3 text-left transition-colors hover:bg-night-700"
-                  >
-                    <Avatar name={myName} size={36} />
-                    <span className="min-w-0">
-                      <span className="block truncate font-display font-semibold text-parchment">
-                        Your builds
-                        <span className="ml-1.5 font-body text-xs font-normal text-gold-dim">
-                          this device
-                        </span>
-                      </span>
-                      <span className="block font-body text-xs text-parchment-faint">
-                        {local.builds.length} {local.builds.length === 1 ? "build" : "builds"}, incl.
-                        kept shared builds
-                      </span>
-                    </span>
-                  </button>
-                )}
                 {!profiles ? (
                   <p className="font-body text-sm text-parchment-faint">Loading players…</p>
                 ) : (
@@ -234,7 +204,7 @@ export function PartyBuildPicker({
                   ))
                 )}
               </div>
-              {profiles && filteredProfiles.length === 0 && local.builds.length === 0 && (
+              {profiles && filteredProfiles.length === 0 && (
                 <p className="mt-3 font-body text-sm text-parchment-faint">No players found.</p>
               )}
             </>
@@ -274,11 +244,6 @@ export function PartyBuildPicker({
                       <span className="min-w-0">
                         <span className="block truncate font-display font-semibold text-parchment">
                           {b.name || "Unnamed build"}
-                          {b.shared && (
-                            <span className="ml-1.5 font-body text-xs font-normal text-gold-dim">
-                              shared
-                            </span>
-                          )}
                         </span>
                         <span className="block font-body text-xs text-parchment-faint">
                           {b.character} · {b.chalice}

@@ -25,7 +25,7 @@ export default function BuildsUsersPage() {
             href="/builds/party"
             className="font-body text-sm text-gold-dim hover:text-gold-bright"
           >
-            Party Planner →
+            Parties →
           </Link>
         </div>
       </header>

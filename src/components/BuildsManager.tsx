@@ -340,7 +340,7 @@ export function BuildsManager() {
             href="/builds/party"
             className="-mb-px rounded-t-md border-b-2 border-transparent px-4 py-2 font-display text-sm font-semibold text-parchment-muted hover:text-parchment"
           >
-            Party Planner
+            Parties
           </Link>
           <Link
             href="/builds/users"

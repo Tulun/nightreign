@@ -1,26 +1,26 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { PartiesDirectory } from "@/components/builds/PartiesDirectory";
+import { PartyPlanner } from "@/components/builds/PartyPlanner";
 
-export default function PartiesPage() {
+export default function PartyPlanPage() {
   return (
     <div>
       <header className="mb-8 border-b border-night-600 pb-6">
         <p className="eyebrow">Nightfarers</p>
         <h2 className="mt-1 font-display text-3xl font-bold text-parchment sm:text-4xl">
-          Parties
+          Plan a Party
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
-          Three-Nightfarer expeditions assembled from community builds. Browse
-          what others have published, open one from a share link, or create
-          your own in the planner.
+          Assemble a three-Nightfarer expedition. Fill each slot with a build —
+          yours or anyone&rsquo;s from Community Builds — then save it to the
+          Parties list or share the whole party with a single link.
         </p>
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
           <Link
-            href="/builds"
+            href="/builds/party"
             className="font-body text-sm text-gold-dim hover:text-gold-bright"
           >
-            ← Back to your builds
+            ← All parties
           </Link>
           <Link
             href="/builds/users"
@@ -31,10 +31,10 @@ export default function PartiesPage() {
         </div>
       </header>
 
-      {/* useSearchParams (the ?id= published-party link) requires a Suspense
-          boundary to statically export. */}
-      <Suspense fallback={<p className="font-body text-sm text-parchment-faint">Loading parties…</p>}>
-        <PartiesDirectory />
+      {/* useSearchParams (?new= / ?edit=) requires a Suspense boundary to
+          statically export. */}
+      <Suspense fallback={<p className="font-body text-sm text-parchment-faint">Loading party…</p>}>
+        <PartyPlanner />
       </Suspense>
     </div>
   );
