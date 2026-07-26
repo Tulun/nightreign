@@ -57,6 +57,30 @@ function writeStore(s: Record<string, Loadout>) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch { /* ignore */ }
 }
 
+/** A named defence profile the user saved to load again later. */
+interface SavedProfile { id: string; name: string; character: string; loadout: Loadout; updatedAt: number }
+
+const PROFILES_KEY = "nr-negation-profiles";
+function readProfiles(): SavedProfile[] {
+  try {
+    const p = JSON.parse(localStorage.getItem(PROFILES_KEY) || "[]");
+    return Array.isArray(p) ? p : [];
+  } catch { return []; }
+}
+function writeProfiles(p: SavedProfile[]) {
+  try { localStorage.setItem(PROFILES_KEY, JSON.stringify(p)); } catch { /* ignore */ }
+}
+
+/** Rough size of a profile for the list row: how many effect sources it holds. */
+function profileEffectCount(l: Loadout): number {
+  let n = 0;
+  l.relics?.forEach((r) => { if (r.enabled) n += r.effects.filter((e) => e.effectId).length + r.curses.filter((e) => e.effectId).length; });
+  n += (l.talismanSlots ?? []).filter(Boolean).length;
+  n += (l.weapons ?? []).filter((w) => w.effectId).length;
+  if (l.block) n += 1;
+  return n;
+}
+
 export function NegationCalculator() {
   const [step, setStep] = useState<Step>("character");
   const [charName, setCharName] = useState(nightfarers[0].name);
@@ -66,6 +90,10 @@ export function NegationCalculator() {
   const [block, setBlock] = useState("");
   const [condOn, setCondOn] = useState<Record<string, boolean>>({});
   const [hit, setHit] = useState(1000);
+  const [profiles, setProfiles] = useState<SavedProfile[]>([]);
+  /** Shared save-name input — prefilled on load so re-saving overwrites. */
+  const [profileName, setProfileName] = useState("");
+  const [showProfiles, setShowProfiles] = useState(false);
 
   const [loaded, setLoaded] = useState(false);
   const character = nightfarers.find((c) => c.name === charName) ?? nightfarers[0];
@@ -85,6 +113,7 @@ export function NegationCalculator() {
     const initial = last && nightfarers.some((c) => c.name === last) ? last : charName;
     if (initial !== charName) setCharName(initial);
     applyLoadout(readStore()[initial]);
+    setProfiles(readProfiles());
     setLoaded(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -105,6 +134,45 @@ export function NegationCalculator() {
 
   function clearAll() {
     applyLoadout(undefined);
+  }
+
+  // Save the current setup under a name; a matching name (case-insensitive)
+  // is overwritten in place, so load → tweak → save updates the profile.
+  function saveProfile(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const loadout: Loadout = { relics, weapons, talismanSlots, block, condOn };
+    setProfiles((prev) => {
+      const existing = prev.find((p) => p.name.toLowerCase() === trimmed.toLowerCase());
+      const next = existing
+        ? prev.map((p) => (p === existing ? { ...p, name: trimmed, character: charName, loadout, updatedAt: Date.now() } : p))
+        : [...prev, {
+            id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+            name: trimmed, character: charName, loadout, updatedAt: Date.now(),
+          }];
+      writeProfiles(next);
+      return next;
+    });
+    setProfileName(trimmed);
+  }
+
+  function loadProfile(p: SavedProfile) {
+    const character = nightfarers.some((c) => c.name === p.character) ? p.character : nightfarers[0].name;
+    try { localStorage.setItem("nr-negation-char", character); } catch { /* ignore */ }
+    setCharName(character);
+    applyLoadout(p.loadout);
+    setProfileName(p.name);
+    setShowProfiles(false);
+    setStep("results");
+  }
+
+  function deleteProfile(id: string) {
+    if (!window.confirm("Delete this defence profile?")) return;
+    setProfiles((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      writeProfiles(next);
+      return next;
+    });
   }
 
   function patchRelic(i: number, fn: (r: Relic) => Relic) {
@@ -193,7 +261,8 @@ export function NegationCalculator() {
       <Steps step={step} />
 
       {step === "character" && (
-        <Section title="Nightfarer" className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-3xl space-y-6">
+        <Section title="Nightfarer">
           <label className="mb-4 flex max-w-sm flex-col gap-1">
             <Dropdown value={charName} clearable={false}
               options={nightfarers.map((c) => ({ value: c.name, label: c.name }))}
@@ -213,13 +282,22 @@ export function NegationCalculator() {
           </div>
           <Nav onNext={() => setStep("buffs")} nextLabel="Next: Buffs →" />
         </Section>
+        {profiles.length > 0 && (
+          <div className="flex justify-center">
+            <LoadProfileButton count={profiles.length} onOpen={() => setShowProfiles(true)} />
+          </div>
+        )}
+        </div>
       )}
 
       {step === "buffs" && (
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-3">
             <button type="button" onClick={() => setStep("character")} className="rounded-lg border border-night-600 bg-night-800 px-4 py-2 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700">← Back</button>
-            <button type="button" onClick={clearAll} className="rounded-lg border border-red-500/40 bg-night-800 px-4 py-2 font-body text-sm text-red-300 transition-colors hover:bg-night-700">Clear all</button>
+            <div className="flex items-center gap-3">
+              {profiles.length > 0 && <LoadProfileButton count={profiles.length} onOpen={() => setShowProfiles(true)} />}
+              <button type="button" onClick={clearAll} className="rounded-lg border border-red-500/40 bg-night-800 px-4 py-2 font-body text-sm text-red-300 transition-colors hover:bg-night-700">Clear all</button>
+            </div>
           </div>
 
           <Section title="Negation Relics">
@@ -325,6 +403,8 @@ export function NegationCalculator() {
             })()}
           </Section>
 
+          <SaveProfileRow profiles={profiles} name={profileName} onName={setProfileName} onSave={saveProfile} />
+
           <Nav onBack={() => setStep("character")} onNext={() => setStep("results")} nextLabel="Calculate Negation" />
         </div>
       )}
@@ -333,7 +413,10 @@ export function NegationCalculator() {
         <div className="space-y-6">
           <div className="flex items-center justify-between gap-3">
             <button type="button" onClick={() => setStep("buffs")} className="rounded-lg border border-night-600 bg-night-800 px-4 py-2 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700">← Edit Buffs</button>
-            <button type="button" onClick={clearAll} className="rounded-lg border border-red-500/40 bg-night-800 px-4 py-2 font-body text-sm text-red-300 transition-colors hover:bg-night-700">Clear all</button>
+            <div className="flex items-center gap-3">
+              {profiles.length > 0 && <LoadProfileButton count={profiles.length} onOpen={() => setShowProfiles(true)} />}
+              <button type="button" onClick={clearAll} className="rounded-lg border border-red-500/40 bg-night-800 px-4 py-2 font-body text-sm text-red-300 transition-colors hover:bg-night-700">Clear all</button>
+            </div>
           </div>
 
           <div className="frame rounded-lg bg-night-850 p-4 text-center">
@@ -469,6 +552,8 @@ export function NegationCalculator() {
             </div>
           </Section>
 
+          <SaveProfileRow profiles={profiles} name={profileName} onName={setProfileName} onSave={saveProfile} />
+
           <div className="flex flex-wrap gap-3">
             <button type="button" onClick={() => setStep("buffs")} className="rounded-lg border border-night-600 bg-night-800 px-4 py-2 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700">← Edit Buffs</button>
             <button type="button" onClick={() => { clearAll(); setStep("character"); }}
@@ -482,6 +567,97 @@ export function NegationCalculator() {
           </p>
         </div>
       )}
+
+      {showProfiles && (
+        <ProfilesModal profiles={profiles} onLoad={loadProfile} onDelete={deleteProfile}
+          onClose={() => setShowProfiles(false)} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Save row at the end of the form. The name input lives in the parent so it
+ * follows the user across steps and prefills after a load — saving under an
+ * existing name updates that profile.
+ */
+function SaveProfileRow({ profiles, name, onName, onSave }: {
+  profiles: SavedProfile[]; name: string; onName: (v: string) => void; onSave: (name: string) => void;
+}) {
+  const overwrites = profiles.find((p) => p.name.toLowerCase() === name.trim().toLowerCase());
+  return (
+    <Section title="Save Defence Profile">
+      <p className="mb-3 font-body text-sm text-parchment-muted">Name this setup to load it again later.</p>
+      <div className="flex gap-2">
+        <input value={name} placeholder="Profile name…" maxLength={40}
+          onChange={(e) => onName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") onSave(name); }}
+          className="min-w-0 flex-1 rounded border border-night-600 bg-night-900 px-3 py-2 font-body text-sm text-parchment placeholder:text-parchment-faint focus:border-gold-faint focus:outline-none" />
+        <button type="button" disabled={!name.trim()} onClick={() => onSave(name)}
+          className="shrink-0 rounded-lg border border-gold-faint bg-night-800 px-4 py-2 font-body text-sm font-semibold text-gold-bright transition-colors hover:bg-night-700 disabled:cursor-not-allowed disabled:border-night-600 disabled:text-parchment-faint">
+          Save Profile
+        </button>
+      </div>
+      {overwrites && (
+        <p className="mt-1 font-body text-[0.7rem] text-gold-dim">Saving updates &ldquo;{overwrites.name}&rdquo;.</p>
+      )}
+    </Section>
+  );
+}
+
+function LoadProfileButton({ count, onOpen }: { count: number; onOpen: () => void }) {
+  return (
+    <button type="button" onClick={onOpen}
+      className="rounded-lg border border-sky-500/40 bg-night-800 px-4 py-2 font-body text-sm text-sky-300 transition-colors hover:bg-night-700">
+      Load Profile{count > 0 && <span className="ml-1.5 rounded bg-night-700 px-1.5 text-[0.7rem] font-semibold tabular-nums">{count}</span>}
+    </button>
+  );
+}
+
+/** Modal picker for saved profiles — load applies and closes; × deletes. */
+function ProfilesModal({ profiles, onLoad, onDelete, onClose }: {
+  profiles: SavedProfile[]; onLoad: (p: SavedProfile) => void; onDelete: (id: string) => void; onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-[1px]"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Load defence profile"
+    >
+      <div className="frame w-full max-w-md rounded-lg bg-night-900 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between gap-3 border-b border-night-600 pb-3">
+          <div>
+            <p className="eyebrow">Saved Defence Profiles</p>
+            <h3 className="font-display text-lg font-bold text-parchment">Load Profile</h3>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close"
+            className="self-start text-lg leading-none text-parchment-faint transition-colors hover:text-gold">✕</button>
+        </div>
+        {profiles.length === 0 ? (
+          <p className="mt-4 font-body text-sm text-parchment-faint">No saved profiles.</p>
+        ) : (
+          <ul className="mt-4 max-h-[60vh] space-y-1.5 overflow-y-auto">
+            {profiles.map((p) => (
+              <li key={p.id} className="flex items-center gap-2 rounded-md border border-night-700 bg-night-950/40 px-3 py-2">
+                <button type="button" onClick={() => onLoad(p)} className="min-w-0 flex-1 text-left font-body text-sm">
+                  <span className="font-semibold text-parchment">{p.name}</span>
+                  <span className="block text-[0.7rem] text-parchment-faint">
+                    {p.character} · {profileEffectCount(p.loadout)} effect{profileEffectCount(p.loadout) === 1 ? "" : "s"}
+                  </span>
+                </button>
+                <button type="button" onClick={() => onLoad(p)}
+                  className="shrink-0 rounded border border-sky-500/40 px-2.5 py-1 font-body text-xs font-semibold text-sky-300 transition-colors hover:bg-night-700">
+                  Load
+                </button>
+                <button type="button" onClick={() => onDelete(p.id)} aria-label={`Delete ${p.name}`}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded border border-night-600 text-parchment-faint transition-colors hover:border-red-500/40 hover:text-red-300">×</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
