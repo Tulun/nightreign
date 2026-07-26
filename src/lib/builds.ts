@@ -7,7 +7,7 @@
 
 import { characterSwaps } from "@/data/statSwaps";
 import { uniqueRelics, type UniqueRelicGroup } from "@/data/uniqueRelics";
-import { isCurseEffect } from "@/lib/effectMatch";
+import { NORMAL_EFFECT_VOCABULARY, isCurseEffect } from "@/lib/effectMatch";
 import { SCENE_META, relicIcon } from "@/lib/statSwaps";
 import type { SlotColor } from "@/lib/chalices";
 
@@ -447,6 +447,37 @@ export const fixedRelics: FixedRelicOption[] = [
  * Exception: a signboard swap relic carries nothing but another character's
  * stat swap, so those only show for their own character.
  */
+const ROLLABLE_NORMAL = new Set(NORMAL_EFFECT_VOCABULARY);
+const normEffect = (s: string) => s.trim().toLowerCase();
+
+/**
+ * Identify a scanned relic as a fixed one from its effect lines alone (for
+ * when OCR missed the relic-name header).
+ * - `certain: true` — one of the effects can't roll on a random relic and
+ *   exactly one fixed relic carries it, so it has to be that relic.
+ * - `certain: false` — every effect is rollable, but the set is an exact
+ *   copy of the returned fixed relic's; could be the relic, could be a
+ *   lucky roll, so ask before assuming.
+ */
+export function matchFixedByEffects(
+  effects: string[],
+): { relic: FixedRelicOption; certain: boolean } | null {
+  const lines = effects.map((e) => e.trim()).filter(Boolean);
+  if (lines.length === 0) return null;
+  const fixedOnly = lines.filter((l) => !ROLLABLE_NORMAL.has(l));
+  if (fixedOnly.length > 0) {
+    const carriers = fixedRelics.filter((r) =>
+      fixedOnly.every((l) => r.effects.some((e) => normEffect(e) === normEffect(l))),
+    );
+    if (carriers.length === 1) return { relic: carriers[0], certain: true };
+  }
+  const set = new Set(lines.map(normEffect));
+  const exact = fixedRelics.find(
+    (r) => r.effects.length === set.size && r.effects.every((e) => set.has(normEffect(e))),
+  );
+  return exact ? { relic: exact, certain: false } : null;
+}
+
 export function fixedRelicsFor(character: string, slotColor: SlotColor, deep = false): FixedRelicOption[] {
   if (deep) return [];
   const fits = fixedRelics.filter(

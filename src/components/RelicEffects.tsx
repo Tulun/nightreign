@@ -111,7 +111,7 @@ export function RelicEffects() {
                         key={e.name}
                         className="rounded border border-night-700 bg-night-900/70 px-2 py-1 font-body text-xs text-parchment-muted"
                       >
-                        {e.name}
+                        {swapChipLabel(e.name)}
                       </span>
                     ))}
                   </div>
@@ -147,6 +147,18 @@ export function RelicEffects() {
       <p className="mt-6 font-body text-xs text-parchment-faint">{RELIC_CREDIT}.</p>
     </div>
   );
+}
+
+/**
+ * The catalogue stores swap and starting-item effects with the game's full
+ * boilerplate ("Changes compatible armament's skill to X at start of
+ * expedition"); the chips list just the skill/spell/item, since the section
+ * intro already carries the boilerplate.
+ */
+function swapChipLabel(name: string): string {
+  return name
+    .replace(/^Changes compatible armament's (?:skill|sorcery|incantation) to /, "")
+    .replace(/ (?:at|in possession at) start of expedition$/, "");
 }
 
 /** Renders effects as a 2-column list, collapsing tier variants and showing values/notes. */

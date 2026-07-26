@@ -2,7 +2,7 @@ import type { RelicEffect } from "@/lib/relics";
 
 /**
  * ─────────────────────────────────────────────────────────────────────────
- *  RELIC EFFECTS  (233 total)
+ *  RELIC EFFECTS  (240 total)
  * ─────────────────────────────────────────────────────────────────────────
  *  Possible relic effects grouped by category. Two effects from the SAME
  *  category can never appear on one relic — except effects flagged stackable
@@ -85,36 +85,34 @@ export const relicEffects: RelicEffect[] = [
   { name: "Starting armament inflicts frost", category: "affinity" },
   { name: "Starting armament inflicts poison", category: "affinity" },
   { name: "Starting armament inflicts blood loss", category: "affinity" },
-  { name: "Glintblade Phalanx", category: "skill-swap" },
-  { name: "Gravitas", category: "skill-swap" },
-  { name: "Flaming Strike", category: "skill-swap" },
-  { name: "Eruption", category: "skill-swap" },
-  { name: "Thunderbolt", category: "skill-swap" },
-  { name: "Lightning Slash", category: "skill-swap" },
-  { name: "Sacred Blade", category: "skill-swap" },
-  { name: "Prayerful Strike", category: "skill-swap" },
-  { name: "Poisonous Mist", category: "skill-swap" },
-  { name: "Poison Moth Flight", category: "skill-swap" },
-  { name: "Blood Blade", category: "skill-swap" },
-  { name: "Seppuku", category: "skill-swap" },
-  { name: "Chilling Mist", category: "skill-swap" },
-  { name: "Hoarfrost Stomp", category: "skill-swap" },
-  { name: "White Shadow's Lure", category: "skill-swap" },
-  { name: "Endure", category: "skill-swap" },
-  { name: "Quickstep", category: "skill-swap" },
-  { name: "Storm Stomp", category: "skill-swap" },
-  { name: "Determination", category: "skill-swap" },
-  { name: "Rain of Arrows", category: "skill-swap" },
-  { name: "Beast Claw", category: "spell-swap" },
-  { name: "Night Shard", category: "spell-swap" },
-  { name: "O Flame", category: "spell-swap" },
-  { name: "Magma Shot", category: "spell-swap" },
-  { name: "Carian Greatsword", category: "spell-swap" },
-  { name: "Wrath of Gold", category: "spell-swap" },
-  { name: "Dragonfire", category: "spell-swap" },
-  { name: "Lightning Spear", category: "spell-swap" },
-  { name: "Briars of Punishment", category: "spell-swap" },
-  { name: "Magic Glintblade", category: "spell-swap" },
+  // Swap effects use the full in-game wording so autocomplete and the OCR
+  // importer see the text exactly as the game prints it. The Relic Effects
+  // page strips the boilerplate back off for its compact chip list.
+  ...[
+    "Glintblade Phalanx", "Gravitas", "Flaming Strike", "Eruption", "Thunderbolt",
+    "Lightning Slash", "Sacred Blade", "Prayerful Strike", "Poisonous Mist",
+    "Poison Moth Flight", "Blood Blade", "Seppuku", "Chilling Mist",
+    "Hoarfrost Stomp", "White Shadow's Lure", "Endure", "Quickstep",
+    "Storm Stomp", "Determination", "Rain of Arrows",
+  ].map((skill) => ({
+    name: `Changes compatible armament's skill to ${skill} at start of expedition`,
+    category: "skill-swap" as const,
+  })),
+  ...[
+    "Night Shard", "Magma Shot", "Carian Greatsword", "Briars of Punishment",
+    "Magic Glintblade", "Glintstone Icecrag", "Gravity Well",
+  ].map((sorcery) => ({
+    name: `Changes compatible armament's sorcery to ${sorcery} at start of expedition`,
+    category: "spell-swap" as const,
+  })),
+  ...[
+    "Beast Claw", "O, Flame!", "Wrath of Gold", "Dragonfire", "Lightning Spear",
+    "Aspects of the Crucible: Horns", "Black Flame", "Blessing's Boon",
+    "Lightning Strike", "Swarm of Flies",
+  ].map((incantation) => ({
+    name: `Changes compatible armament's incantation to ${incantation} at start of expedition`,
+    category: "spell-swap" as const,
+  })),
   { name: "Improved Stonedigger Sorcery", category: "spell-school" },
   { name: "Improved Carian Sword Sorcery", category: "spell-school" },
   { name: "Improved Glintblade Sorcery", category: "spell-school" },
@@ -130,25 +128,16 @@ export const relicEffects: RelicEffect[] = [
   { name: "Improved Frenzied Flame Incantations", category: "spell-school" },
   { name: "Improved Dragon Communion Incantations", category: "spell-school" },
   { name: "Dormant Power Helps Discover [Weapon Class]", category: "discover", note: "Changes your preferred weapon class to the named one, making it more likely to drop. Priority goes to the first; doesn't stack with your Nightfarer's preferred type." },
-  { name: "Stonesword Key", category: "starting-items" },
-  { name: "Small Pouch", category: "starting-items" },
-  { name: "Fire Pots", category: "starting-items" },
-  { name: "Magic Pots", category: "starting-items" },
-  { name: "Lightning Pots", category: "starting-items" },
-  { name: "Holy Water Pots", category: "starting-items" },
-  { name: "Poisonbone Darts", category: "starting-items" },
-  { name: "Crystal Darts", category: "starting-items" },
-  { name: "Throwing Daggers", category: "starting-items" },
-  { name: "Glintstone Scraps", category: "starting-items" },
-  { name: "Gravity Stone Chunks", category: "starting-items" },
-  { name: "Bewitching Branches", category: "starting-items" },
-  { name: "Wraith Calling Bell", category: "starting-items" },
-  { name: "Fire Grease", category: "starting-items" },
-  { name: "Magic Grease", category: "starting-items" },
-  { name: "Lightning Grease", category: "starting-items" },
-  { name: "Holy Grease", category: "starting-items" },
-  { name: "Shield Grease", category: "starting-items" },
-  { name: "Starlight Shards", category: "starting-items" },
+  ...[
+    "Stonesword Key", "Small Pouch", "Fire Pots", "Magic Pots", "Lightning Pots",
+    "Holy Water Pots", "Poisonbone Darts", "Crystal Darts", "Throwing Daggers",
+    "Glintstone Scraps", "Gravity Stone Chunks", "Bewitching Branches",
+    "Wraith Calling Bell", "Fire Grease", "Magic Grease", "Lightning Grease",
+    "Holy Grease", "Shield Grease", "Starlight Shards",
+  ].map((item) => ({
+    name: `${item} in possession at start of expedition`,
+    category: "starting-items" as const,
+  })),
   { name: "Wylder: Art activation spreads fire in area", category: "character" },
   { name: "Duchess: Dagger chain attack reprises event upon nearby enemies", category: "character" },
   { name: "Revenant: Expend own HP to fully heal nearby allies when activating Art", category: "character" },

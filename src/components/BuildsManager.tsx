@@ -17,6 +17,7 @@ import {
   fixedRelics,
   fixedRelicsFor,
   loadStore,
+  matchFixedByEffects,
   mergeStores,
   newId,
   normalizeStore,
@@ -1390,15 +1391,34 @@ function BuildEditor({
     const slotColor = (at.deep ? chalice.deep : chalice.slots)[at.index];
     // Deep slots never take fixed relics — every Depth relic is a custom
     // roll, even when it shares a name with a fixed one.
-    const fixed = !at.deep && group.name ? fixedRelics.find((r) => r.name === group.name) : null;
-    if (fixed) {
-      setSlot(at, { kind: "fixed", name: fixed.name });
-      return;
+    if (!at.deep) {
+      const byName = group.name ? fixedRelics.find((r) => r.name === group.name) : null;
+      // No name from OCR? The effects can still give the relic away: an
+      // effect that can't roll pins it to its fixed relic outright; an exact
+      // copy of a fixed relic's effect set might just be a lucky roll — ask.
+      const byEffects = byName ? null : matchFixedByEffects(group.effects);
+      const fixed =
+        byName ??
+        (byEffects &&
+        (byEffects.certain ||
+          window.confirm(
+            `These effects exactly match ${byEffects.relic.name}. Slot that relic?\n\n(Cancel keeps it as a custom relic that happens to have the same effects.)`,
+          ))
+          ? byEffects.relic
+          : null);
+      if (fixed) {
+        setSlot(at, { kind: "fixed", name: fixed.name });
+        return;
+      }
     }
+    // A colored slot dictates the relic's color; the sampled icon color only
+    // decides for White slots (the screenshot's blue cast makes it easy to
+    // misread, so the slot is the better authority).
     const color =
+      (slotColor !== "White" ? (slotColor as CustomRelic["color"]) : null) ??
       group.color ??
       colorFromRelicName(group.name) ??
-      (slotColor === "White" ? "Red" : (slotColor as CustomRelic["color"]));
+      "Red";
     const id = addOrReuseRelic({
       id: newId(),
       name: group.name ?? "",
