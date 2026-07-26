@@ -876,8 +876,11 @@ function BuildCard({
 
   const share = async () => {
     const url = `${window.location.origin}${window.location.pathname}#b=${await encodeSharedBuild(build, store)}`;
+    // The link is the data (no server), so messaging apps can't preview the
+    // build — lead with a description line so the paste says what it is.
+    const text = `${build.name || "Unnamed build"} — ${build.character} · ${build.chalice}\n${url}`;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -2888,7 +2891,10 @@ function ScreenshotBuildImport({
     try {
       const ocr = await ocrLines(file, setStatus);
       const texts = ocr.map((l) => l.text);
-      const found = parseRelicGroups(texts);
+      // A build holds exactly three relics per set, so anything past the
+      // third group is OCR spillover (a doubled line, the selected relic's
+      // detail pane) — never offer a 4th relic for 3 slots.
+      const found = parseRelicGroups(texts).slice(0, 3);
       const seen = bestLineMatch(texts, chalices.map((c) => c.name));
       setChaliceGuess(seen?.effect ?? null);
       // A screenshot shows either normal relics or Deep relics — never both.
@@ -3013,10 +3019,18 @@ function ScreenshotBuildImport({
       )}
       {groups && groups.length > 0 && (
         <div className="grid w-full gap-2 lg:grid-cols-2">
-          {groups.map((g, i) => (
+          {groups.map((g, i) => {
+            // Preview the color the relic will actually get on Apply: the
+            // chosen slot dictates it (applyGroup's rule) — the sampled
+            // screenshot color only decides for White slots, and Deep
+            // screenshots' blue cast makes the sample read Blue anyway.
+            const at = SLOT_TARGETS[targets[i]].at;
+            const targetColor = at.deep ? chalice.deep[at.index] : chalice.slots[at.index];
+            const shownColor = targetColor !== "White" ? targetColor : g.color;
+            return (
             <div key={i} className="frame rounded-md bg-night-900 p-3">
               <p className="flex items-center gap-2 font-body text-sm text-parchment">
-                {g.color && <SlotIconImg color={g.color} size={18} />}
+                {shownColor && <SlotIconImg color={shownColor} size={18} />}
                 {g.name ?? <span className="text-parchment-faint">Unnamed relic</span>}
                 {g.deep && (
                   <span className="rounded border border-night-500 px-1 font-body text-[0.6rem] uppercase tracking-wide text-gold-dim">
@@ -3075,7 +3089,8 @@ function ScreenshotBuildImport({
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </>
