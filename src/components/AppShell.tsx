@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Sidebar } from "./Sidebar";
+import { AuthButton } from "./AuthButton";
 
 /**
  * App frame: a slim top bar with a menu toggle, and a left nav drawer that is
@@ -40,6 +41,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Field Grimoire
           </span>
         </Link>
+        <div className="ml-auto">
+          <AuthButton />
+        </div>
       </header>
 
       {/* Backdrop */}

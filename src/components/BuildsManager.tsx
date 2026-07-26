@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { characterChalices } from "@/data/chalices";
 import { Dropdown } from "@/components/Dropdown";
 import { MultiSelect } from "@/components/MultiSelect";
@@ -25,12 +26,14 @@ import {
   type SharedBuild,
   type SlotTriple,
 } from "@/lib/builds";
+import { useCloudSync } from "@/lib/useCloudSync";
 
 /**
- * User builds, stored locally in the browser (no account, no server). The
- * list view shows saved builds per Nightfarer; the editor is a full-width
- * view with searchable relic pickers, Deep of Night slots, and a
- * whole-screenshot importer that fills slots from a photo.
+ * User builds, stored locally in the browser and — when signed in — mirrored
+ * to the account (see useCloudSync). The list view shows saved builds per
+ * Nightfarer; the editor is a full-width view with searchable relic pickers,
+ * Deep of Night slots, and a whole-screenshot importer that fills slots from
+ * a photo.
  */
 export function BuildsManager() {
   const [store, setStore] = useState<BuildStore | null>(null);
@@ -48,6 +51,7 @@ export function BuildsManager() {
   // edits now live only in this tab, so warn until a write succeeds again.
   const [storageBroken, setStorageBroken] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const syncStatus = useCloudSync(store, setStore);
 
   useEffect(() => {
     setStore(loadStore());
@@ -331,6 +335,12 @@ export function BuildsManager() {
             </button>
           );
         })}
+        <Link
+          href="/builds/users"
+          className="-mb-px ml-auto rounded-t-md border-b-2 border-transparent px-4 py-2 font-display text-sm font-semibold text-parchment-muted hover:text-parchment"
+        >
+          Community →
+        </Link>
       </div>
 
       {view === "builds" && (
@@ -417,7 +427,15 @@ export function BuildsManager() {
           }}
         />
         <span className="font-body text-xs text-parchment-faint">
-          Saved in this browser only — export to back up or move devices.
+          {syncStatus === "local" &&
+            "Saved in this browser only — sign in to sync, or export to back up."}
+          {syncStatus === "syncing" && "Saving to your account…"}
+          {syncStatus === "synced" && "Saved in this browser and synced to your account."}
+          {syncStatus === "error" && (
+            <span className="text-red-200">
+              Cloud sync failed — changes are still saved in this browser.
+            </span>
+          )}
         </span>
       </div>
 

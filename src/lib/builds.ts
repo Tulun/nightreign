@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────
-//  User builds — stored entirely in localStorage (no backend). A build is a
+//  User builds — stored in localStorage, optionally mirrored to a Firestore
+//  account (see cloudSync.ts / useCloudSync.ts). A build is a
 //  character + chalice + three relic slots (plus three Deep of Night slots);
 //  each slot holds either a fixed relic from the app's data or a
 //  user-created custom relic.

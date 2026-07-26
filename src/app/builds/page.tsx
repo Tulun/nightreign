@@ -12,7 +12,8 @@ export default function BuildsPage() {
           Save your relic loadouts per Nightfarer. Slots draw from the fixed
           relics in the game plus your own custom relics — type effects with
           autocomplete, or parse them from a screenshot and fix any mistakes.
-          Everything is stored in your browser; use Export to back up.
+          Everything is stored in your browser; sign in to sync it to your
+          account and browse other players&rsquo; builds.
         </p>
       </header>
 
