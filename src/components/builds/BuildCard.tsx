@@ -75,6 +75,10 @@ function ActionIcon({ kind }: { kind: "edit" | "delete" }) {
  * click; with `href` the whole card is a link into the build's own page —
  * carrying the actions alongside the link, if it was given any — and with
  * `onOpen` it's a grid tile that opens the build in place.
+ *
+ * The variant tabs are the card's own business unless `variantIdx` is given,
+ * which hands that choice to the caller — the build's own page keeps it in
+ * the URL so a single loadout can be linked (see buildPath).
  */
 export function BuildCard({
   build,
@@ -84,6 +88,8 @@ export function BuildCard({
   onEdit,
   onDelete,
   expandable = false,
+  variantIdx,
+  onVariantChange,
 }: {
   build: Build;
   store: BuildStore;
@@ -94,15 +100,24 @@ export function BuildCard({
   onEdit?: () => void;
   onDelete?: () => void;
   expandable?: boolean;
+  /** Which loadout to show, when the caller owns that choice. */
+  variantIdx?: number;
+  /** Told which tab was clicked — with or without `variantIdx`. */
+  onVariantChange?: (i: number) => void;
 }) {
   const [expanded, setExpanded] = useState(!expandable);
   // Mobile-only: which slot set the card shows (desktop always shows both).
   const [view, setView] = useState<"normal" | "deep">("normal");
   // Which loadout variant the card shows — builds can carry a few takes on
-  // the same idea, tabbed through here.
-  const [variantIdx, setVariantIdx] = useState(0);
+  // the same idea, tabbed through here. A controlled variantIdx wins, and
+  // then the tabs only report the click; the caller does the switching.
+  const [ownVariant, setOwnVariant] = useState(0);
   const variants = variantCount(build);
-  const vi = Math.min(variantIdx, variants - 1);
+  const vi = Math.max(0, Math.min(variantIdx ?? ownVariant, variants - 1));
+  const pickVariant = (i: number) => {
+    if (variantIdx === undefined) setOwnVariant(i);
+    onVariantChange?.(i);
+  };
   const loadout = variantAt(build, vi);
   const chalice = chalicesFor(build.character).find((c) => c.name === loadout.chalice);
   // The expanded card always draws both slot sets — a vessel has its three
@@ -454,7 +469,7 @@ export function BuildCard({
             <button
               key={i}
               type="button"
-              onClick={() => setVariantIdx(i)}
+              onClick={() => pickVariant(i)}
               aria-pressed={vi === i}
               className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
                 vi === i

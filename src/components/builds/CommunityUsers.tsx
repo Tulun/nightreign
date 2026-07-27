@@ -30,6 +30,7 @@ import {
   buildShareUrl,
   ownBuildPath,
   sortedTags,
+  variantIdxFromParam,
   type Build,
   type BuildStore,
 } from "@/lib/builds";
@@ -273,6 +274,9 @@ export function CommunityUsers() {
   const params = useSearchParams();
   const selectedUid = params.get("u");
   const selectedBuildId = params.get("b");
+  // Which loadout of that build — see buildPath. Only meaningful once the
+  // build is in hand, since it's clamped to the variants it actually has.
+  const variantParam = params.get("v");
   // Where this visit came from, if it was linked from elsewhere in the app.
   const from = safeReturnPath(params.get("from"));
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
@@ -339,6 +343,14 @@ export function CommunityUsers() {
     const build = selectedStore?.builds.find(
       (b) => b.id === selectedBuildId && b.public !== false,
     );
+    // The tabs live in the URL here, so the link on the clipboard is always
+    // the loadout on screen — and switching tabs replaces rather than pushes,
+    // so Back still leaves the build instead of walking its variants.
+    const variantIdx = build ? variantIdxFromParam(variantParam, build) : 0;
+    const showVariant = (i: number) =>
+      router.replace(withReturn(buildPath(selectedUid, selectedBuildId, i), from), {
+        scroll: false,
+      });
     return (
       <div>
         <div className="mb-5 flex flex-wrap items-center gap-2">
@@ -351,8 +363,12 @@ export function CommunityUsers() {
           </Link>
           {build && (
             <CopyLinkButton
-              url={buildShareUrl(selectedUid, selectedBuildId)}
-              text={buildShareText(build, buildShareUrl(selectedUid, selectedBuildId))}
+              url={buildShareUrl(selectedUid, selectedBuildId, variantIdx)}
+              text={buildShareText(
+                build,
+                buildShareUrl(selectedUid, selectedBuildId, variantIdx),
+                variantIdx,
+              )}
             />
           )}
           {build && selectedUid === user?.uid && (
@@ -380,7 +396,12 @@ export function CommunityUsers() {
                 </p>
               </div>
             )}
-            <BuildCard build={build} store={selectedStore} />
+            <BuildCard
+              build={build}
+              store={selectedStore}
+              variantIdx={variantIdx}
+              onVariantChange={showVariant}
+            />
           </>
         )}
       </div>

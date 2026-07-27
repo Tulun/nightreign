@@ -201,6 +201,17 @@ export function variantAt(b: Build, i: number): VariantView {
   return v ?? { chalice: b.chalice, slots: b.slots, deepSlots: b.deepSlots };
 }
 
+/**
+ * The variant index a `&v=` link asks for. Anything the build can't honour —
+ * absent, not a whole number, or naming a variant since deleted or renumbered
+ * — falls back to the build's own loadout, so a stale link still opens the
+ * build on something rather than on nothing.
+ */
+export function variantIdxFromParam(v: string | null | undefined, b: Build): number {
+  const i = Number(v);
+  return v && Number.isInteger(i) && i > 0 && i < variantCount(b) ? i : 0;
+}
+
 /** Write a change to variant i's loadout back onto the build. */
 export function withVariantPatch(b: Build, i: number, patch: Partial<VariantView>): Build {
   if (i === 0) return { ...b, ...patch };
@@ -522,9 +533,15 @@ export function newId(): string {
  * Path of one build's own page in the community directory. A static export
  * can't prerender /users/{uid}/{buildId}, so both ids ride the query string
  * (same trick as the profile links).
+ *
+ * `variantIdx` picks which loadout the page opens on — a build's variants are
+ * separate takes worth linking to individually. Variant 0 is the build's own
+ * loadout and stays out of the URL, and an index the build doesn't have falls
+ * back to it (see variantIdxFromParam).
  */
-export function buildPath(uid: string, buildId: string): string {
-  return `/builds/users?u=${encodeURIComponent(uid)}&b=${encodeURIComponent(buildId)}`;
+export function buildPath(uid: string, buildId: string, variantIdx = 0): string {
+  const v = variantIdx > 0 ? `&v=${variantIdx}` : "";
+  return `/builds/users?u=${encodeURIComponent(uid)}&b=${encodeURIComponent(buildId)}${v}`;
 }
 
 /**
@@ -540,8 +557,8 @@ export function ownBuildPath(uid: string, buildId: string, action?: "edit" | "de
 }
 
 /** The same link, absolute and base-path-aware — what Share copies. */
-export function buildShareUrl(uid: string, buildId: string): string {
-  const path = asset(buildPath(uid, buildId));
+export function buildShareUrl(uid: string, buildId: string, variantIdx = 0): string {
+  const path = asset(buildPath(uid, buildId, variantIdx));
   return typeof window === "undefined" ? path : `${window.location.origin}${path}`;
 }
 
@@ -551,13 +568,15 @@ export function buildShareUrl(uid: string, buildId: string): string {
  * says nothing until (and unless) a preview loads, so the caption carries
  * the name, Nightfarer and chalice — and the blank line keeps the URL alone
  * on its own line, which is what those apps linkify and unfurl.
+ *
+ * The link points at one loadout (see buildPath), so the caption names the
+ * variant it opens on and quotes *that* loadout's chalice. Builds without
+ * variants say nothing extra — there's only the one take.
  */
-export function buildShareText(
-  build: Pick<Build, "name" | "character" | "chalice">,
-  url: string,
-): string {
+export function buildShareText(build: Build, url: string, variantIdx = 0): string {
   const name = build.name.trim() || "Unnamed build";
-  return `${name} — ${build.character}, ${build.chalice}\n\n${url}`;
+  const variant = variantCount(build) > 1 ? ` (${variantLabel(build, variantIdx)})` : "";
+  return `${name}${variant} — ${build.character}, ${variantAt(build, variantIdx).chalice}\n\n${url}`;
 }
 
 /**

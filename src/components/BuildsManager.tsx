@@ -23,6 +23,7 @@ import {
   saveStore,
   sortedTags,
   tagTombstone,
+  variantIdxFromParam,
   withTombstones,
   withoutTombstones,
   type Build,
@@ -68,6 +69,9 @@ export function BuildsManager() {
   // Whose build the URL claims to be (see withOwner). Absent on links made
   // while signed out, and on anything older than that change.
   const ownerUid = params.get("u");
+  // Which loadout of a build with variants is on show — in the URL so the
+  // share link copied here points at that same one (see buildPath).
+  const variantParam = params.get("v");
   // Character filter for the build list — empty shows all Nightfarers.
   const [characterFilter, setCharacterFilter] = useState<string[]>([]);
   // Tag filter — empty means all builds; otherwise builds matching any of
@@ -130,8 +134,10 @@ export function BuildsManager() {
     if (!store || !openId || isNew || !ownerUid) return;
     if (user === undefined || ownerUid === user?.uid) return;
     if (store.builds.some((b) => b.id === openId)) return;
-    router.replace(buildPath(ownerUid, openId));
-  }, [store, openId, isNew, ownerUid, user, router]);
+    // The variant travels along raw — the build isn't here to clamp it
+    // against, and the community page does that on arrival.
+    router.replace(buildPath(ownerUid, openId, Math.max(0, Math.trunc(Number(variantParam)) || 0)));
+  }, [store, openId, isNew, ownerUid, variantParam, user, router]);
 
   // A ?delete=1 link, asked once and only for a build this browser actually
   // holds — a missing one falls through to the message below, and re-asking
@@ -403,7 +409,15 @@ export function BuildsManager() {
     // build kept off the profile. Sync state deliberately isn't one of them —
     // it's a moment in time (every edit passes through "syncing"), while the
     // link is permanent, so it's said in the tooltip, not enforced.
-    const shareUrl = user ? buildShareUrl(user.uid, openBuild.id) : "";
+    // Which loadout the card shows, and so which one the share link opens on.
+    // Switching tabs replaces rather than pushes, so Back still leaves the
+    // build rather than walking back through its variants.
+    const variantIdx = variantIdxFromParam(variantParam, openBuild);
+    const showVariant = (i: number) =>
+      router.replace(withOwner(`/builds?b=${encodeURIComponent(openBuild.id)}`) + (i > 0 ? `&v=${i}` : ""), {
+        scroll: false,
+      });
+    const shareUrl = user ? buildShareUrl(user.uid, openBuild.id, variantIdx) : "";
     const shareBlocked = !user
       ? "Sign in to sync your builds — a share link points at your account’s copy."
       : openBuild.public === false
@@ -431,7 +445,7 @@ export function BuildsManager() {
           </button>
           <CopyLinkButton
             url={shareUrl}
-            text={buildShareText(openBuild, shareUrl)}
+            text={buildShareText(openBuild, shareUrl, variantIdx)}
             label="Copy share link"
             disabled={!!shareBlocked}
             title={shareBlocked ?? shareHint}
@@ -444,7 +458,12 @@ export function BuildsManager() {
             Delete
           </button>
         </div>
-        <BuildCard build={openBuild} store={store} />
+        <BuildCard
+          build={openBuild}
+          store={store}
+          variantIdx={variantIdx}
+          onVariantChange={showVariant}
+        />
       </div>
     );
   }
