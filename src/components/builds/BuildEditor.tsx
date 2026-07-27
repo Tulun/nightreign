@@ -11,9 +11,15 @@ import { MultiSelect } from "@/components/MultiSelect";
 import {
   fixedRelics,
   matchFixedByEffects,
+  MAX_VARIANTS,
   newId,
   sameCustomRelic,
   sortedTags,
+  variantAt,
+  variantCount,
+  variantLabel,
+  withVariantLabel,
+  withVariantPatch,
   type Build,
   type BuildSlot,
   type BuildStore,
@@ -40,6 +46,7 @@ export function BuildEditor({
   onSave,
   onCancel,
   backLabel = "← All builds",
+  lockCharacter = false,
   onAddCustomRelic,
   onUpdateCustomRelic,
   onCreateTag,
@@ -50,15 +57,59 @@ export function BuildEditor({
   onCancel: () => void;
   /** Where leaving the editor goes back to — the list, or the build's page. */
   backLabel?: string;
+  /** Saved builds keep their Nightfarer — only a new build picks one. */
+  lockCharacter?: boolean;
   onAddCustomRelic: (r: CustomRelic) => void;
   onUpdateCustomRelic: (r: CustomRelic) => void;
   onCreateTag: (name: string) => void;
 }) {
   const [build, setBuild] = useState<Build>(initial);
+  // Which loadout variant the editor is working on (0 = the build's own).
+  const [variant, setVariant] = useState(0);
   const [newRelicAt, setNewRelicAt] = useState<SlotRef | null>(null);
   const [newTag, setNewTag] = useState("");
+  const loadout = variantAt(build, variant);
   const chalices = chalicesFor(build.character);
-  const chalice = chalices.find((c) => c.name === build.chalice) ?? chalices[0];
+  const chalice = chalices.find((c) => c.name === loadout.chalice) ?? chalices[0];
+
+  // A pending new-relic form points at a slot of the variant it was opened
+  // on — close it rather than carry it across to another loadout's slot.
+  const switchVariant = (i: number) => {
+    setVariant(i);
+    setNewRelicAt(null);
+  };
+
+  const setChalice = (name: string) =>
+    setBuild((b) => withVariantPatch(b, variant, { chalice: name }));
+
+  // A new variant starts as a copy of the one on screen — variants are
+  // takes on the same idea, so tweaking beats starting from empty slots.
+  const addVariant = () => {
+    setBuild((b) => {
+      if (variantCount(b) >= MAX_VARIANTS) return b;
+      const cur = variantAt(b, variant);
+      return {
+        ...b,
+        variants: [
+          ...(b.variants ?? []),
+          {
+            name: "",
+            chalice: cur.chalice,
+            slots: [...cur.slots] as SlotTriple,
+            deepSlots: [...cur.deepSlots] as SlotTriple,
+          },
+        ],
+      };
+    });
+    switchVariant(variantCount(build)); // the copy's index, once it exists
+  };
+
+  const removeVariant = () => {
+    if (variant === 0) return;
+    if (!window.confirm(`Remove ${variantLabel(build, variant)}? Its slots are discarded.`)) return;
+    setBuild((b) => ({ ...b, variants: (b.variants ?? []).filter((_, j) => j !== variant - 1) }));
+    switchVariant(variant - 1);
+  };
 
   // Create the tag in the registry and put it on this build in one step.
   const addNewTag = () => {
@@ -72,9 +123,9 @@ export function BuildEditor({
   const setSlot = (at: SlotRef, slot: BuildSlot) => {
     setBuild((b) => {
       const key = at.deep ? "deepSlots" : "slots";
-      const slots = [...b[key]] as SlotTriple;
+      const slots = [...variantAt(b, variant)[key]] as SlotTriple;
       slots[at.index] = slot;
-      return { ...b, [key]: slots };
+      return withVariantPatch(b, variant, { [key]: slots });
     });
     // Filling a slot supersedes its pending new-relic form.
     setNewRelicAt((cur) => (cur && cur.deep === at.deep && cur.index === at.index ? null : cur));
@@ -151,7 +202,7 @@ export function BuildEditor({
     return colors.map((slotColor, index) => {
       const at: SlotRef = { deep, index };
       const isNewHere = newRelicAt?.deep === deep && newRelicAt.index === index;
-      const value = deep ? build.deepSlots[index] : build.slots[index];
+      const value = deep ? loadout.deepSlots[index] : loadout.slots[index];
       const resolved = resolveSlot(value, store);
       const customRelic =
         value?.kind === "custom" ? store.customRelics.find((r) => r.id === value.id) : undefined;
@@ -202,33 +253,109 @@ export function BuildEditor({
         {backLabel}
       </button>
 
-      {/* Character first, then chalice and slots follow from it. */}
-      <div className="mb-4 flex flex-wrap gap-2">
-        {characterChalices.map((c) => {
-          const active = c.name === build.character;
-          return (
-            <button
-              key={c.name}
-              type="button"
-              onClick={() =>
-                setBuild((b) =>
-                  b.character === c.name
-                    ? b
-                    : { ...b, character: c.name, chalice: chalicesFor(c.name)[0].name },
-                )
-              }
-              aria-pressed={active}
-              className={`frame rounded-md px-3 py-1.5 font-body text-sm transition-colors ${
-                active
-                  ? "bg-night-700 text-gold-bright"
-                  : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
-              }`}
-              style={active ? { borderColor: "#c9a227" } : undefined}
-            >
-              {c.name}
-            </button>
-          );
-        })}
+      {/* Character first, then chalice and slots follow from it. A saved
+          build stays with its Nightfarer — the picker only shows for a new
+          one, and switching resets every loadout's chalice to match. */}
+      {lockCharacter ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2.5">
+          <span
+            className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright"
+            style={{ borderColor: "#c9a227" }}
+          >
+            {build.character}
+          </span>
+          <span className="font-body text-xs text-parchment-faint">
+            Builds stay with their Nightfarer — start a new build for another character.
+          </span>
+        </div>
+      ) : (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {characterChalices.map((c) => {
+            const active = c.name === build.character;
+            return (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() =>
+                  setBuild((b) => {
+                    if (b.character === c.name) return b;
+                    const first = chalicesFor(c.name)[0].name;
+                    return {
+                      ...b,
+                      character: c.name,
+                      chalice: first,
+                      variants: b.variants?.map((v) => ({ ...v, chalice: first })),
+                    };
+                  })
+                }
+                aria-pressed={active}
+                className={`frame rounded-md px-3 py-1.5 font-body text-sm transition-colors ${
+                  active
+                    ? "bg-night-700 text-gold-bright"
+                    : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
+                }`}
+                style={active ? { borderColor: "#c9a227" } : undefined}
+              >
+                {c.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Loadout variants — up to MAX_VARIANTS takes on the same build idea,
+          each with its own chalice and slots. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {variantCount(build) > 1 && (
+          <div className="flex flex-wrap gap-1" role="group" aria-label="Build variants">
+            {Array.from({ length: variantCount(build) }, (_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => switchVariant(i)}
+                aria-pressed={i === variant}
+                className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+                  i === variant
+                    ? "bg-night-700 text-gold-bright"
+                    : "bg-night-900 text-parchment-muted hover:text-parchment"
+                }`}
+              >
+                {variantLabel(build, i)}
+              </button>
+            ))}
+          </div>
+        )}
+        {variantCount(build) < MAX_VARIANTS && (
+          <button
+            type="button"
+            onClick={addVariant}
+            title="Copy this loadout into a new variant of the same build"
+            className="frame rounded-md bg-night-800 px-2.5 py-1 font-body text-xs text-parchment-muted hover:bg-night-700 hover:text-parchment"
+          >
+            + Add variant
+          </button>
+        )}
+        {variantCount(build) > 1 && (
+          <>
+            <input
+              type="text"
+              value={variant === 0 ? build.variantName ?? "" : build.variants?.[variant - 1]?.name ?? ""}
+              onChange={(e) => setBuild((b) => withVariantLabel(b, variant, e.target.value))}
+              placeholder={variantLabel(build, variant)}
+              aria-label="Variant name"
+              className="frame w-32 rounded bg-night-900 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint"
+            />
+            {variant > 0 && (
+              <button
+                type="button"
+                onClick={removeVariant}
+                className="frame rounded-md bg-night-800 px-2.5 py-1 font-body text-xs text-parchment-muted hover:bg-night-700 hover:text-red-300"
+              >
+                Remove variant
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -240,16 +367,12 @@ export function BuildEditor({
           className="frame w-64 rounded bg-night-900 px-3 py-2 font-display text-lg text-parchment placeholder:text-parchment-faint"
         />
         {/* Swapping chalices keeps slotted relics — colors are the user's call. */}
-        <ChalicePicker
-          chalices={chalices}
-          value={chalice}
-          onChange={(name) => setBuild((b) => ({ ...b, chalice: name }))}
-        />
+        <ChalicePicker chalices={chalices} value={chalice} onChange={setChalice} />
         <ScreenshotBuildImport
           chalice={chalice}
           chalices={chalices}
           onApply={applyGroup}
-          onSwapChalice={(name) => setBuild((b) => ({ ...b, chalice: name }))}
+          onSwapChalice={setChalice}
         />
       </div>
 

@@ -6,7 +6,7 @@
 
 import { Fragment, useState } from "react";
 import Link from "next/link";
-import { type Build, type BuildStore, type SlotTriple } from "@/lib/builds";
+import { variantAt, variantCount, variantLabel, type Build, type BuildStore, type SlotTriple } from "@/lib/builds";
 import { chalicesFor, resolveSlot, EffectLines, RelicImg, SlotIconImg } from "./shared";
 
 /** Disclosure chevron for expandable build cards. */
@@ -96,13 +96,19 @@ export function BuildCard({
   const [expanded, setExpanded] = useState(!expandable);
   // Mobile-only: which slot set the card shows (desktop always shows both).
   const [view, setView] = useState<"normal" | "deep">("normal");
-  const chalice = chalicesFor(build.character).find((c) => c.name === build.chalice);
+  // Which loadout variant the card shows — builds can carry a few takes on
+  // the same idea, tabbed through here.
+  const [variantIdx, setVariantIdx] = useState(0);
+  const variants = variantCount(build);
+  const vi = Math.min(variantIdx, variants - 1);
+  const loadout = variantAt(build, vi);
+  const chalice = chalicesFor(build.character).find((c) => c.name === loadout.chalice);
   // The expanded card always draws both slot sets — a vessel has its three
   // Deep of Night slots whether or not this build fills them, and drawing
   // them empty (as the game does) beats a half-width card that reads as
   // something failing to render. hasDeep is still what decides where the
   // *relics* matter: the line pitch, the mobile toggle, the icon strip.
-  const hasDeep = build.deepSlots.some(Boolean);
+  const hasDeep = loadout.deepSlots.some(Boolean);
   // Party-member snapshots carry their own relics; slots resolve against
   // those, not the user's pool.
   const relicStore = build.relics?.length
@@ -114,7 +120,7 @@ export function BuildCard({
   // two blocks ending at different heights. Equal counts pad nothing.
   const lineCount = (slot: SlotTriple[number]) => resolveSlot(slot, relicStore)?.lines.length ?? 0;
   const rowLines = [0, 1, 2].map((i) =>
-    Math.max(lineCount(build.slots[i]), lineCount(build.deepSlots[i])),
+    Math.max(lineCount(loadout.slots[i]), lineCount(loadout.deepSlots[i])),
   );
 
   const renderSlots = (slots: SlotTriple) =>
@@ -160,8 +166,8 @@ export function BuildCard({
         </div>
       );
     });
-  const normalRows = renderSlots(build.slots);
-  const deepRows = renderSlots(build.deepSlots);
+  const normalRows = renderSlots(loadout.slots);
+  const deepRows = renderSlots(loadout.deepSlots);
 
   // The vessel's six slot colors, normal then Deep of Night — a header-line
   // summary of what the build's chalice can take, so the slot rows below stay
@@ -184,7 +190,7 @@ export function BuildCard({
   // icons for empty slots; Deep of Night icons after a divider).
   const iconStrip = (size: number, gap = "gap-1") => (
     <span className={`flex items-center ${gap}`}>
-      {build.slots.map((slot, i) => {
+      {loadout.slots.map((slot, i) => {
         const r = resolveSlot(slot, relicStore);
         return r ? (
           <RelicImg key={`n${i}`} src={r.icon} alt={r.name} size={size} />
@@ -197,7 +203,7 @@ export function BuildCard({
       {hasDeep && (
         <>
           <span className="mx-1 w-px self-stretch bg-night-600" aria-hidden="true" />
-          {build.deepSlots.map((slot, i) => {
+          {loadout.deepSlots.map((slot, i) => {
             const r = resolveSlot(slot, relicStore);
             return r ? (
               <span key={`d${i}`} title={`${r.name} (Deep of Night)`} className="opacity-70">
@@ -244,6 +250,7 @@ export function BuildCard({
             </h4>
             <p className="truncate font-body text-sm text-parchment-faint">
               {build.character} · {build.chalice}
+              {variants > 1 && ` · ${variants} variants`}
             </p>
           </div>
           {(onEdit || onDelete) && (
@@ -296,6 +303,7 @@ export function BuildCard({
           </span>
           <span className="block truncate font-body text-sm text-parchment-faint">
             {build.character} · {build.chalice}
+            {variants > 1 && ` · ${variants} variants`}
           </span>
           {tagChips && <span className="mt-2 flex">{tagChips}</span>}
           {/* Narrow screens have no room beside the title — the relics drop
@@ -343,7 +351,7 @@ export function BuildCard({
           </div>
           <div className="flex min-w-0 items-center gap-3">
             <p className="truncate font-body text-sm text-parchment-faint">
-              {build.character} · {build.chalice}
+              {build.character} · {loadout.chalice}
             </p>
             {/* Desktop only — the slot colors belong beside the vessel that
                 grants them, and a phone header has no room for six icons. */}
@@ -377,6 +385,27 @@ export function BuildCard({
           </div>
         )}
       </div>
+      {/* Variant tabs — click through the build's loadouts. Rendered above
+          the slot grid so comparing two takes is one click, not a scroll. */}
+      {expanded && variants > 1 && (
+        <div className="mt-3 flex flex-wrap items-center gap-1" role="group" aria-label="Build variants">
+          {Array.from({ length: variants }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setVariantIdx(i)}
+              aria-pressed={vi === i}
+              className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+                vi === i
+                  ? "bg-night-700 text-gold-bright"
+                  : "bg-night-900 text-parchment-muted hover:text-parchment"
+              }`}
+            >
+              {variantLabel(build, i)}
+            </button>
+          ))}
+        </div>
+      )}
       {/* Mobile-only view toggle — the stacked sections mean a lot of
           scrolling on small screens, so show one set at a time there. */}
       {expanded && hasDeep && (

@@ -432,7 +432,7 @@ export function ScreenshotBuildImport({
           title="Screenshot the relic rites screen (relic names + effects visible); the parser groups what it reads into relics you can drop into slots. Fix anything it misreads afterwards."
           className="frame rounded-md bg-night-800 px-3 py-2 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment disabled:opacity-50"
         >
-          Import from screenshot
+          Import relics from screenshot
         </button>
         {groups && groups.length > 0 && applied.some((a) => !a) && (
           <button

@@ -3,7 +3,9 @@
 //  account (see cloudSync.ts / useCloudSync.ts). A build is a
 //  character + chalice + three relic slots (plus three Deep of Night slots);
 //  each slot holds either a fixed relic from the app's data or a
-//  user-created custom relic.
+//  user-created custom relic. A build can carry up to MAX_VARIANTS loadout
+//  variants — takes on the same idea, each with its own chalice and slots,
+//  all locked to the build's one character.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { characterSwaps } from "@/data/statSwaps";
@@ -91,6 +93,15 @@ export type BuildSlot =
 
 export type SlotTriple = [BuildSlot, BuildSlot, BuildSlot];
 
+/** An extra loadout under the same build idea — see Build.variants. */
+export interface BuildVariant {
+  /** Tab label; "" falls back to a positional default ("Variant 2"…). */
+  name: string;
+  chalice: string;
+  slots: SlotTriple;
+  deepSlots: SlotTriple;
+}
+
 export interface Build {
   id: string;
   name: string;
@@ -103,6 +114,14 @@ export interface Build {
   notes: string;
   /** User-defined tags for filtering, drawn from BuildStore.tags. */
   tags?: string[];
+  /** Tab label for the build's own loadout when variants exist ("Main"). */
+  variantName?: string;
+  /**
+   * Alternate loadouts: the build's own chalice/slots/deepSlots are the
+   * first variant, these are the extras (capped at MAX_VARIANTS - 1). They
+   * share the build's character — a different Nightfarer is a new build.
+   */
+  variants?: BuildVariant[];
   updatedAt: number;
   /**
    * Community-profile visibility: undefined/true = shown on your profile,
@@ -155,6 +174,73 @@ export const EMPTY_STORE: BuildStore = {
 };
 
 export const EMPTY_SLOTS: SlotTriple = [null, null, null];
+
+// ── Loadout variants ─────────────────────────────────────────────────────
+
+/** Loadouts per build, counting the build's own (kept small for the tab UI). */
+export const MAX_VARIANTS = 4;
+
+/** One loadout's worth of a build: what a variant tab shows and edits. */
+export interface VariantView {
+  chalice: string;
+  slots: SlotTriple;
+  deepSlots: SlotTriple;
+}
+
+export const variantCount = (b: Build): number => 1 + (b.variants?.length ?? 0);
+
+/** Tab label for variant i — the stored name, or a positional default. */
+export function variantLabel(b: Build, i: number): string {
+  if (i === 0) return b.variantName?.trim() || "Main";
+  return b.variants?.[i - 1]?.name.trim() || `Variant ${i + 1}`;
+}
+
+/** The chalice + slots behind variant i (0 = the build's own loadout). */
+export function variantAt(b: Build, i: number): VariantView {
+  const v = i > 0 ? b.variants?.[i - 1] : undefined;
+  return v ?? { chalice: b.chalice, slots: b.slots, deepSlots: b.deepSlots };
+}
+
+/** Write a change to variant i's loadout back onto the build. */
+export function withVariantPatch(b: Build, i: number, patch: Partial<VariantView>): Build {
+  if (i === 0) return { ...b, ...patch };
+  return {
+    ...b,
+    variants: (b.variants ?? []).map((v, j) => (j === i - 1 ? { ...v, ...patch } : v)),
+  };
+}
+
+/** Rename variant i's tab. */
+export function withVariantLabel(b: Build, i: number, name: string): Build {
+  if (i === 0) return { ...b, variantName: name };
+  return {
+    ...b,
+    variants: (b.variants ?? []).map((v, j) => (j === i - 1 ? { ...v, name } : v)),
+  };
+}
+
+/** Keep only well-formed variants (stores from before them have none). */
+function sanitizeVariants(v: unknown): BuildVariant[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const shaped = v.filter(
+    (x): x is BuildVariant =>
+      !!x &&
+      typeof x === "object" &&
+      typeof (x as BuildVariant).chalice === "string" &&
+      Array.isArray((x as BuildVariant).slots) &&
+      (x as BuildVariant).slots.length === 3,
+  );
+  const out = shaped.slice(0, MAX_VARIANTS - 1).map((x) => ({
+    name: typeof x.name === "string" ? x.name : "",
+    chalice: x.chalice,
+    slots: x.slots,
+    deepSlots:
+      Array.isArray(x.deepSlots) && x.deepSlots.length === 3
+        ? x.deepSlots
+        : ([...EMPTY_SLOTS] as SlotTriple),
+  }));
+  return out.length > 0 ? out : undefined;
+}
 
 /**
  * Migrate a legacy relic whose effects were one flat list (with any curse
@@ -295,6 +381,7 @@ export function normalizeStore(data: unknown): BuildStore | null {
     .map((b) => ({
       ...b,
       deepSlots: b.deepSlots ?? [...EMPTY_SLOTS] as SlotTriple,
+      variants: sanitizeVariants(b.variants),
       // Party-member snapshots carry their own relics — migrate those too.
       relics: b.relics?.map(gameRelicLines),
     }));

@@ -229,7 +229,11 @@ export function BuildsManager() {
     const strip = (slots: SlotTriple): SlotTriple =>
       slots.map((s) => (s?.kind === "custom" && s.id === id ? null : s)) as SlotTriple;
     const uses = (b: Build) =>
-      [...b.slots, ...b.deepSlots].some((s) => s?.kind === "custom" && s.id === id);
+      [
+        ...b.slots,
+        ...b.deepSlots,
+        ...(b.variants ?? []).flatMap((v) => [...v.slots, ...v.deepSlots]),
+      ].some((s) => s?.kind === "custom" && s.id === id);
     update((s) =>
       withTombstones(
         {
@@ -238,7 +242,17 @@ export function BuildsManager() {
           // copy on another device outranks it and puts the slot back.
           builds: s.builds.map((b) =>
             uses(b)
-              ? { ...b, slots: strip(b.slots), deepSlots: strip(b.deepSlots), updatedAt: Date.now() }
+              ? {
+                  ...b,
+                  slots: strip(b.slots),
+                  deepSlots: strip(b.deepSlots),
+                  variants: b.variants?.map((v) => ({
+                    ...v,
+                    slots: strip(v.slots),
+                    deepSlots: strip(v.deepSlots),
+                  })),
+                  updatedAt: Date.now(),
+                }
               : b,
           ),
         },
@@ -306,6 +320,7 @@ export function BuildsManager() {
           initial={openBuild}
           store={store}
           backLabel={isNew ? "← All builds" : "← Back to build"}
+          lockCharacter={!isNew}
           onSave={saveBuild}
           onCancel={() => (isNew ? showList() : showBuild(openBuild.id))}
           onAddCustomRelic={addCustomRelic}
