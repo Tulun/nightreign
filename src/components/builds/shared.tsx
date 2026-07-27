@@ -253,6 +253,14 @@ export function TrashIcon() {
   );
 }
 
+export function XIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  );
+}
+
 export { colorFromRelicName } from "@/lib/relicColor";
 
 export interface OcrLine {

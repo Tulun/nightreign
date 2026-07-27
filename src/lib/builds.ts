@@ -210,6 +210,53 @@ export function withVariantPatch(b: Build, i: number, patch: Partial<VariantView
   };
 }
 
+// ── Slot legality ────────────────────────────────────────────────────────
+
+/**
+ * The color of the relic sitting in a slot — null for an empty slot, and for
+ * one whose relic has gone missing from the pool (a dangling id is nothing to
+ * judge legality on, so callers leave it alone rather than clear it).
+ */
+export function slotRelicColor(
+  slot: BuildSlot,
+  store: Pick<BuildStore, "customRelics">,
+): Exclude<SlotColor, "White"> | null {
+  if (!slot) return null;
+  if (slot.kind === "fixed") return fixedRelics.find((r) => r.name === slot.name)?.color ?? null;
+  return store.customRelics.find((r) => r.id === slot.id)?.color ?? null;
+}
+
+/** Whether a relic can sit in a slot of this color — White takes anything. */
+export function slotFits(
+  slot: BuildSlot,
+  slotColor: SlotColor,
+  store: Pick<BuildStore, "customRelics">,
+): boolean {
+  if (slotColor === "White") return true;
+  const color = slotRelicColor(slot, store);
+  return color === null || color === slotColor;
+}
+
+/**
+ * A loadout's slots re-checked against a chalice's colors: relics that still
+ * fit stay put, the rest are emptied. Used when swapping chalices — the game
+ * won't let a Red relic sit in a Blue socket, so carrying it across would show
+ * a build that can't be equipped.
+ */
+export function slotsForColors(
+  slots: SlotTriple,
+  colors: readonly SlotColor[],
+  store: Pick<BuildStore, "customRelics">,
+): { slots: SlotTriple; cleared: number } {
+  let cleared = 0;
+  const next = slots.map((slot, i) => {
+    if (slotFits(slot, colors[i] ?? "White", store)) return slot;
+    cleared++;
+    return null;
+  }) as SlotTriple;
+  return { slots: cleared > 0 ? next : slots, cleared };
+}
+
 /** Rename variant i's tab. */
 export function withVariantLabel(b: Build, i: number, name: string): Build {
   if (i === 0) return { ...b, variantName: name };

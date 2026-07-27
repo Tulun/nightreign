@@ -13,6 +13,7 @@ import { chalicesFor, CopyLinkButton } from "@/components/builds/shared";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
+  buildPath,
   buildShareText,
   buildShareUrl,
   loadStore,
@@ -58,6 +59,9 @@ export function BuildsManager() {
   const openId = params.get("b");
   const isNew = openId === "new";
   const isEditing = isNew || params.get("edit") !== null;
+  // Whose build the URL claims to be (see withOwner). Absent on links made
+  // while signed out, and on anything older than that change.
+  const ownerUid = params.get("u");
   // Character filter for the build list — empty shows all Nightfarers.
   const [characterFilter, setCharacterFilter] = useState<string[]>([]);
   // Tag filter — empty means all builds; otherwise builds matching any of
@@ -111,6 +115,18 @@ export function BuildsManager() {
     if (store) setStorageBroken(!saveStore(store));
   }, [store]);
 
+  // A build's page addressed to an account that isn't yours came from someone
+  // else's address bar, and this page can't show it — ?b= reads out of *this*
+  // browser. Hand it to where that build does live: the owner's community
+  // page, view-only. Your own uid is deliberately not redirected — that's
+  // your build on a device that may simply not have synced it yet.
+  useEffect(() => {
+    if (!store || !openId || isNew || !ownerUid) return;
+    if (user === undefined || ownerUid === user?.uid) return;
+    if (store.builds.some((b) => b.id === openId)) return;
+    router.replace(buildPath(ownerUid, openId));
+  }, [store, openId, isNew, ownerUid, user, router]);
+
   if (!store) {
     return <p className="font-body text-sm text-parchment-faint">Loading saved builds…</p>;
   }
@@ -120,8 +136,15 @@ export function BuildsManager() {
 
   // ── Navigation: every view of this page is a URL ───────────────────────
   const showList = () => router.push("/builds");
-  const showBuild = (id: string) => router.push(`/builds?b=${encodeURIComponent(id)}`);
-  const editBuild = (id: string) => router.push(`/builds?b=${encodeURIComponent(id)}&edit=1`);
+  // Signed in, a build's URL carries the account as well. The page itself
+  // stays personal — ?b= is still read out of this browser — but a link
+  // copied from the address bar and passed on can then be recognised as
+  // someone else's and sent to its community page, instead of dead-ending.
+  const withOwner = (url: string) =>
+    user ? `${url}&u=${encodeURIComponent(user.uid)}` : url;
+  const showBuild = (id: string) => router.push(withOwner(`/builds?b=${encodeURIComponent(id)}`));
+  const editBuild = (id: string) =>
+    router.push(withOwner(`/builds?b=${encodeURIComponent(id)}&edit=1`));
   const startNew = () => router.push("/builds?b=new");
 
   const addCustomRelic = (relic: CustomRelic) =>
@@ -298,11 +321,20 @@ export function BuildsManager() {
     // Either the draft hasn't been created yet (a render away) or the id is
     // stale — a deleted build, or a link from another browser, since these
     // builds live in this one.
+    //
+    // A link naming an account that isn't yours is the redirect above on its
+    // way out, so say that rather than flashing "no such build". While auth
+    // is still restoring the owner is unknown, and this assumes it's a shared
+    // link: guessing wrong only costs a beat of "Opening…" before the message
+    // corrects itself, where the reverse flashes an error at every recipient.
+    const sharedLink = !!ownerUid && ownerUid !== user?.uid;
     return (
       <div>
         {storageBanner}
         {isNew ? (
           <p className="font-body text-sm text-parchment-faint">Starting a new build…</p>
+        ) : sharedLink ? (
+          <p className="font-body text-sm text-parchment-faint">Opening the shared build…</p>
         ) : (
           <>
             <button type="button" onClick={showList} className={TOOLBAR_BTN}>
@@ -339,18 +371,24 @@ export function BuildsManager() {
   }
 
   if (openBuild) {
-    // This page is personal — ?b= reads out of *this* browser, so the link
-    // to hand someone is the build's page in the community directory, which
-    // exists only once the build has reached the account. Signed out or
-    // mid-sync the button stays put and says why it can't copy yet.
+    // This page is personal — ?b= reads out of *this* browser, so the link to
+    // hand someone is the build's page in the community directory. Only two
+    // things mean there's no link to copy: no account to address it to, and a
+    // build kept off the profile. Sync state deliberately isn't one of them —
+    // it's a moment in time (every edit passes through "syncing"), while the
+    // link is permanent, so it's said in the tooltip, not enforced.
     const shareUrl = user ? buildShareUrl(user.uid, openBuild.id) : "";
     const shareBlocked = !user
       ? "Sign in to sync your builds — a share link points at your account’s copy."
       : openBuild.public === false
         ? "This build is hidden from your community profile."
-        : syncStatus !== "synced"
-          ? "Saving to your account — the link works once this build has synced."
-          : undefined;
+        : undefined;
+    const shareHint =
+      syncStatus === "error"
+        ? "Copies this build’s community page — but the last sync failed, so it may not open for others yet."
+        : syncStatus === "synced"
+          ? "Copies this build’s community page — anyone can open it, view-only."
+          : "Copies this build’s community page — it opens for others once this build finishes saving to your account.";
     return (
       <div>
         {storageBanner}
@@ -370,7 +408,7 @@ export function BuildsManager() {
             text={buildShareText(openBuild, shareUrl)}
             label="Copy share link"
             disabled={!!shareBlocked}
-            title={shareBlocked ?? "Copies this build’s community page — anyone can open it, view-only."}
+            title={shareBlocked ?? shareHint}
           />
           <button
             type="button"

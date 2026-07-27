@@ -11,7 +11,9 @@ import type { Chalice } from "@/lib/chalices";
 import { CURSE_VOCABULARY, bestLineMatch, parseRelicGroups, screenIsDeep } from "@/lib/effectMatch";
 import {
   RELIC_COLORS,
+  IconButton,
   SlotIconImg,
+  XIcon,
   colorFromRelicName,
   EffectSuggestInput,
   effectVocabulary,
@@ -66,7 +68,11 @@ export function ScreenshotPoolImport({
 
   const parse = async (file: File) => {
     setBusy(true);
+    // A new screenshot replaces the last one outright — leftover cards from a
+    // previous import (added, skipped, or still undecided) are dropped.
     setGroups(null);
+    setColors([]);
+    setAdded([]);
     batch.current = [];
     try {
       const ocr = await ocrLines(file, setStatus);
@@ -139,6 +145,18 @@ export function ScreenshotPoolImport({
     setColors([]);
     setAdded([]);
     batch.current = [];
+  };
+
+  // Reject a single parsed relic — it leaves the review list entirely.
+  const dismissOne = (i: number) => {
+    if (!groups) return;
+    if (groups.length === 1) {
+      clearResults();
+      return;
+    }
+    setGroups(groups.filter((_, j) => j !== i));
+    setColors((cs) => cs.filter((_, j) => j !== i));
+    setAdded((a) => a.filter((_, j) => j !== i));
   };
 
   const addOne = (i: number) => {
@@ -237,7 +255,7 @@ export function ScreenshotPoolImport({
               added[i] ? (
                 <div key={i} className="frame flex items-center gap-2 rounded-md bg-night-900 p-3">
                   <SlotIconImg color={colors[i]} size={18} />
-                  <p className="min-w-0 font-body text-sm">
+                  <p className="min-w-0 flex-1 font-body text-sm">
                     <span className="text-parchment">{g.name || "Unnamed relic"}</span>{" "}
                     {added[i] === "new" ? (
                       <span className="text-gold-bright">added to your pool ✓</span>
@@ -245,17 +263,25 @@ export function ScreenshotPoolImport({
                       <span className="text-parchment-faint">is already in your pool — skipped</span>
                     )}
                   </p>
+                  <IconButton label="Dismiss this card" onClick={() => dismissOne(i)}>
+                    <XIcon />
+                  </IconButton>
                 </div>
               ) : (
                 <div key={i} className="frame rounded-md bg-night-900 p-3">
-                  <p className="flex items-center gap-2 font-body text-sm text-parchment">
-                    {g.name ?? <span className="text-parchment-faint">Unnamed relic</span>}
-                    {g.deep && (
-                      <span className="rounded border border-night-500 px-1 font-body text-[0.6rem] uppercase tracking-wide text-gold-dim">
-                        Deep
-                      </span>
-                    )}
-                  </p>
+                  <div className="flex items-start gap-2">
+                    <p className="flex flex-1 items-center gap-2 font-body text-sm text-parchment">
+                      {g.name ?? <span className="text-parchment-faint">Unnamed relic</span>}
+                      {g.deep && (
+                        <span className="rounded border border-night-500 px-1 font-body text-[0.6rem] uppercase tracking-wide text-gold-dim">
+                          Deep
+                        </span>
+                      )}
+                    </p>
+                    <IconButton label="Reject this relic" onClick={() => dismissOne(i)} danger>
+                      <XIcon />
+                    </IconButton>
+                  </div>
                   <div className="mt-2 space-y-1.5">
                     {g.lines.map((line, li) => (
                       <div key={li} className="space-y-1">
@@ -338,8 +364,13 @@ export function ScreenshotBuildImport({
 
   const parse = async (file: File) => {
     setBusy(true);
+    // A new screenshot replaces the last one outright — leftover cards from a
+    // previous import (applied or still undecided) are dropped. Relics already
+    // applied stay in their slots.
     setGroups(null);
     setChaliceGuess(null);
+    setTargets([]);
+    setApplied([]);
     try {
       const ocr = await ocrLines(file, setStatus);
       const texts = ocr.map((l) => l.text);
@@ -405,6 +436,27 @@ export function ScreenshotBuildImport({
         : gs,
     );
 
+  // Dismiss the parsed cards — relics already applied stay in their slots.
+  const clearResults = () => {
+    setGroups(null);
+    setStatus(null);
+    setChaliceGuess(null);
+    setTargets([]);
+    setApplied([]);
+  };
+
+  // Reject a single parsed relic — it leaves the review list entirely.
+  const dismissOne = (i: number) => {
+    if (!groups) return;
+    if (groups.length === 1) {
+      clearResults();
+      return;
+    }
+    setGroups(groups.filter((_, j) => j !== i));
+    setTargets((t) => t.filter((_, j) => j !== i));
+    setApplied((a) => a.filter((_, j) => j !== i));
+  };
+
   const applyOne = (i: number) => {
     if (!groups || applied[i]) return;
     const g = groups[i];
@@ -443,6 +495,16 @@ export function ScreenshotBuildImport({
             Apply all
           </button>
         )}
+        {groups && groups.length > 0 && (
+          <button
+            type="button"
+            onClick={clearResults}
+            title="Dismiss these results — relics you already applied stay in their slots."
+            className="frame rounded-md bg-night-800 px-3 py-2 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
+          >
+            Clear
+          </button>
+        )}
         {status && <span className="max-w-xs font-body text-xs text-parchment-faint">{status}</span>}
       </div>
       <input
@@ -471,7 +533,9 @@ export function ScreenshotBuildImport({
           >
             Switch chalice
           </button>
-          <span className="font-body text-xs text-parchment-faint">Slotted relics are kept — shuffle them if the colors moved.</span>
+          <span className="font-body text-xs text-parchment-faint">
+            Slotted relics the new sockets accept are kept; the rest are cleared.
+          </span>
         </div>
       )}
       {groups && groups.length > 0 && (
@@ -486,15 +550,24 @@ export function ScreenshotBuildImport({
             const shownColor = targetColor !== "White" ? targetColor : g.color;
             return (
             <div key={i} className="frame rounded-md bg-night-900 p-3">
-              <p className="flex items-center gap-2 font-body text-sm text-parchment">
-                {shownColor && <SlotIconImg color={shownColor} size={18} />}
-                {g.name ?? <span className="text-parchment-faint">Unnamed relic</span>}
-                {g.deep && (
-                  <span className="rounded border border-night-500 px-1 font-body text-[0.6rem] uppercase tracking-wide text-gold-dim">
-                    Deep
-                  </span>
-                )}
-              </p>
+              <div className="flex items-start gap-2">
+                <p className="flex flex-1 items-center gap-2 font-body text-sm text-parchment">
+                  {shownColor && <SlotIconImg color={shownColor} size={18} />}
+                  {g.name ?? <span className="text-parchment-faint">Unnamed relic</span>}
+                  {g.deep && (
+                    <span className="rounded border border-night-500 px-1 font-body text-[0.6rem] uppercase tracking-wide text-gold-dim">
+                      Deep
+                    </span>
+                  )}
+                </p>
+                <IconButton
+                  label={applied[i] ? "Dismiss this card" : "Reject this relic"}
+                  onClick={() => dismissOne(i)}
+                  danger={!applied[i]}
+                >
+                  <XIcon />
+                </IconButton>
+              </div>
               <div className="mt-2 space-y-1.5">
                 {g.lines.map((line, li) => (
                   <div key={li} className="space-y-1">

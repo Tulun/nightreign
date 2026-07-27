@@ -9,11 +9,13 @@ import { useRef, useState } from "react";
 import { characterChalices } from "@/data/chalices";
 import { MultiSelect } from "@/components/MultiSelect";
 import {
+  EMPTY_SLOTS,
   fixedRelics,
   matchFixedByEffects,
   MAX_VARIANTS,
   newId,
   sameCustomRelic,
+  slotsForColors,
   sortedTags,
   variantAt,
   variantCount,
@@ -25,8 +27,9 @@ import {
   type BuildStore,
   type CustomRelic,
   type SlotTriple,
+  type VariantView,
 } from "@/lib/builds";
-import type { Chalice } from "@/lib/chalices";
+import type { Chalice, SlotColor } from "@/lib/chalices";
 import { CustomRelicEditor } from "./CustomRelicEditor";
 import { RelicPicker } from "./RelicBrowser";
 import { ScreenshotBuildImport } from "./ScreenshotImport";
@@ -68,6 +71,8 @@ export function BuildEditor({
   const [variant, setVariant] = useState(0);
   const [newRelicAt, setNewRelicAt] = useState<SlotRef | null>(null);
   const [newTag, setNewTag] = useState("");
+  // Relics a chalice swap emptied out, reported until the next swap.
+  const [cleared, setCleared] = useState<{ chalice: string; count: number } | null>(null);
   const loadout = variantAt(build, variant);
   const chalices = chalicesFor(build.character);
   const chalice = chalices.find((c) => c.name === loadout.chalice) ?? chalices[0];
@@ -77,10 +82,31 @@ export function BuildEditor({
   const switchVariant = (i: number) => {
     setVariant(i);
     setNewRelicAt(null);
+    setCleared(null);
   };
 
-  const setChalice = (name: string) =>
-    setBuild((b) => withVariantPatch(b, variant, { chalice: name }));
+  /** This loadout's slots re-checked against a chalice's socket colors. */
+  const refit = (slots: SlotTriple, colors: readonly SlotColor[]) =>
+    slotsForColors(slots, colors, store);
+
+  // Swapping chalices keeps every relic the new sockets still accept and
+  // empties the ones they don't — the game won't equip a Red relic in a Blue
+  // socket, so carrying it across would only show a build no one can run.
+  const setChalice = (name: string) => {
+    const target = chalices.find((c) => c.name === name);
+    if (!target) return;
+    const normal = refit(loadout.slots, target.slots);
+    const deep = refit(loadout.deepSlots, target.deep);
+    setBuild((b) =>
+      withVariantPatch(b, variant, {
+        chalice: name,
+        slots: normal.slots,
+        deepSlots: deep.slots,
+      }),
+    );
+    const count = normal.cleared + deep.cleared;
+    setCleared(count > 0 ? { chalice: target.name, count } : null);
+  };
 
   // A new variant starts as a copy of the one on screen — variants are
   // takes on the same idea, so tweaking beats starting from empty slots.
@@ -197,6 +223,19 @@ export function BuildEditor({
     setSlot(at, { kind: "custom", id });
   };
 
+  // Emptying a set of slots one Remove at a time is the tedious part of
+  // reworking a build — this does the set in one go. A single relic goes
+  // without asking; more than that is worth confirming.
+  const clearSlots = (deep: boolean) => {
+    const key = deep ? "deepSlots" : "slots";
+    const filled = loadout[key].filter(Boolean).length;
+    if (filled === 0) return;
+    const what = deep ? "Deep of Night slots" : "relic slots";
+    if (filled > 1 && !window.confirm(`Clear all ${filled} relics from the ${what}?`)) return;
+    setBuild((b) => withVariantPatch(b, variant, { [key]: [...EMPTY_SLOTS] as SlotTriple }));
+    setNewRelicAt((cur) => (cur && cur.deep === deep ? null : cur));
+  };
+
   const slotSection = (deep: boolean) => {
     const colors = deep ? chalice.deep : chalice.slots;
     return colors.map((slotColor, index) => {
@@ -279,12 +318,19 @@ export function BuildEditor({
                 onClick={() =>
                   setBuild((b) => {
                     if (b.character === c.name) return b;
-                    const first = chalicesFor(c.name)[0].name;
+                    // Every loadout lands on the new Nightfarer's first
+                    // vessel, so every loadout gets refitted to its sockets.
+                    const first = chalicesFor(c.name)[0];
+                    const onto = (v: VariantView) => ({
+                      chalice: first.name,
+                      slots: refit(v.slots, first.slots).slots,
+                      deepSlots: refit(v.deepSlots, first.deep).slots,
+                    });
                     return {
                       ...b,
                       character: c.name,
-                      chalice: first,
-                      variants: b.variants?.map((v) => ({ ...v, chalice: first })),
+                      ...onto(b),
+                      variants: b.variants?.map((v) => ({ ...v, ...onto(v) })),
                     };
                   })
                 }
@@ -366,7 +412,7 @@ export function BuildEditor({
           placeholder="Build name"
           className="frame w-64 rounded bg-night-900 px-3 py-2 font-display text-lg text-parchment placeholder:text-parchment-faint"
         />
-        {/* Swapping chalices keeps slotted relics — colors are the user's call. */}
+        {/* Swapping chalices keeps every relic the new sockets accept. */}
         <ChalicePicker chalices={chalices} value={chalice} onChange={setChalice} />
         <ScreenshotBuildImport
           chalice={chalice}
@@ -375,6 +421,12 @@ export function BuildEditor({
           onSwapChalice={setChalice}
         />
       </div>
+      {cleared && (
+        <p className="mt-2 font-body text-xs text-red-300/80">
+          {cleared.count === 1 ? "1 relic" : `${cleared.count} relics`} didn’t fit {cleared.chalice}
+          ’s sockets and {cleared.count === 1 ? "was" : "were"} cleared.
+        </p>
+      )}
 
       {/* Tags — pick from your registry, or create one right here. */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -417,11 +469,23 @@ export function BuildEditor({
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section>
-          <h3 className="eyebrow mb-2">Relic Slots</h3>
+          <div className="mb-2 flex items-center gap-2">
+            <h3 className="eyebrow">Relic Slots</h3>
+            <ClearSlotsButton
+              filled={loadout.slots.filter(Boolean).length}
+              onClear={() => clearSlots(false)}
+            />
+          </div>
           <div className="space-y-3">{slotSection(false)}</div>
         </section>
         <section>
-          <h3 className="eyebrow mb-2 text-gold-dim">Deep of Night Slots</h3>
+          <div className="mb-2 flex items-center gap-2">
+            <h3 className="eyebrow text-gold-dim">Deep of Night Slots</h3>
+            <ClearSlotsButton
+              filled={loadout.deepSlots.filter(Boolean).length}
+              onClear={() => clearSlots(true)}
+            />
+          </div>
           <div className="space-y-3">{slotSection(true)}</div>
         </section>
       </div>
@@ -435,6 +499,21 @@ export function BuildEditor({
         </button>
       </div>
     </div>
+  );
+}
+
+/** Empties a whole slot set — hidden until there's something to empty. */
+function ClearSlotsButton({ filled, onClear }: { filled: number; onClear: () => void }) {
+  if (filled === 0) return null;
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      title="Empty every slot in this set"
+      className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted transition-colors hover:border-red-400/60 hover:text-red-300"
+    >
+      Clear relics
+    </button>
   );
 }
 
