@@ -119,7 +119,10 @@ export function BuildCard({
   // Each row pads its shorter slot out to its neighbour's effect count, so a
   // 2-effect relic beside a 3-effect one gains a dashed row instead of the
   // two blocks ending at different heights. Equal counts pad nothing.
-  const lineCount = (slot: SlotTriple[number]) => resolveSlot(slot, relicStore)?.lines.length ?? 0;
+  // An unfilled slot counts as a relic's full three effect rows — every empty
+  // slot then shows the same three dashes, whatever sits beside it, instead of
+  // a row of two empties collapsing to a bare label.
+  const lineCount = (slot: SlotTriple[number]) => resolveSlot(slot, relicStore)?.lines.length ?? 3;
   const rowLines = [0, 1, 2].map((i) =>
     Math.max(lineCount(loadout.slots[i]), lineCount(loadout.deepSlots[i])),
   );
@@ -479,9 +482,8 @@ export function BuildCard({
           the top row, then each row pairs a normal slot with its deep
           neighbor so the two sets stay lined up. Rows size to their own
           content: a grid row is as tall as its taller cell either way, so
-          the pair still aligns, and a row where both slots are empty stays
-          short instead of stretching to a filled row's height. Mobile: the
-          toggle above picks which set shows. */}
+          the pair still aligns. Mobile: the toggle above picks which set
+          shows. */}
       {expanded && (
       <div className="mt-3 sm:grid sm:grid-cols-2 sm:grid-rows-[auto_repeat(3,auto)] sm:gap-x-3">
         <div>

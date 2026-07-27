@@ -19,9 +19,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { characterChalices } from "@/data/chalices";
 import { BuildCard } from "@/components/builds/BuildCard";
 import { CopyLinkButton } from "@/components/builds/shared";
+import { NicknameCard } from "@/components/builds/NicknameCard";
 import { MultiSelect } from "@/components/MultiSelect";
 import { cloudErrorMessage } from "@/lib/cloudRead";
-import { listProfiles, pullCloudStore, setProfileName, type UserProfile } from "@/lib/cloudSync";
+import { listProfiles, pullCloudStore, type UserProfile } from "@/lib/cloudSync";
 import { useAuth } from "@/lib/useAuth";
 import {
   EMPTY_STORE,
@@ -282,12 +283,8 @@ export function CommunityUsers() {
   // requests, and either can fail on its own.
   const [dirError, setDirError] = useState<string | null>(null);
   const [storeError, setStoreError] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
   // Bumped by "Try again", which re-runs both reads.
   const [attempt, setAttempt] = useState(0);
-  // Inline editor for your own directory name (nickname).
-  const [nameDraft, setNameDraft] = useState<string | null>(null);
-  const [savingName, setSavingName] = useState(false);
 
   const retry = () => {
     setDirError(null);
@@ -444,90 +441,18 @@ export function CommunityUsers() {
 
   // ── Directory list ─────────────────────────────────────────────────────
   const me = user ? profiles.find((p) => p.uid === user.uid) : undefined;
-  const saveName = async () => {
-    const name = nameDraft?.trim();
-    if (!user || !name || name === me?.displayName) {
-      setNameDraft(null);
-      return;
-    }
-    setSavingName(true);
-    setSaveError(null);
-    try {
-      await setProfileName(user.uid, name);
-      setProfiles((ps) => ps?.map((p) => (p.uid === user.uid ? { ...p, displayName: name } : p)) ?? ps);
-      setNameDraft(null);
-    } catch (err) {
-      console.error("Saving name failed:", err);
-      // Keep the editor open with the draft intact so the retry is just
-      // pressing Save again.
-      setSaveError("Couldn't save your name — try again in a moment.");
-    } finally {
-      setSavingName(false);
-    }
-  };
 
   return (
     <div>
       {/* Your public identity — swap the Google name for a nickname any time. */}
       {me && (
-        <section className="frame mb-5 flex flex-wrap items-center gap-2 rounded-md bg-night-850 px-4 py-3">
-          {nameDraft === null ? (
-            <>
-              <p className="font-body text-sm text-parchment-muted">
-                You appear here as <span className="font-semibold text-parchment">{me.displayName}</span>.
-              </p>
-              <button
-                type="button"
-                onClick={() => setNameDraft(me.displayName)}
-                className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright"
-              >
-                Change name
-              </button>
-              <span className="basis-full font-body text-xs text-parchment-faint">
-                Pick a nickname if you&rsquo;d rather not show your real name — it replaces it
-                everywhere on the site.
-              </span>
-            </>
-          ) : (
-            <>
-              <label htmlFor="nickname" className="font-body text-sm text-parchment-muted">
-                Shown as
-              </label>
-              <input
-                id="nickname"
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void saveName();
-                  if (e.key === "Escape") setNameDraft(null);
-                }}
-                maxLength={40}
-                autoFocus
-                className="frame w-48 rounded-md border border-night-600 bg-night-900 px-2 py-1 font-body text-sm text-parchment focus:border-gold-dim focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => void saveName()}
-                disabled={savingName || !nameDraft.trim()}
-                className="frame rounded-md bg-night-700 px-3 py-1 font-body text-sm text-gold-bright hover:bg-night-600 disabled:opacity-50"
-              >
-                {savingName ? "Saving…" : "Save"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setNameDraft(null)}
-                className="frame rounded-md bg-night-800 px-3 py-1 font-body text-sm text-parchment-muted hover:text-parchment"
-              >
-                Cancel
-              </button>
-              {saveError && (
-                <span className="basis-full font-body text-xs text-red-200" role="alert">
-                  {saveError}
-                </span>
-              )}
-            </>
-          )}
-        </section>
+        <NicknameCard
+          uid={me.uid}
+          name={me.displayName}
+          onSaved={(name) =>
+            setProfiles((ps) => ps?.map((p) => (p.uid === me.uid ? { ...p, displayName: name } : p)) ?? ps)
+          }
+        />
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">

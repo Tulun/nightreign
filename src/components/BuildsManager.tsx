@@ -32,6 +32,7 @@ import {
 } from "@/lib/builds";
 import { useAuth } from "@/lib/useAuth";
 import { useCloudSync } from "@/lib/useCloudSync";
+import { MyNickname } from "@/components/builds/NicknameCard";
 
 /** Shared look for the toolbar above a single build. */
 const TOOLBAR_BTN =
@@ -500,6 +501,10 @@ export function BuildsManager() {
   return (
     <div>
       {storageBanner}
+
+      {/* The name your synced builds appear under, editable here as well as
+          in the community directory. Nothing to show when signed out. */}
+      <MyNickname synced={syncStatus === "synced"} />
 
       {/* Builds / My Relics view switch */}
       <div className="mb-5 flex flex-wrap gap-1 border-b border-night-700">

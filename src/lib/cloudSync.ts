@@ -86,6 +86,16 @@ export async function ensureProfileName(user: User): Promise<void> {
   await setDoc(profileDoc(user.uid), { displayName: defaultHandle(user.uid) }, { merge: true });
 }
 
+/**
+ * The site-visible name on one profile, or null when it has none yet (a
+ * brand-new account, before the sign-in sync runs ensureProfileName).
+ */
+export async function getProfileName(uid: string): Promise<string | null> {
+  const snap = await cloudRead(() => getDoc(profileDoc(uid)));
+  const name = snap.data()?.displayName;
+  return typeof name === "string" && name.trim() ? name : null;
+}
+
 /** Set the site-visible name (nickname) shown in the directory. */
 export async function setProfileName(uid: string, name: string): Promise<void> {
   await setDoc(profileDoc(uid), { displayName: name.trim() }, { merge: true });
