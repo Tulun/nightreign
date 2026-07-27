@@ -56,6 +56,9 @@ export function iconSampleRegion(bbox: IconBox, imageHeight: number): SampleRegi
  * no glow that stands out), return null rather than their cast.
  */
 export function dominantIconColor(rgba: Uint8ClampedArray | Uint8Array): RelicColor | null {
+  // (Gray-world white balance was tried here and rejected: correcting the
+  // blue cast turns background noise into confident Yellow/Green verdicts —
+  // it traded 0 wrong answers for 12 on the eval set.)
   const vivid: { h: number; w: number }[] = [];
   let sampled = 0;
   for (let i = 0; i < rgba.length; i += 16) {

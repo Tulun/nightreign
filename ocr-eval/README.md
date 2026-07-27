@@ -14,9 +14,10 @@ npm run ocr:eval
 ```
 
 The first run downloads tesseract's English model (~11 MB) into
-`ocr-eval/.cache/` and OCRs every screenshot (a few seconds each). OCR results
-are cached by image content, so later runs are near-instant — perfect for
-tuning the matching side of the pipeline.
+`ocr-eval/.cache/` and OCRs every screenshot — two passes each (the original
+and a contrast-boosted copy compete on parse quality), so expect several
+seconds per image. OCR results are cached by image content, so later runs are
+near-instant — perfect for tuning the matching side of the pipeline.
 
 Options (note the `--` that separates npm's args from the script's):
 

@@ -15,7 +15,9 @@ import {
   CURSE_VOCABULARY,
   DEEP_EFFECT_VOCABULARY,
   NORMAL_EFFECT_VOCABULARY,
+  pickBestOcrPass,
 } from "@/lib/effectMatch";
+import { grayInvertStretch } from "@/lib/imagePrep";
 import { lineFromWords } from "@/lib/ocrClean";
 import { dominantIconColor, iconSampleRegion } from "@/lib/relicColor";
 
@@ -172,28 +174,63 @@ export interface OcrLine {
   bbox: { x0: number; y0: number; x1: number; y1: number } | null;
 }
 
+/** The file drawn to a canvas with its pixels run through grayInvertStretch. */
+async function preprocessedCopy(file: File): Promise<Blob | null> {
+  try {
+    const bmp = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    canvas.width = bmp.width;
+    canvas.height = bmp.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(bmp, 0, 0);
+    const pixels = ctx.getImageData(0, 0, bmp.width, bmp.height);
+    const prepped = grayInvertStretch({ width: bmp.width, height: bmp.height, data: pixels.data });
+    pixels.data.set(prepped.data);
+    ctx.putImageData(pixels, 0, 0);
+    return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+  } catch {
+    return null;
+  }
+}
+
 /** Run OCR on an image and return its text lines (with positions when available). */
 export async function ocrLines(file: File, onProgress: (status: string) => void): Promise<OcrLine[]> {
   onProgress("Loading OCR engine (downloads a few MB on first use)…");
   const { createWorker } = await import("tesseract.js");
+  let pass = 1;
   const worker = await createWorker("eng", 1, {
     logger: (m: { status: string; progress: number }) => {
       if (m.status === "recognizing text") {
-        onProgress(`Reading screenshot… ${Math.round(m.progress * 100)}%`);
+        onProgress(`Reading screenshot (pass ${pass}/2)… ${Math.round(m.progress * 100)}%`);
       }
     },
   });
-  const { data } = await worker.recognize(file, {}, { text: true, blocks: true });
-  await worker.terminate();
-  const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
-    (b.paragraphs ?? []).flatMap((p) =>
-      (p.lines ?? []).map((l) =>
-        lineFromWords(l.words ?? [], { text: l.text ?? "", bbox: l.bbox ?? null }),
+  const extract = (data: Awaited<ReturnType<typeof worker.recognize>>["data"]): OcrLine[] => {
+    const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
+      (b.paragraphs ?? []).flatMap((p) =>
+        (p.lines ?? []).map((l) =>
+          lineFromWords(l.words ?? [], { text: l.text ?? "", bbox: l.bbox ?? null }),
+        ),
       ),
-    ),
-  );
-  if (lines.length > 0) return lines;
-  return data.text.split("\n").map((text) => ({ text, bbox: null }));
+    );
+    if (lines.length > 0) return lines;
+    return data.text.split("\n").map((text) => ({ text, bbox: null }));
+  };
+  try {
+    const { data } = await worker.recognize(file, {}, { text: true, blocks: true });
+    const pass1 = extract(data);
+    // Second pass on a contrast-boosted copy — it recovers lines the
+    // original misses on some captures and wrecks others, so the passes
+    // compete on parse quality and the better one wins per image.
+    pass = 2;
+    const prepped = await preprocessedCopy(file);
+    if (!prepped) return pass1;
+    const { data: data2 } = await worker.recognize(prepped, {}, { text: true, blocks: true });
+    return pickBestOcrPass([pass1, extract(data2)]);
+  } finally {
+    await worker.terminate();
+  }
 }
 
 /**
