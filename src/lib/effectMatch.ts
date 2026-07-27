@@ -395,6 +395,12 @@ export interface ParsedRelicGroup {
   deep: boolean;
 }
 
+/** A line fed to the parser: bare text, or text with its screen position. */
+export interface ParseLine {
+  text: string;
+  bbox?: { x0: number; y0: number; x1: number; y1: number } | null;
+}
+
 /**
  * Re-join effects that wrap onto a second screen line ("[Raider] Damage
  * taken while using Character Skill" / "improves attack power and stamina").
@@ -403,17 +409,17 @@ export interface ParsedRelicGroup {
  * whole effects and their neighbors are left untouched. Relic-name lines
  * head their groups and are never absorbed into a join.
  */
-function joinWrappedLines(lines: string[]): string[] {
+function joinWrappedLines(lines: ParseLine[]): ParseLine[] {
   const match = (s: string) => (s.length < 8 ? null : bestEffectMatch(s, 0.3));
   // A demerit renders as its own line under its effect — joining across it
   // would swallow the curse, so a curse-matching half is never joined.
   const isCurseLine = (m: EffectMatch | null) => m != null && m.score >= 0.55 && CURSE_EFFECTS.has(m.effect);
-  const out: string[] = [];
+  const out: ParseLine[] = [];
   for (let i = 0; i < lines.length; i++) {
-    const a = lines[i].trim();
-    const b = i + 1 < lines.length ? lines[i + 1].trim() : "";
+    const a = lines[i].text.trim();
+    const b = i + 1 < lines.length ? lines[i + 1].text.trim() : "";
     if (!b || (a.length >= 8 && bestMatch(a, RELIC_NAME_VOCABULARY, 0.62))) {
-      out.push(a);
+      out.push({ ...lines[i], text: a });
       continue;
     }
     const mA = match(a);
@@ -425,10 +431,17 @@ function joinWrappedLines(lines: string[]): string[] {
       mJ.score > (mA?.score ?? 0) && mJ.score > (mB?.score ?? 0) &&
       !isCurseLine(mA) && !isCurseLine(mB)
     ) {
-      out.push(joined);
+      const ba = lines[i].bbox;
+      const bb = lines[i + 1].bbox;
+      out.push({
+        text: joined,
+        bbox: ba && bb
+          ? { x0: Math.min(ba.x0, bb.x0), y0: Math.min(ba.y0, bb.y0), x1: Math.max(ba.x1, bb.x1), y1: Math.max(ba.y1, bb.y1) }
+          : ba ?? bb,
+      });
       i++;
     } else {
-      out.push(a);
+      out.push({ ...lines[i], text: a });
     }
   }
   return out;
@@ -437,10 +450,14 @@ function joinWrappedLines(lines: string[]): string[] {
 /**
  * Cluster OCR lines into relic groups. A line matching a relic name starts a
  * new group; effect lines attach to the current group (max 3 per relic, as in
- * game). A curse line is the demerit of the effect directly above it. Returns
- * at most `maxGroups` groups that contain something.
+ * game). A curse line is the demerit of the effect directly above it. When
+ * line positions are provided, a vertical gap much taller than a line also
+ * starts a new group — relic blocks are visibly separated on every screen,
+ * so one unreadable line can't spill the next relic's effects into this one.
+ * Returns at most `maxGroups` groups that contain something.
  */
-export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGroup[] {
+export function parseRelicGroups(lines: (string | ParseLine)[], maxGroups = 6): ParsedRelicGroup[] {
+  const norm: ParseLine[] = lines.map((l) => (typeof l === "string" ? { text: l } : l));
   const groups: ParsedRelicGroup[] = [];
   let current: ParsedRelicGroup | null = null;
   const push = (g: ParsedRelicGroup) => {
@@ -448,22 +465,43 @@ export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGro
     return g;
   };
 
-  for (const raw of joinWrappedLines(lines)) {
-    const line = raw.trim();
+  const joined = joinWrappedLines(norm);
+  // Learn the screen's line pitch from the lines that will actually parse:
+  // the median vertical step between consecutive recognized lines. Block
+  // boundaries then show up as steps far larger than the pitch.
+  const acceptedYs = joined
+    .filter((l) => {
+      const t = l.text.trim();
+      if (t.length < 8 || !l.bbox) return false;
+      return bestMatch(t, RELIC_NAME_VOCABULARY, 0.62) !== null || bestEffectMatch(t, 0.5) !== null;
+    })
+    .map((l) => l.bbox!.y0)
+    .sort((a, b) => a - b);
+  const steps = acceptedYs.slice(1).map((y, i) => y - acceptedYs[i]).filter((s) => s > 0).sort((a, b) => a - b);
+  const pitch = steps[steps.length >> 1] ?? 0;
+  let prevBox: ParseLine["bbox"] = null;
+
+  for (const pl of joined) {
+    const line = pl.text.trim();
     if (line.length < 8) continue;
     const asName = bestMatch(line, RELIC_NAME_VOCABULARY, 0.62);
     const asEffect = bestEffectMatch(line, 0.5);
     if (asName && (!asEffect || asName.score >= asEffect.score)) {
       current = push({ name: asName.effect, effects: [], demerits: [], deep: /^deep /i.test(asName.effect) });
+      prevBox = pl.bbox ?? prevBox;
     } else if (asEffect) {
       // A demerit rides with the effect above it, not as its own line.
       if (CURSE_EFFECTS.has(asEffect.effect)) {
         if (current && current.effects.length > 0) {
           current.demerits[current.effects.length - 1] = asEffect.effect;
+          prevBox = pl.bbox ?? prevBox;
         }
         continue;
       }
-      if (!current || current.effects.length >= 3) {
+      // A step of ~2 pitches is a missing line inside the block; a relic
+      // boundary is a clearly larger jump.
+      const step = pl.bbox && prevBox && pitch > 0 ? pl.bbox.y0 - prevBox.y0 : 0;
+      if (!current || current.effects.length >= 3 || (current.effects.length > 0 && step > 2.4 * pitch)) {
         current = push({ name: null, effects: [], demerits: [], deep: false });
       }
       // Skip duplicates within a group (OCR sometimes doubles lines).
@@ -471,6 +509,7 @@ export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGro
         current.effects.push(asEffect);
         current.demerits.push(null);
       }
+      prevBox = pl.bbox ?? prevBox;
     }
   }
   for (const g of groups) {
@@ -489,4 +528,24 @@ export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGro
  */
 export function screenIsDeep(groups: ParsedRelicGroup[]): boolean {
   return groups.filter((g) => g.deep).length * 2 > groups.length;
+}
+
+/**
+ * Given the line lists of several OCR passes over the same screenshot (the
+ * original plus preprocessed copies), keep the pass whose lines parse into
+ * the most confidently-read relics. Preprocessing helps some captures and
+ * wrecks others, so the passes compete on results per image rather than one
+ * transform being trusted globally. Ties keep the earliest pass.
+ */
+export function pickBestOcrPass<T extends ParseLine>(passes: T[][]): T[] {
+  let best: { lines: T[]; quality: number } | null = null;
+  for (const lines of passes) {
+    const groups = parseRelicGroups(lines);
+    const quality =
+      groups.flatMap((g) => g.effects).filter((e) => e.score >= 0.85).length +
+      groups.reduce((n, g) => n + g.demerits.filter(Boolean).length, 0) +
+      groups.filter((g) => g.name !== null).length;
+    if (!best || quality > best.quality) best = { lines, quality };
+  }
+  return best?.lines ?? [];
 }

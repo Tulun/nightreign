@@ -17,10 +17,12 @@ import {
   EFFECT_VOCABULARY,
   RELIC_NAME_VOCABULARY,
   parseRelicGroups,
+  pickBestOcrPass,
   resolveEffectAlias,
   screenIsDeep,
   similarity,
 } from "@/lib/effectMatch";
+import { grayInvertStretch } from "@/lib/imagePrep";
 import { lineFromWords } from "@/lib/ocrClean";
 import {
   colorFromRelicName,
@@ -36,7 +38,7 @@ const CACHE_DIR = path.join(ROOT, "ocr-eval", ".cache");
 
 // Bump when OCR settings change (engine params, preprocessing, tesseract
 // version) so cached OCR results from the old settings are not reused.
-const OCR_CONFIG_KEY = "tesseract7-eng-v4-segment-bbox";
+const OCR_CONFIG_KEY = "tesseract7-eng-v6-best-pass";
 
 // ── Expected-output fixture format ───────────────────────────────────────
 
@@ -117,16 +119,29 @@ interface OcrLine {
 type Worker = import("tesseract.js").Worker;
 
 async function ocrLines(worker: Worker, imagePath: string): Promise<OcrLine[]> {
-  const { data } = await worker.recognize(imagePath, {}, { text: true, blocks: true });
-  const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
-    (b.paragraphs ?? []).flatMap((p) =>
-      (p.lines ?? []).map((l) =>
-        lineFromWords(l.words ?? [], { text: l.text ?? "", bbox: l.bbox ?? null }),
+  const extract = (data: Awaited<ReturnType<Worker["recognize"]>>["data"]): OcrLine[] => {
+    const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
+      (b.paragraphs ?? []).flatMap((p) =>
+        (p.lines ?? []).map((l) =>
+          lineFromWords(l.words ?? [], { text: l.text ?? "", bbox: l.bbox ?? null }),
+        ),
       ),
-    ),
-  );
-  if (lines.length > 0) return lines;
-  return data.text.split("\n").map((text) => ({ text, bbox: null }));
+    );
+    if (lines.length > 0) return lines;
+    return data.text.split("\n").map((text) => ({ text, bbox: null }));
+  };
+  const { data } = await worker.recognize(imagePath, {}, { text: true, blocks: true });
+  const pass1 = extract(data);
+  // Second pass on a contrast-boosted copy — it recovers lines the original
+  // misses on some captures and wrecks others, so the two passes compete on
+  // parse quality and the better one wins per image.
+  const img = decodeImage(imagePath);
+  if (!img) return pass1;
+  const prepped = grayInvertStretch(img);
+  const png = new PNG({ width: prepped.width, height: prepped.height });
+  png.data = Buffer.from(prepped.data);
+  const { data: data2 } = await worker.recognize(PNG.sync.write(png), {}, { text: true, blocks: true });
+  return pickBestOcrPass([pass1, extract(data2)]);
 }
 
 /** OCR with a disk cache — tuning the matcher shouldn't re-OCR every run. */
@@ -409,8 +424,7 @@ async function main() {
     }
 
     // Same pipeline as ScreenshotImport.tsx.
-    const texts = lines.map((l) => l.text);
-    const groups = parseRelicGroups(texts);
+    const groups = parseRelicGroups(lines);
     const allDeep = screenIsDeep(groups);
     const img = decodeImage(imagePath);
     const colors = groups.map((g) => {

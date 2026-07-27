@@ -34,11 +34,13 @@ export function MyRelics({
   onAdd,
   onUpdate,
   onDelete,
+  onRemoveMany,
 }: {
   relics: CustomRelic[];
   onAdd: (r: CustomRelic) => void;
   onUpdate: (r: CustomRelic) => void;
   onDelete: (id: string) => void;
+  onRemoveMany: (ids: string[]) => void;
 }) {
   const [colorFilter, setColorFilter] = useState<CustomRelic["color"] | null>(null);
   const [kindFilter, setKindFilter] = useState<"normal" | "deep" | null>(null);
@@ -85,7 +87,7 @@ export function MyRelics({
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {newRelicButton}
-          <ScreenshotPoolImport relics={relics} onAdd={onAdd} />
+          <ScreenshotPoolImport relics={relics} onAdd={onAdd} onRemove={onRemoveMany} />
         </div>
         {creator}
       </div>
@@ -114,7 +116,7 @@ export function MyRelics({
           beneath them without disturbing the filter row. */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {newRelicButton}
-        <ScreenshotPoolImport relics={relics} onAdd={onAdd} />
+        <ScreenshotPoolImport relics={relics} onAdd={onAdd} onRemove={onRemoveMany} />
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <button

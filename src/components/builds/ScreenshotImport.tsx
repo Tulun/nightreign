@@ -49,9 +49,12 @@ interface EditableGroup {
 export function ScreenshotPoolImport({
   relics,
   onAdd,
+  onRemove,
 }: {
   relics: CustomRelic[];
   onAdd: (r: CustomRelic) => void;
+  /** Removes relics by id — a new screenshot supersedes the last one's adds. */
+  onRemove: (ids: string[]) => void;
 }) {
   const [status, setStatus] = useState<string | null>(null);
   const [groups, setGroups] = useState<EditableGroup[] | null>(null);
@@ -66,11 +69,13 @@ export function ScreenshotPoolImport({
   const parse = async (file: File) => {
     setBusy(true);
     setGroups(null);
-    batch.current = [];
+    // Relics added from the previous screenshot — a successful new parse
+    // replaces them. Keep the batch as-is until then, so a failed read
+    // leaves the old screenshot's relics tracked (and in the pool).
+    const priorBatch = batch.current.map((r) => r.id);
     try {
       const ocr = await ocrLines(file, setStatus);
-      const texts = ocr.map((l) => l.text);
-      const found = parseRelicGroups(texts);
+      const found = parseRelicGroups(ocr);
       // A screenshot shows either normal relics or Deep relics — never both.
       const allDeep = screenIsDeep(found);
       const guessed = await guessGroupColors(
@@ -97,9 +102,20 @@ export function ScreenshotPoolImport({
       );
       setColors(found.map((g, i) => colorFromRelicName(g.name) ?? guessed[i] ?? "Red"));
       setAdded(found.map(() => null));
+      // A new screenshot supersedes the previous one: drop only the relics
+      // the last screenshot added, and only once this parse actually found
+      // relics (a failed read shouldn't cost the user anything). Relics
+      // saved any other way are untouched.
+      const cleared = found.length > 0 && priorBatch.length > 0;
+      if (found.length > 0) batch.current = [];
+      if (cleared) onRemove(priorBatch);
       setStatus(
         found.length > 0
-          ? `Found ${found.length} relic${found.length === 1 ? "" : "s"}${
+          ? `${
+              cleared
+                ? `Removed the ${priorBatch.length} relic${priorBatch.length === 1 ? "" : "s"} from your last screenshot. `
+                : ""
+            }Found ${found.length} relic${found.length === 1 ? "" : "s"}${
               allDeep ? " — these look like Deep relics" : ""
             }. Check each color, edit any line, and add.`
           : "No relics recognized. Try a sharper screenshot of the relic list.",
@@ -319,7 +335,7 @@ export function ScreenshotBuildImport({
       // A build holds exactly three relics per set, so anything past the
       // third group is OCR spillover (a doubled line, the selected relic's
       // detail pane) — never offer a 4th relic for 3 slots.
-      const found = parseRelicGroups(texts).slice(0, 3);
+      const found = parseRelicGroups(ocr).slice(0, 3);
       const seen = bestLineMatch(texts, chalices.map((c) => c.name));
       setChaliceGuess(seen?.effect ?? null);
       // A screenshot shows either normal relics or Deep relics — never both.

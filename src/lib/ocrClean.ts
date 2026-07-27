@@ -17,6 +17,12 @@ export interface OcrWord {
   bbox: OcrBox | null;
 }
 
+/** A cleaned OCR line: text plus the box of the words it was kept from. */
+export interface OcrLine {
+  text: string;
+  bbox: OcrBox | null;
+}
+
 /**
  * Rebuild a line from its words, keeping only the segment that holds the
  * real text. On full-screen captures the relic grid sits beside the effect
