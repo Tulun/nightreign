@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SlotSection } from "@/components/builds/PartyPlanner";
+import { cloudErrorMessage } from "@/lib/cloudRead";
 import { listProfiles } from "@/lib/cloudSync";
 import { useAuth } from "@/lib/useAuth";
 import {
@@ -33,7 +34,8 @@ function PartiesList({ ownUid }: { ownUid: string | null }) {
   const router = useRouter();
   const [parties, setParties] = useState<PartySummary[] | null>(null);
   const [names, setNames] = useState<Map<string, string>>(new Map());
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,7 +44,7 @@ function PartiesList({ ownUid }: { ownUid: string | null }) {
       .then((p) => !cancelled && setParties(p))
       .catch((err) => {
         console.error("Loading published parties failed:", err);
-        if (!cancelled) setError(true);
+        if (!cancelled) setError(cloudErrorMessage(err, "the published parties"));
       });
     listProfiles()
       .then((ps) => !cancelled && setNames(new Map(ps.map((p) => [p.uid, p.displayName]))))
@@ -50,7 +52,7 @@ function PartiesList({ ownUid }: { ownUid: string | null }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   // Open a published party in the planner. Warn first if that would
   // replace a never-published draft (a published draft is safe to drop —
@@ -90,9 +92,20 @@ function PartiesList({ ownUid }: { ownUid: string | null }) {
 
   if (error) {
     return (
-      <p className="font-body text-sm text-parchment-faint">
-        Couldn&rsquo;t load published parties — try again in a moment.
-      </p>
+      <div className="frame rounded-md border border-red-900/60 bg-night-850 px-4 py-3" role="alert">
+        <p className="font-body text-sm text-red-200">{error}</p>
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            setParties(null);
+            setAttempt((a) => a + 1);
+          }}
+          className="mt-2 rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright"
+        >
+          Try again
+        </button>
+      </div>
     );
   }
   if (!parties) {
@@ -174,7 +187,10 @@ export function PartiesDirectory() {
   const sharedId = useSearchParams().get("id");
   // A shared party (from ?id= or a #p= link), shown read-only.
   const [shared, setShared] = useState<{ party: Party; ownerUid: string | null } | null>(null);
+  // The link resolved to nothing (stale/deleted/truncated) …
   const [linkError, setLinkError] = useState(false);
+  // … versus the read itself failing, which is a different message.
+  const [linkFetchError, setLinkFetchError] = useState<string | null>(null);
   const [deletingShared, setDeletingShared] = useState(false);
   // The local planner draft (for the continue-draft link and overwrite
   // confirms). Null until read client-side.
@@ -206,7 +222,7 @@ export function PartiesDirectory() {
       })
       .catch((err) => {
         console.error("Loading shared party failed:", err);
-        if (!cancelled) setLinkError(true);
+        if (!cancelled) setLinkFetchError(cloudErrorMessage(err, "that party"));
       });
     return () => {
       cancelled = true;
@@ -214,13 +230,14 @@ export function PartiesDirectory() {
   }, [sharedId]);
 
   // Waiting on the ?id= fetch.
-  if (sharedId && !shared && !linkError) {
+  if (sharedId && !shared && !linkError && !linkFetchError) {
     return <p className="font-body text-sm text-parchment-faint">Loading party…</p>;
   }
 
   const dismissShared = () => {
     setShared(null);
     setLinkError(false);
+    setLinkFetchError(null);
     if (sharedId) router.replace("/builds/party");
   };
 
@@ -367,6 +384,11 @@ export function PartiesDirectory() {
         <p className="mb-4 font-body text-sm text-red-200">
           That party link couldn&rsquo;t be opened — it may be stale, deleted, or truncated when
           pasted.
+        </p>
+      )}
+      {linkFetchError && (
+        <p className="mb-4 font-body text-sm text-red-200" role="alert">
+          {linkFetchError}
         </p>
       )}
       <div className="mb-6 flex flex-wrap items-center gap-3">

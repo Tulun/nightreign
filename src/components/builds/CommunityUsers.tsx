@@ -15,6 +15,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { characterChalices } from "@/data/chalices";
 import { BuildCard } from "@/components/builds/BuildCard";
 import { MultiSelect } from "@/components/MultiSelect";
+import { cloudErrorMessage } from "@/lib/cloudRead";
 import { listProfiles, pullCloudStore, setProfileName, type UserProfile } from "@/lib/cloudSync";
 import { useAuth } from "@/lib/useAuth";
 import {
@@ -38,6 +39,28 @@ function Avatar({ name, size }: { name: string; size: number }) {
     >
       <span className="font-display font-bold text-gold">{name.charAt(0).toUpperCase()}</span>
     </span>
+  );
+}
+
+/**
+ * A read that failed, with a way to try again. Firestore reads are given a
+ * deadline (see cloudRead) precisely so this can replace an endless
+ * "Loading…" — a blocked connection otherwise hangs forever in silence.
+ */
+function LoadError({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div className="frame rounded-md border border-red-900/60 bg-night-850 px-4 py-3" role="alert">
+      <p className="font-body text-sm text-red-200">{message}</p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-2 rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright"
+        >
+          Try again
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -187,10 +210,24 @@ export function CommunityUsers() {
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   // The selected user's synced store; their builds resolve against it.
   const [selectedStore, setSelectedStore] = useState<BuildStore | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Failures are per-read: the directory and the selected store are separate
+  // requests, and either can fail on its own.
+  const [dirError, setDirError] = useState<string | null>(null);
+  const [storeError, setStoreError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // Bumped by "Try again", which re-runs both reads.
+  const [attempt, setAttempt] = useState(0);
   // Inline editor for your own directory name (nickname).
   const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [savingName, setSavingName] = useState(false);
+
+  const retry = () => {
+    setDirError(null);
+    setStoreError(null);
+    setProfiles(null);
+    setSelectedStore(null);
+    setAttempt((a) => a + 1);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -198,30 +235,33 @@ export function CommunityUsers() {
       .then((p) => !cancelled && setProfiles(p))
       .catch((err) => {
         console.error("Loading user directory failed:", err);
-        if (!cancelled) setError("Couldn't load the user directory — try again in a moment.");
+        if (!cancelled) setDirError(cloudErrorMessage(err, "the user directory"));
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [attempt]);
 
   useEffect(() => {
     if (!selectedUid) return;
     let cancelled = false;
     setSelectedStore(null);
+    setStoreError(null);
     pullCloudStore(selectedUid)
       .then((s) => !cancelled && setSelectedStore(s ?? EMPTY_STORE))
       .catch((err) => {
         console.error("Loading user's builds failed:", err);
-        if (!cancelled) setError("Couldn't load this user's builds — try again in a moment.");
+        if (!cancelled) setStoreError(cloudErrorMessage(err, "these builds"));
       });
     return () => {
       cancelled = true;
     };
-  }, [selectedUid]);
+  }, [selectedUid, attempt]);
 
-  if (error) {
-    return <p className="font-body text-sm text-red-200">{error}</p>;
+  // The directory carries every profile name, so nothing below can render
+  // without it — but the message says why, and the retry re-runs the read.
+  if (dirError) {
+    return <LoadError message={dirError} onRetry={retry} />;
   }
 
   if (!profiles) {
@@ -246,7 +286,9 @@ export function CommunityUsers() {
           </Link>
           {build && <CopyLinkButton url={buildShareUrl(selectedUid, selectedBuildId)} />}
         </div>
-        {!selectedStore ? (
+        {storeError ? (
+          <LoadError message={storeError} onRetry={retry} />
+        ) : !selectedStore ? (
           <p className="font-body text-sm text-parchment-faint">Loading build…</p>
         ) : !build ? (
           <p className="font-body text-sm text-parchment-faint">
@@ -298,7 +340,9 @@ export function CommunityUsers() {
                 </p>
               </div>
             </div>
-            {!selectedStore ? (
+            {storeError ? (
+              <LoadError message={storeError} onRetry={retry} />
+            ) : !selectedStore ? (
               <p className="font-body text-sm text-parchment-faint">Loading builds…</p>
             ) : (
               <ProfileBuilds key={selectedUid} store={selectedStore} uid={selectedUid} />
@@ -318,13 +362,16 @@ export function CommunityUsers() {
       return;
     }
     setSavingName(true);
+    setSaveError(null);
     try {
       await setProfileName(user.uid, name);
       setProfiles((ps) => ps?.map((p) => (p.uid === user.uid ? { ...p, displayName: name } : p)) ?? ps);
       setNameDraft(null);
     } catch (err) {
       console.error("Saving name failed:", err);
-      setError("Couldn't save your name — try again in a moment.");
+      // Keep the editor open with the draft intact so the retry is just
+      // pressing Save again.
+      setSaveError("Couldn't save your name — try again in a moment.");
     } finally {
       setSavingName(false);
     }
@@ -384,6 +431,11 @@ export function CommunityUsers() {
               >
                 Cancel
               </button>
+              {saveError && (
+                <span className="basis-full font-body text-xs text-red-200" role="alert">
+                  {saveError}
+                </span>
+              )}
             </>
           )}
         </section>

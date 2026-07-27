@@ -23,6 +23,7 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
+import { cloudRead } from "@/lib/cloudRead";
 import { normalizeStore, sortedTags, type BuildStore } from "@/lib/builds";
 
 /** Directory entry for the community users page. */
@@ -91,9 +92,12 @@ export async function pushCloudStore(user: User, store: BuildStore): Promise<voi
   ]);
 }
 
-/** Read an account's store; null when absent or unparseable. */
+/**
+ * Read an account's store; null when absent or unparseable. Throws
+ * CloudReadError when the backend can't be reached (see cloudRead).
+ */
 export async function pullCloudStore(uid: string): Promise<BuildStore | null> {
-  const snap = await getDoc(storeDoc(uid));
+  const snap = await cloudRead(() => getDoc(storeDoc(uid)));
   const raw = snap.data()?.store;
   if (typeof raw !== "string") return null;
   try {
@@ -105,7 +109,7 @@ export async function pullCloudStore(uid: string): Promise<BuildStore | null> {
 
 /** Every signed-up account, most recently synced first. */
 export async function listProfiles(): Promise<UserProfile[]> {
-  const snap = await getDocs(collection(db, "users"));
+  const snap = await cloudRead(() => getDocs(collection(db, "users")));
   return snap.docs
     .map((d) => {
       const data = d.data() as {

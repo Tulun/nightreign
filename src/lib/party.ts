@@ -17,6 +17,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { cloudRead } from "@/lib/cloudRead";
 import {
   compressJson,
   decompressJson,
@@ -191,7 +192,7 @@ export interface PartySummary {
 
 /** Every published party, most recently updated first. */
 export async function listParties(): Promise<PartySummary[]> {
-  const snap = await getDocs(collection(db, "parties"));
+  const snap = await cloudRead(() => getDocs(collection(db, "parties")));
   return snap.docs
     .map((d) => {
       const data = d.data() as {
@@ -217,7 +218,7 @@ export async function listParties(): Promise<PartySummary[]> {
 
 /** Read a published party; null when absent or unparseable. */
 export async function fetchParty(id: string): Promise<CloudParty | null> {
-  const snap = await getDoc(doc(db, "parties", id));
+  const snap = await cloudRead(() => getDoc(doc(db, "parties", id)));
   const data = snap.data();
   if (!data || typeof data.party !== "string") return null;
   try {
