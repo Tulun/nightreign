@@ -96,6 +96,14 @@ export function BuildCard({
     ? { ...store, customRelics: [...store.customRelics, ...build.relics] }
     : store;
 
+  // Each row pads its shorter slot out to its neighbour's effect count, so a
+  // 2-effect relic beside a 3-effect one gains a dashed row instead of the
+  // two blocks ending at different heights. Equal counts pad nothing.
+  const lineCount = (slot: SlotTriple[number]) => resolveSlot(slot, relicStore)?.lines.length ?? 0;
+  const rowLines = [0, 1, 2].map((i) =>
+    Math.max(lineCount(build.slots[i]), hasDeep ? lineCount(build.deepSlots[i]) : 0),
+  );
+
   const renderSlots = (slots: SlotTriple, colors?: readonly SlotColor[]) =>
     slots.map((slot, i) => {
       const resolved = resolveSlot(slot, relicStore);
@@ -106,7 +114,17 @@ export function BuildCard({
               <RelicImg src={resolved.icon} alt={resolved.name} size={48} />
               <div className="min-w-0">
                 <p className="font-body text-base text-parchment">{resolved.name}</p>
-                <EffectLines lines={resolved.lines} size="sm" className="mt-0.5 space-y-0.5" />
+                {/* spread + pad: every row runs at the pitch of an effect with
+                    a demerit under it, and short slots gain dashed rows, so a
+                    normal slot and its Deep of Night neighbour read as one
+                    block. Only where the card shows both (hasDeep). */}
+                <EffectLines
+                  lines={resolved.lines}
+                  size="sm"
+                  className="mt-0.5 space-y-0.5"
+                  spread={hasDeep}
+                  pad={hasDeep ? rowLines[i] : 0}
+                />
               </div>
             </>
           ) : (
@@ -332,10 +350,19 @@ export function BuildCard({
       )}
       {/* Desktop: a two-column grid — tags and the Deep of Night header share
           the top row, then each row pairs a normal slot with its deep
-          neighbor so the two sets stay lined up. Mobile: the toggle above
-          picks which set shows. */}
+          neighbor so the two sets stay lined up. The three slot rows are
+          explicitly equal (1fr each, so they all take the tallest one's
+          height): a demerit on one side would otherwise stretch just that
+          row and leave the columns reading as two unrelated lists. Mobile:
+          the toggle above picks which set shows. */}
       {expanded && (
-      <div className={`mt-3 ${hasDeep ? "sm:grid sm:grid-cols-2 sm:gap-x-3" : ""}`}>
+      <div
+        className={`mt-3 ${
+          hasDeep
+            ? "sm:grid sm:grid-cols-2 sm:grid-rows-[auto_repeat(3,minmax(0,1fr))] sm:gap-x-3"
+            : ""
+        }`}
+      >
         <div>
           {(build.tags?.length ?? 0) > 0 && (
             <div className="flex flex-wrap gap-1 pb-2">
@@ -356,14 +383,16 @@ export function BuildCard({
             Deep of Night
           </p>
         )}
+        {/* Tighter gaps on mobile: one set shows at a time there, so the
+            slots only have to read as separate, not line up with anything. */}
         {[0, 1, 2].map((i) => (
           <Fragment key={i}>
-            <div className={`${i < 2 ? "pb-4" : ""} ${view === "deep" ? "hidden sm:block" : ""}`}>
+            <div className={`${i < 2 ? "pb-3 sm:pb-4" : ""} ${view === "deep" ? "hidden sm:block" : ""}`}>
               {normalRows[i]}
             </div>
             {hasDeep && (
               <div
-                className={`${i < 2 ? "pb-4" : ""} sm:border-l sm:border-night-700 sm:pl-4 ${
+                className={`${i < 2 ? "pb-3 sm:pb-4" : ""} sm:border-l sm:border-night-700 sm:pl-4 ${
                   view === "normal" ? "hidden sm:block" : ""
                 }`}
               >

@@ -97,6 +97,8 @@ export function EffectLines({
   className,
   size = "xs",
   divided = false,
+  spread = false,
+  pad = 0,
 }: {
   lines: ResolvedLine[];
   className?: string;
@@ -104,6 +106,22 @@ export function EffectLines({
   size?: "xs" | "sm" | "base";
   /** Rule between lines, so each effect reads separately at a glance. */
   divided?: boolean;
+  /**
+   * Hold every line to the pitch of an effect *with* a demerit under it,
+   * desktop only. Used where two slot lists sit side by side: a Deep of Night
+   * relic carries a demerit under most effects, so its lines run at roughly
+   * double pitch and a plain list beside it reads as a different rhythm.
+   * Matching the pitch lines the two columns up effect-for-effect. Narrow
+   * screens show one list at a time, where compact beats aligned.
+   */
+  spread?: boolean;
+  /**
+   * Pad the list out to this many rows with an icon-sized blank and a dash,
+   * the way the game shows an effect slot a relic hasn't filled. Desktop
+   * only, and decorative — it's what makes two slot blocks the same height
+   * even when one relic carries fewer effects than its neighbour.
+   */
+  pad?: number;
 }) {
   const sizeClass =
     size === "base" ? "text-base leading-relaxed" : size === "sm" ? "text-sm leading-relaxed" : "text-xs leading-snug";
@@ -116,7 +134,10 @@ export function EffectLines({
       {lines.map((l, i) => (
         <li
           key={`${l.text}-${i}`}
-          className={`font-body text-parchment-muted ${sizeClass} ${divided ? "py-1.5 first:pt-0 last:pb-0" : ""}`}
+          className={`font-body text-parchment-muted ${sizeClass} ${divided ? "py-1.5 first:pt-0 last:pb-0" : ""} ${
+            // Two text-sm/leading-relaxed lines plus the demerit's own gap.
+            spread ? "sm:min-h-[3rem]" : ""
+          }`}
         >
           <span className="flex items-start gap-1.5">
             <EffectIcon name={l.text} size={iconSize} />
@@ -133,6 +154,26 @@ export function EffectLines({
               {gameEffectName(l.demerit)}
             </span>
           )}
+        </li>
+      ))}
+      {/* Unfilled effect slots: the icon's footprint and a dash, as the game
+          shows them. Hidden on mobile, where one slot set shows at a time and
+          there is nothing to line up with. */}
+      {Array.from({ length: Math.max(0, pad - lines.length) }).map((_, i) => (
+        <li
+          key={`pad-${i}`}
+          aria-hidden="true"
+          className={`hidden font-body text-parchment-faint sm:list-item ${sizeClass} ${
+            spread ? "sm:min-h-[3rem]" : ""
+          }`}
+        >
+          <span className="flex items-start gap-1.5">
+            <span
+              className="mt-[0.15em] shrink-0 rounded-sm border border-night-600/70"
+              style={{ width: iconSize, height: iconSize }}
+            />
+            <span>—</span>
+          </span>
         </li>
       ))}
     </ul>
