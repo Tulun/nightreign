@@ -186,20 +186,6 @@ export function BuildsManager() {
     }));
   };
 
-  // Batch removal without a confirm — the screenshot importer uses this to
-  // drop the previous screenshot's relics when a new one loads. Builds keep
-  // their fixed relics; affected custom slots go empty, like deletion.
-  const removeCustomRelics = (ids: string[]) => {
-    const drop = new Set(ids);
-    const strip = (slots: SlotTriple): SlotTriple =>
-      slots.map((s) => (s?.kind === "custom" && drop.has(s.id) ? null : s)) as SlotTriple;
-    update((s) => ({
-      ...s,
-      customRelics: s.customRelics.filter((r) => !drop.has(r.id)),
-      builds: s.builds.map((b) => ({ ...b, slots: strip(b.slots), deepSlots: strip(b.deepSlots) })),
-    }));
-  };
-
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(store, null, 2)], { type: "application/json" });
@@ -412,7 +398,6 @@ export function BuildsManager() {
           onAdd={addCustomRelic}
           onUpdate={updateCustomRelic}
           onDelete={deleteCustomRelic}
-          onRemoveMany={removeCustomRelics}
         />
       )}
 

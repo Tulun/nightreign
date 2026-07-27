@@ -49,12 +49,9 @@ interface EditableGroup {
 export function ScreenshotPoolImport({
   relics,
   onAdd,
-  onRemove,
 }: {
   relics: CustomRelic[];
   onAdd: (r: CustomRelic) => void;
-  /** Removes relics by id — a new screenshot supersedes the last one's adds. */
-  onRemove: (ids: string[]) => void;
 }) {
   const [status, setStatus] = useState<string | null>(null);
   const [groups, setGroups] = useState<EditableGroup[] | null>(null);
@@ -69,10 +66,7 @@ export function ScreenshotPoolImport({
   const parse = async (file: File) => {
     setBusy(true);
     setGroups(null);
-    // Relics added from the previous screenshot — a successful new parse
-    // replaces them. Keep the batch as-is until then, so a failed read
-    // leaves the old screenshot's relics tracked (and in the pool).
-    const priorBatch = batch.current.map((r) => r.id);
+    batch.current = [];
     try {
       const ocr = await ocrLines(file, setStatus);
       const found = parseRelicGroups(ocr);
@@ -102,20 +96,9 @@ export function ScreenshotPoolImport({
       );
       setColors(found.map((g, i) => colorFromRelicName(g.name) ?? guessed[i] ?? "Red"));
       setAdded(found.map(() => null));
-      // A new screenshot supersedes the previous one: drop only the relics
-      // the last screenshot added, and only once this parse actually found
-      // relics (a failed read shouldn't cost the user anything). Relics
-      // saved any other way are untouched.
-      const cleared = found.length > 0 && priorBatch.length > 0;
-      if (found.length > 0) batch.current = [];
-      if (cleared) onRemove(priorBatch);
       setStatus(
         found.length > 0
-          ? `${
-              cleared
-                ? `Removed the ${priorBatch.length} relic${priorBatch.length === 1 ? "" : "s"} from your last screenshot. `
-                : ""
-            }Found ${found.length} relic${found.length === 1 ? "" : "s"}${
+          ? `Found ${found.length} relic${found.length === 1 ? "" : "s"}${
               allDeep ? " — these look like Deep relics" : ""
             }. Check each color, edit any line, and add.`
           : "No relics recognized. Try a sharper screenshot of the relic list.",
@@ -147,6 +130,15 @@ export function ScreenshotPoolImport({
     setGroups((gs) =>
       gs ? gs.map((g) => ({ ...g, deep, demerits: deep ? g.demerits : ["", "", ""] })) : gs,
     );
+
+  // Dismiss the parsed cards — relics already added stay in the pool.
+  const clearResults = () => {
+    setGroups(null);
+    setStatus(null);
+    setColors([]);
+    setAdded([]);
+    batch.current = [];
+  };
 
   const addOne = (i: number) => {
     if (!groups || added[i]) return;
@@ -228,69 +220,89 @@ export function ScreenshotPoolImport({
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              onClick={clearResults}
+              title="Dismiss these results — relics you already added stay in your pool."
+              className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
+            >
+              Clear
+            </button>
           </div>
           <div className="grid w-full gap-2 lg:grid-cols-2 xl:grid-cols-3">
-            {groups.map((g, i) => (
-              <div key={i} className="frame rounded-md bg-night-900 p-3">
-                <p className="flex items-center gap-2 font-body text-sm text-parchment">
-                  {g.name ?? <span className="text-parchment-faint">Unnamed relic</span>}
-                  {g.deep && (
-                    <span className="rounded border border-night-500 px-1 font-body text-[0.6rem] uppercase tracking-wide text-gold-dim">
-                      Deep
-                    </span>
-                  )}
-                </p>
-                <div className="mt-2 space-y-1.5">
-                  {g.lines.map((line, li) => (
-                    <div key={li} className="space-y-1">
-                      <input
-                        type="text"
-                        value={line}
-                        list={effectListId(g.deep)}
-                        disabled={!!added[i]}
-                        onChange={(e) => setLine(i, li, e.target.value)}
-                        placeholder={`Effect ${li + 1}${li === 0 ? "" : " (optional)"}`}
-                        className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint disabled:opacity-60"
-                      />
-                      {g.deep && line.trim() !== "" && (
+            {groups.map((g, i) =>
+              // A handled relic collapses to its outcome — the editable card
+              // has done its job, and the message says what happened to it.
+              added[i] ? (
+                <div key={i} className="frame flex items-center gap-2 rounded-md bg-night-900 p-3">
+                  <SlotIconImg color={colors[i]} size={18} />
+                  <p className="min-w-0 font-body text-sm">
+                    <span className="text-parchment">{g.name || "Unnamed relic"}</span>{" "}
+                    {added[i] === "new" ? (
+                      <span className="text-gold-bright">added to your pool ✓</span>
+                    ) : (
+                      <span className="text-parchment-faint">is already in your pool — skipped</span>
+                    )}
+                  </p>
+                </div>
+              ) : (
+                <div key={i} className="frame rounded-md bg-night-900 p-3">
+                  <p className="flex items-center gap-2 font-body text-sm text-parchment">
+                    {g.name ?? <span className="text-parchment-faint">Unnamed relic</span>}
+                    {g.deep && (
+                      <span className="rounded border border-night-500 px-1 font-body text-[0.6rem] uppercase tracking-wide text-gold-dim">
+                        Deep
+                      </span>
+                    )}
+                  </p>
+                  <div className="mt-2 space-y-1.5">
+                    {g.lines.map((line, li) => (
+                      <div key={li} className="space-y-1">
                         <input
                           type="text"
-                          value={g.demerits[li] ?? ""}
-                          list="effect-vocab-curse"
-                          disabled={!!added[i]}
-                          onChange={(e) => setDemerit(i, li, e.target.value)}
-                          placeholder="Demerit (optional)"
-                          className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40 disabled:opacity-60"
+                          value={line}
+                          list={effectListId(g.deep)}
+                          onChange={(e) => setLine(i, li, e.target.value)}
+                          placeholder={`Effect ${li + 1}${li === 0 ? "" : " (optional)"}`}
+                          className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint"
                         />
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-2 flex items-center gap-2">
-                  <SlotIconImg color={colors[i]} size={18} />
-                  <select
-                    value={colors[i]}
-                    disabled={!!added[i]}
-                    onChange={(e) =>
-                      setColors((cs) => cs.map((c, j) => (j === i ? (e.target.value as CustomRelic["color"]) : c)))
-                    }
-                    className="frame rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment disabled:opacity-60"
-                  >
-                    {RELIC_COLORS.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                        {g.deep && line.trim() !== "" && (
+                          <input
+                            type="text"
+                            value={g.demerits[li] ?? ""}
+                            list="effect-vocab-curse"
+                            onChange={(e) => setDemerit(i, li, e.target.value)}
+                            placeholder="Demerit (optional)"
+                            className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40"
+                          />
+                        )}
+                      </div>
                     ))}
-                  </select>
-                  <button
-                    type="button"
-                    disabled={!!added[i]}
-                    onClick={() => addOne(i)}
-                    className="frame rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600 disabled:opacity-50"
-                  >
-                    {added[i] === "new" ? "Added ✓" : added[i] === "dupe" ? "Already in pool" : "Add to pool"}
-                  </button>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <SlotIconImg color={colors[i]} size={18} />
+                    <select
+                      value={colors[i]}
+                      onChange={(e) =>
+                        setColors((cs) => cs.map((c, j) => (j === i ? (e.target.value as CustomRelic["color"]) : c)))
+                      }
+                      className="frame rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment"
+                    >
+                      {RELIC_COLORS.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => addOne(i)}
+                      className="frame rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600"
+                    >
+                      Add to pool
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         </>
       )}
