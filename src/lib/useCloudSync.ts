@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import {
+  FAKE_CLOUD,
   ensureProfileName,
   mergeWithCloud,
   pullCloudStore,
@@ -21,7 +22,26 @@ import {
   useAuth,
   watchCloudStore,
 } from "@/lib/cloud";
+import { hasSeededStore } from "@/lib/devSeed";
 import type { BuildStore } from "@/lib/builds";
+
+/**
+ * Dev-only backstop: a store loaded from ?seed= must never be merged into a
+ * real account and pushed. The seeder already refuses to run while signed in,
+ * but the other order — seed, then sign in — is only caught here.
+ *
+ * NODE_ENV folds to "production" in any deployed build, so this whole check
+ * (and the import above) drops out of what visitors run. The stub backend is
+ * exempt: pushing fixtures into it is the point.
+ */
+function seededStoreBlocksSync(): boolean {
+  if (process.env.NODE_ENV === "production" || FAKE_CLOUD) return false;
+  if (!hasSeededStore()) return false;
+  console.warn(
+    "[dev] Seeded store detected — cloud sync is off so fixtures can't reach a real account. Load ?seed=empty to clear it.",
+  );
+  return true;
+}
 
 export type SyncStatus = "local" | "syncing" | "synced" | "error";
 
@@ -77,6 +97,7 @@ export function useCloudSync(
   // Sign-in merge, once per uid, as soon as the local store has loaded.
   useEffect(() => {
     if (!user || !store || syncedUid === user.uid) return;
+    if (seededStoreBlocksSync()) return; // dev fixtures stay off the account
     let cancelled = false;
     setStatus("syncing");
     (async () => {

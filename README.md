@@ -22,11 +22,19 @@ http://localhost:3000/builds?seed=demo     sample builds, relics, tags, variants
 http://localhost:3000/builds?seed=empty    wipe back to the first-run state
 ```
 
-The page reloads with the parameter stripped. Two guards, both in
-`src/lib/devSeed.ts`: seeding only works on localhost (the deployed site
-ignores the parameter, and the fixture is dynamically imported so it never
-reaches visitors' bundles), and it refuses while signed in — a seeded store
-would sync straight into the account. Refusals show as a notice in the corner.
+The page reloads with the parameter stripped. Three guards keep fixtures away
+from a real account:
+
+- Seeding only works on localhost — the deployed site ignores the parameter
+  entirely, and never even fetches the fixture chunk.
+- It refuses while signed in, since the seeded store would sync straight into
+  the account. Refusals show as a notice in the corner.
+- A seeded store is marked (`nightreign-dev-seeded`), and `useCloudSync`
+  refuses to sync while that marker is set — that covers the other order,
+  seed first and sign in after. `?seed=empty` clears the marker, and the
+  stub backend is exempt. Dev builds only: the check compiles out of the
+  deployed site.
+
 Fixtures live in `src/data/devSeeds.ts`; every seeded id starts with `seed-`.
 
 ### Fake cloud (testing signed-in and multi-user flows)

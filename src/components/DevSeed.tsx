@@ -63,6 +63,24 @@ export function DevSeed() {
 
     let cancelled = false;
     void (async () => {
+      // Seeding under a signed-in stub session is a race we can't win: the
+      // sync this page already started resolves after the fixture write and
+      // saves the pre-seed store back over it. So sign out and come straight
+      // back — the parameters stay in the URL and the fresh, session-less
+      // page does the actual seeding.
+      if (FAKE_CLOUD && name) {
+        const fake = await import("@/lib/fakeCloud");
+        if (cancelled) return;
+        if (fake.signedInUid()) {
+          await fake.signOutUser();
+          window.location.reload();
+          return;
+        }
+      }
+
+      // Store first: with no session there is nothing to race, and a later
+      // ?cloud=signin then merges *the fixture* into the account, which is
+      // the order that makes the merge worth testing.
       if (name) {
         const { devSeeds, devSeedNames } = await import("@/data/devSeeds");
         if (cancelled) return;

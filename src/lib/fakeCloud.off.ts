@@ -28,6 +28,7 @@ export {
   off as fetchParty,
   off as publishParty,
   off as deleteParty,
+  off as signedInUid,
   off as resetFakeCloud,
   off as setScenario,
   off as remoteEdit,

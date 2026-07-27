@@ -178,6 +178,11 @@ function fakeUser(uid: string, displayName: string | null): User {
   return { uid, displayName, email: null, photoURL: null, isAnonymous: false } as unknown as User;
 }
 
+/** Who the stub currently has signed in, if anyone. */
+export function signedInUid(): string | null {
+  return read().signedInUid;
+}
+
 function currentUser(): User | null {
   const s = read();
   if (!s.signedInUid) return null;
