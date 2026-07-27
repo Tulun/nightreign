@@ -18,6 +18,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BuildCard } from "@/components/builds/BuildCard";
 import { PartyBuildPicker } from "@/components/builds/PartyBuildPicker";
+import { CharacterImg } from "@/components/builds/shared";
 import { EMPTY_STORE, type Build } from "@/lib/builds";
 import { fetchParty, publishParty, useAuth } from "@/lib/cloud";
 import {
@@ -43,19 +44,22 @@ function Avatar({ name, size }: { name: string; size: number }) {
 }
 
 /**
- * One party slot: the member's build as a collapsed, expandable card, or an
- * invitation to fill the slot. Read-only mode (shared view) hides controls.
+ * One party slot: the member's build, open to its relics, or an invitation to
+ * fill the slot. Read-only mode (shared view) hides controls.
  */
-export function SlotSection({
+function SlotSection({
   index,
   member,
   readOnly,
+  nightView,
   onChoose,
   onClear,
 }: {
   index: number;
   member: PartyMember | null;
   readOnly: boolean;
+  /** Which slot set the whole party is showing — see PartySlotGrid. */
+  nightView: "normal" | "deep";
   onChoose?: () => void;
   onClear?: () => void;
 }) {
@@ -71,9 +75,12 @@ export function SlotSection({
     ? { ...member.build.build, id: `party-${index}`, updatedAt: 0, relics: member.build.relics }
     : null;
   return (
-    <section className="frame rounded-md bg-night-850 p-4">
+    <section className="frame flex flex-col rounded-md bg-night-850 p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <p className="eyebrow">Slot {index + 1}</p>
+        {/* Who this slot fields, before whose build it is — the Nightfarer is
+            what the rest of the party is read against. */}
+        {build && <CharacterImg name={build.character} size={32} />}
         {member && (
           <span className="flex min-w-0 items-center gap-2">
             <Avatar name={member.ownerName} size={26} />
@@ -121,18 +128,85 @@ export function SlotSection({
         )}
       </div>
       {build ? (
-        <BuildCard build={build} store={EMPTY_STORE} expandable />
+        <BuildCard
+          build={build}
+          store={EMPTY_STORE}
+          expandable
+          defaultExpanded
+          nightView={nightView}
+        />
       ) : (
+        /* flex-1: beside two filled columns, an open slot is the whole
+           column's height rather than a short box floating at its top. */
         <button
           type="button"
           onClick={onChoose}
           disabled={readOnly}
-          className="w-full rounded-md border-2 border-dashed border-night-600 px-4 py-8 font-body text-sm text-parchment-muted transition-colors hover:border-gold-dim hover:text-gold-bright disabled:cursor-default disabled:hover:border-night-600 disabled:hover:text-parchment-muted"
+          className="w-full flex-1 rounded-md border-2 border-dashed border-night-600 px-4 py-8 font-body text-sm text-parchment-muted transition-colors hover:border-gold-dim hover:text-gold-bright disabled:cursor-default disabled:hover:border-night-600 disabled:hover:text-parchment-muted"
         >
           {readOnly ? "Empty slot" : "+ Choose a build for this slot"}
         </button>
       )}
     </section>
+  );
+}
+
+/**
+ * The party's three slots: a row of columns on a desktop screen, stacked
+ * below that. A column is too narrow for a build card's side-by-side slot
+ * sets, and six relics per member would bury the party anyway — so one
+ * toggle up top picks the set all three members show, which is also the
+ * comparison that matters (the party's normal run, or its Deep of Night one).
+ */
+export function PartySlotGrid({
+  slots,
+  readOnly,
+  onChoose,
+  onClear,
+}: {
+  slots: PartySlots;
+  readOnly: boolean;
+  onChoose?: (index: number) => void;
+  onClear?: (index: number) => void;
+}) {
+  const [view, setView] = useState<"normal" | "deep">("normal");
+  // Nothing to toggle to if no one in the party runs Deep of Night relics.
+  const anyDeep = slots.some((m) => m?.build.build.deepSlots.some(Boolean));
+  return (
+    <div>
+      {anyDeep && (
+        <div className="mb-3 flex items-center gap-1" role="group" aria-label="Which relics to show">
+          {(["normal", "deep"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              aria-pressed={view === v}
+              className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+                view === v
+                  ? "bg-night-700 text-gold-bright"
+                  : "bg-night-900 text-parchment-muted hover:text-parchment"
+              }`}
+            >
+              {v === "normal" ? "Normal" : "Deep of Night"}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="grid gap-4 lg:grid-cols-3">
+        {slots.map((member, i) => (
+          <SlotSection
+            key={i}
+            index={i}
+            member={member}
+            readOnly={readOnly}
+            nightView={view}
+            onChoose={onChoose && (() => onChoose(i))}
+            onClear={onClear && (() => onClear(i))}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -322,18 +396,12 @@ export function PartyPlanner() {
         </span>
       </div>
 
-      <div className="grid gap-4">
-        {party.slots.map((member, i) => (
-          <SlotSection
-            key={i}
-            index={i}
-            member={member}
-            readOnly={false}
-            onChoose={() => setPickerSlot(i)}
-            onClear={() => setSlot(i, null)}
-          />
-        ))}
-      </div>
+      <PartySlotGrid
+        slots={party.slots}
+        readOnly={false}
+        onChoose={setPickerSlot}
+        onClear={(i) => setSlot(i, null)}
+      />
 
       {pickerSlot !== null && (
         <PartyBuildPicker

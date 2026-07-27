@@ -88,6 +88,8 @@ export function BuildCard({
   onEdit,
   onDelete,
   expandable = false,
+  defaultExpanded = false,
+  nightView,
   variantIdx,
   onVariantChange,
 }: {
@@ -100,14 +102,33 @@ export function BuildCard({
   onEdit?: () => void;
   onDelete?: () => void;
   expandable?: boolean;
+  /** Start an expandable card open — for views that are about the relics. */
+  defaultExpanded?: boolean;
+  /**
+   * Which slot set to show, when the caller owns that choice: the card then
+   * shows one set at a time at every width, single-column, and its own
+   * toggle steps aside. Party columns are too narrow for the side-by-side
+   * grid, and there the choice belongs to the party, not to one member.
+   */
+  nightView?: "normal" | "deep";
   /** Which loadout to show, when the caller owns that choice. */
   variantIdx?: number;
   /** Told which tab was clicked — with or without `variantIdx`. */
   onVariantChange?: (i: number) => void;
 }) {
-  const [expanded, setExpanded] = useState(!expandable);
-  // Mobile-only: which slot set the card shows (desktop always shows both).
-  const [view, setView] = useState<"normal" | "deep">("normal");
+  const [expanded, setExpanded] = useState(!expandable || defaultExpanded);
+  // Mobile-only: which slot set the card shows (desktop shows both, unless
+  // the caller has taken that choice over with nightView).
+  const [ownView, setOwnView] = useState<"normal" | "deep">("normal");
+  const single = nightView !== undefined;
+  const view = nightView ?? ownView;
+  // A set the card isn't showing: gone entirely when only one shows at a
+  // time, otherwise gone on mobile and back on the desktop two-column grid.
+  const hideUnless = (set: "normal" | "deep") =>
+    view === set ? "" : single ? "hidden" : "hidden sm:block";
+  // Two-column separators belong to the grid; single-column has no left edge
+  // to draw against.
+  const deepRule = single ? "" : "sm:border-l sm:border-night-700 sm:pl-4";
   // Which loadout variant the card shows — builds can carry a few takes on
   // the same idea, tabbed through here. A controlled variantIdx wins, and
   // then the tabs only report the click; the caller does the switching.
@@ -163,14 +184,16 @@ export function BuildCard({
                 {/* spread + pad: every row runs at the pitch of an effect with
                     a demerit under it, and short slots gain dashed rows, so a
                     normal slot and its Deep of Night neighbour read as one
-                    block. Only where the card shows both (hasDeep). */}
+                    block. Only where the card shows both (hasDeep), never
+                    where it shows one set at a time — there they'd only be
+                    height, and a party column has none to spare. */}
                 <EffectLines
                   lines={resolved.lines}
                   states={states[i]}
                   size="sm"
                   className="mt-0.5 space-y-0.5"
-                  spread={hasDeep}
-                  pad={rowLines[i]}
+                  spread={hasDeep && !single}
+                  pad={single ? 0 : rowLines[i]}
                 />
               </div>
             </>
@@ -185,8 +208,8 @@ export function BuildCard({
                   lines={[]}
                   size="sm"
                   className="mt-0.5 space-y-0.5"
-                  spread={hasDeep}
-                  pad={rowLines[i]}
+                  spread={hasDeep && !single}
+                  pad={single ? 0 : rowLines[i]}
                 />
               </div>
             </>
@@ -483,14 +506,15 @@ export function BuildCard({
         </div>
       )}
       {/* Mobile-only view toggle — the stacked sections mean a lot of
-          scrolling on small screens, so show one set at a time there. */}
-      {expanded && hasDeep && (
+          scrolling on small screens, so show one set at a time there. With
+          nightView the caller is already running a toggle of its own. */}
+      {expanded && hasDeep && !single && (
         <div className="mt-3 flex items-center gap-1 sm:hidden">
           {(["normal", "deep"] as const).map((v) => (
             <button
               key={v}
               type="button"
-              onClick={() => setView(v)}
+              onClick={() => setOwnView(v)}
               aria-pressed={view === v}
               className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
                 view === v
@@ -507,10 +531,14 @@ export function BuildCard({
           the top row, then each row pairs a normal slot with its deep
           neighbor so the two sets stay lined up. Rows size to their own
           content: a grid row is as tall as its taller cell either way, so
-          the pair still aligns. Mobile: the toggle above picks which set
-          shows. */}
+          the pair still aligns. Mobile (and any nightView caller): the
+          toggle above picks which set shows. */}
       {expanded && (
-      <div className="mt-3 sm:grid sm:grid-cols-2 sm:grid-rows-[auto_repeat(3,auto)] sm:gap-x-3">
+      <div
+        className={`mt-3 ${
+          single ? "" : "sm:grid sm:grid-cols-2 sm:grid-rows-[auto_repeat(3,auto)] sm:gap-x-3"
+        }`}
+      >
         <div>
           {(build.tags?.length ?? 0) > 0 && (
             <div className="flex flex-wrap gap-1 pb-2">
@@ -525,25 +553,17 @@ export function BuildCard({
         {/* Without deep relics there's no mobile toggle, so `view` stays
             "normal" and this whole side is desktop-only — a phone doesn't
             scroll past three empty slots. */}
-        <p
-          className={`eyebrow pb-2 text-gold-dim sm:border-l sm:border-night-700 sm:pl-4 ${
-            view === "normal" ? "hidden sm:block" : ""
-          }`}
-        >
+        <p className={`eyebrow pb-2 text-gold-dim ${deepRule} ${hideUnless("deep")}`}>
           Deep of Night
         </p>
         {/* Tighter gaps on mobile: one set shows at a time there, so the
             slots only have to read as separate, not line up with anything. */}
         {[0, 1, 2].map((i) => (
           <Fragment key={i}>
-            <div className={`${i < 2 ? "pb-3 sm:pb-4" : ""} ${view === "deep" ? "hidden sm:block" : ""}`}>
+            <div className={`${i < 2 ? "pb-3 sm:pb-4" : ""} ${hideUnless("normal")}`}>
               {normalRows[i]}
             </div>
-            <div
-              className={`${i < 2 ? "pb-3 sm:pb-4" : ""} sm:border-l sm:border-night-700 sm:pl-4 ${
-                view === "normal" ? "hidden sm:block" : ""
-              }`}
-            >
+            <div className={`${i < 2 ? "pb-3 sm:pb-4" : ""} ${deepRule} ${hideUnless("deep")}`}>
               {deepRows[i]}
             </div>
           </Fragment>

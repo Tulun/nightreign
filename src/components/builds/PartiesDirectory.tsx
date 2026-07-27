@@ -5,13 +5,14 @@
 //  Firestore) with a button through to the planner (/builds/party/plan)
 //  for assembling your own. Share links land here too — ?id= for published
 //  docs, #p= for self-contained hash links — and render the party
-//  read-only with the option to load it into your planner.
+//  read-only; your own parties carry Edit and Delete from here.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { SlotSection } from "@/components/builds/PartyPlanner";
+import { PartySlotGrid } from "@/components/builds/PartyPlanner";
+import { CharacterImg } from "@/components/builds/shared";
 import { cloudErrorMessage } from "@/lib/cloudRead";
 import {
   deleteParty,
@@ -137,9 +138,27 @@ function PartiesList({ ownUid }: { ownUid: string | null }) {
                   <span className="ml-1.5 font-body text-xs font-normal text-gold-dim">yours</span>
                 )}
               </span>
-              <span className="block font-body text-xs text-parchment-faint">
-                {p.roster.map((r) => r ?? "open slot").join(" / ") || "Empty party"}
-              </span>
+              {/* The roster as faces rather than a run of names — an open
+                  slot keeps its place as an empty frame, so a party of two
+                  still reads as a party of three with a gap in it. */}
+              {p.roster.length > 0 ? (
+                <span className="mt-1.5 flex items-center gap-1.5">
+                  {p.roster.map((r, i) =>
+                    r ? (
+                      <CharacterImg key={i} name={r} size={30} />
+                    ) : (
+                      <span
+                        key={i}
+                        title="Open slot"
+                        className="block shrink-0 rounded border border-dashed border-night-600"
+                        style={{ width: 30, height: 30 }}
+                      />
+                    ),
+                  )}
+                </span>
+              ) : (
+                <span className="block font-body text-xs text-parchment-faint">Empty party</span>
+              )}
               {p.blurb && (
                 <span className="mt-1 block font-body text-xs italic text-parchment-muted">
                   {p.blurb}
@@ -242,23 +261,6 @@ export function PartiesDirectory() {
   // A never-published draft is the only thing an overwrite actually loses.
   const draftUnsaved = draftCount > 0 && !draft?.id;
 
-  // Copy the shared party into the local draft and open the planner. Keep
-  // the doc id only if it's yours — then Save updates the same link.
-  // Someone else's party becomes a fresh draft you own.
-  const loadShared = () => {
-    if (!shared) return;
-    if (
-      draftUnsaved &&
-      !window.confirm("Load this shared party into your planner? Your unsaved draft will be replaced.")
-    ) {
-      return;
-    }
-    const mine = !!user && shared.ownerUid === user.uid;
-    const { id: _dropped, ...rest } = shared.party;
-    saveParty(mine ? shared.party : rest);
-    router.push("/builds/party/plan");
-  };
-
   // ── Own-party controls on the shared view ──────────────────────────────
   const sharedIsMine = !!shared && !!user && shared.ownerUid === user.uid;
 
@@ -320,10 +322,10 @@ export function PartiesDirectory() {
             <span className="font-body text-xs text-parchment-faint">
               {sharedIsMine
                 ? "This is your published party."
-                : `A party of ${shared.party.slots.filter(Boolean).length} — load it into your planner to tweak or re-share it.`}
+                : `A party of ${shared.party.slots.filter(Boolean).length}.`}
             </span>
             <div className="ml-auto flex gap-2">
-              {sharedIsMine ? (
+              {sharedIsMine && (
                 <>
                   <button
                     type="button"
@@ -341,14 +343,6 @@ export function PartiesDirectory() {
                     {deletingShared ? "Deleting…" : "Delete"}
                   </button>
                 </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={loadShared}
-                  className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
-                >
-                  Load into planner
-                </button>
               )}
               <button
                 type="button"
@@ -365,11 +359,7 @@ export function PartiesDirectory() {
             </p>
           )}
         </section>
-        <div className="grid gap-4">
-          {shared.party.slots.map((member, i) => (
-            <SlotSection key={i} index={i} member={member} readOnly />
-          ))}
-        </div>
+        <PartySlotGrid slots={shared.party.slots} readOnly />
       </div>
     );
   }

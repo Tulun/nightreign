@@ -9,7 +9,10 @@
 //                   a build only the cloud has, and a NEWER copy of a build
 //                   the device also holds — so the sign-in merge in
 //                   useCloudSync actually has to resolve something.
-//    fake-vanguard  a well-stocked neighbour to browse and pick from.
+//    fake-vanguard  a well-stocked neighbour to browse and pick from. Its
+//                   Guardian build is the one that runs Deep of Night
+//                   relics, curses and all — the rest of the stub data is
+//                   normal-set only, so anything Deep goes through it.
 //    fake-solo      a one-build account.
 //    fake-quiet     signed up, never synced: no store, updatedAt null.
 //    fake-broken    reads of this account's store always time out, so the
@@ -36,6 +39,25 @@ const relic = (
   effects: string[],
 ): CustomRelic => ({ id, name, color, effects, demerits: effects.map(() => ""), deep: false });
 
+/**
+ * A Deep of Night relic, written as [effect, curse] pairs — its lines can
+ * carry a demerit under them, which is what the two slot sets are drawn to
+ * different pitches for. "" leaves a line clean, as the game does.
+ */
+const deepRelic = (
+  id: string,
+  color: CustomRelic["color"],
+  name: string,
+  lines: [string, string][],
+): CustomRelic => ({
+  id,
+  name,
+  color,
+  effects: lines.map(([effect]) => effect),
+  demerits: lines.map(([, curse]) => curse),
+  deep: true,
+});
+
 const custom = (id: string): SlotTriple[number] => ({ kind: "custom", id });
 
 function build(
@@ -45,6 +67,8 @@ function build(
   chalice: string,
   slots: SlotTriple,
   updatedAt: number,
+  /** Deep of Night slots — most fixtures run the normal set only. */
+  deepSlots: SlotTriple = [null, null, null],
 ): Build {
   return {
     id,
@@ -52,7 +76,7 @@ function build(
     character,
     chalice,
     slots,
-    deepSlots: [null, null, null],
+    deepSlots,
     notes: "",
     updatedAt,
   };
@@ -125,6 +149,10 @@ export function fakeFixtures(now: number): FakeFixtures {
 
   const vanguard = store(
     [
+      // The one fixture that runs a Deep of Night set, so the party view's
+      // Normal / Deep toggle and the build card's two-column pairing have
+      // something to show. Guardian's Chalice goes Red / Blue / Yellow in
+      // Deep, and the third slot stays open the way the normal set's does.
       build(
         "van-build-guardian",
         "Guardian — Wall",
@@ -132,6 +160,7 @@ export function fakeFixtures(now: number): FakeFixtures {
         "Guardian's Chalice",
         [custom("van-relic-blue"), custom("van-relic-yellow"), null],
         now - 2 * DAY,
+        [custom("van-deep-red"), custom("van-deep-blue"), null],
       ),
       build(
         "van-build-raider",
@@ -159,6 +188,15 @@ export function fakeFixtures(now: number): FakeFixtures {
       relic("van-relic-yellow", "Yellow", "Sunlit Charm", [
         "Holy Attack Power Up +1",
         "Poise +2",
+      ]),
+      // A curse on one line and a clean line beside it, each way round.
+      deepRelic("van-deep-red", "Red", "Sundered Bulwark", [
+        ["Improved Physical Damage Negation +2", "Taking Damage Causes Blood Loss Buildup"],
+        ["Improved Damage Negation at Low HP", ""],
+      ]),
+      deepRelic("van-deep-blue", "Blue", "Drowned Sigil", [
+        ["Magic Attack Power Up +3", ""],
+        ["Poise +3", "Reduced Rune Acquisition"],
       ]),
     ],
     ["meta", "co-op"],

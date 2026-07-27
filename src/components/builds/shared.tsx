@@ -8,6 +8,7 @@
 
 import Image from "next/image";
 import { useId, useState } from "react";
+import { nightfarers } from "@/data/characters";
 import { characterChalices, grailChalices } from "@/data/chalices";
 import { asset } from "@/lib/assets";
 import { customRelicIcon, fixedRelics, type BuildSlot, type BuildStore, type CustomRelic } from "@/lib/builds";
@@ -419,6 +420,38 @@ export function SlotIconImg({ color, size = 20 }: { color: SlotColor; size?: num
 export function RelicImg({ src, alt, size = 32 }: { src: string; alt: string; size?: number }) {
   return (
     <Image src={asset(src)} alt={alt} title={alt} width={size} height={size} className="shrink-0 object-contain" style={{ width: size, height: size }} />
+  );
+}
+
+/**
+ * A Nightfarer's portrait. The files are named for the character; a name off
+ * the roster (a party saved against a future one, say) falls back to its
+ * initial in the same frame, so the row keeps its shape instead of losing a
+ * face to a broken image.
+ */
+export function CharacterImg({ name, size = 28 }: { name: string; size?: number }) {
+  const slug = name.trim().toLowerCase();
+  if (!nightfarers.some((n) => n.name.toLowerCase() === slug)) {
+    return (
+      <span
+        title={name}
+        className="frame grid shrink-0 place-items-center rounded bg-night-900 font-display font-bold text-gold"
+        style={{ width: size, height: size }}
+      >
+        {name.trim().charAt(0).toUpperCase()}
+      </span>
+    );
+  }
+  return (
+    <Image
+      src={asset(`/icons/characters/${slug}.png`)}
+      alt={name}
+      title={name}
+      width={size}
+      height={size}
+      className="frame shrink-0 rounded bg-night-900 object-contain"
+      style={{ width: size, height: size }}
+    />
   );
 }
 

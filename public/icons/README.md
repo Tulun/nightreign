@@ -10,6 +10,11 @@ no per-item wiring, you just drop a correctly-named file in the right folder.
 - `greatshields/<id>.png` — greatshields, keyed by id in `src/data/greatshields.ts`.
 - `small-shields/<id>.png`, `medium-shields/<id>.png` — small/medium shields,
   keyed by id in `src/data/shields.ts`.
+- `characters/<name>.png` — Nightfarer class icons, kebab-case name from
+  `src/data/characters.ts` (`wylder.png`, `ironeye.png`, …). All 10 present,
+  70×70 RGBA. These are the game's portrait busts, not abstract sigils — the
+  wiki has no emblem-style symbol art. Sourced from
+  [Fextralife](https://eldenringnightreign.wiki.fextralife.com/Nightfarers+(Classes)).
 - `cocktails/`, `elements/`, `status/` — art for those features.
 - `effects/<category>.png` — the small glyphs the game shows beside each relic
   effect line (sword = attack, armor = defense, bag = item, …). 80×80 RGBA, the
