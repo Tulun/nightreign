@@ -7,7 +7,6 @@
 import { Fragment, useState } from "react";
 import Link from "next/link";
 import { type Build, type BuildStore, type SlotTriple } from "@/lib/builds";
-import type { SlotColor } from "@/lib/chalices";
 import { chalicesFor, resolveSlot, EffectLines, RelicImg, SlotIconImg } from "./shared";
 
 /** Disclosure chevron for expandable build cards. */
@@ -26,6 +25,15 @@ function Chevron({ open, className = "text-parchment-faint" }: { open: boolean; 
       <path d="M9 6l6 6-6 6" />
     </svg>
   );
+}
+
+/**
+ * Where an unfilled slot's picture would go: nothing but the relic art's
+ * width, so the empty row's text still starts in the same column as its
+ * neighbours' — a framed box there reads as a picture that failed to load.
+ */
+function EmptySlotImg({ size = 48 }: { size?: number }) {
+  return <span className="block shrink-0" style={{ width: size }} aria-hidden="true" />;
 }
 
 /** Pencil / trash glyphs for the tile's Edit and Delete actions. */
@@ -89,6 +97,11 @@ export function BuildCard({
   // Mobile-only: which slot set the card shows (desktop always shows both).
   const [view, setView] = useState<"normal" | "deep">("normal");
   const chalice = chalicesFor(build.character).find((c) => c.name === build.chalice);
+  // The expanded card always draws both slot sets — a vessel has its three
+  // Deep of Night slots whether or not this build fills them, and drawing
+  // them empty (as the game does) beats a half-width card that reads as
+  // something failing to render. hasDeep is still what decides where the
+  // *relics* matter: the line pitch, the mobile toggle, the icon strip.
   const hasDeep = build.deepSlots.some(Boolean);
   // Party-member snapshots carry their own relics; slots resolve against
   // those, not the user's pool.
@@ -101,10 +114,10 @@ export function BuildCard({
   // two blocks ending at different heights. Equal counts pad nothing.
   const lineCount = (slot: SlotTriple[number]) => resolveSlot(slot, relicStore)?.lines.length ?? 0;
   const rowLines = [0, 1, 2].map((i) =>
-    Math.max(lineCount(build.slots[i]), hasDeep ? lineCount(build.deepSlots[i]) : 0),
+    Math.max(lineCount(build.slots[i]), lineCount(build.deepSlots[i])),
   );
 
-  const renderSlots = (slots: SlotTriple, colors?: readonly SlotColor[]) =>
+  const renderSlots = (slots: SlotTriple) =>
     slots.map((slot, i) => {
       const resolved = resolveSlot(slot, relicStore);
       return (
@@ -123,21 +136,49 @@ export function BuildCard({
                   size="sm"
                   className="mt-0.5 space-y-0.5"
                   spread={hasDeep}
-                  pad={hasDeep ? rowLines[i] : 0}
+                  pad={rowLines[i]}
                 />
               </div>
             </>
           ) : (
+            /* Same shape as a filled slot — picture, name line, effect rows —
+               so an unfilled slot reads as an empty slot rather than a gap. */
             <>
-              {colors?.[i] && <SlotIconImg color={colors[i]} size={40} />}
-              <p className="font-body text-sm text-parchment-faint">Empty slot</p>
+              <EmptySlotImg size={48} />
+              <div className="min-w-0">
+                <p className="font-body text-base text-parchment-faint">Empty slot</p>
+                <EffectLines
+                  lines={[]}
+                  size="sm"
+                  className="mt-0.5 space-y-0.5"
+                  spread={hasDeep}
+                  pad={rowLines[i]}
+                />
+              </div>
             </>
           )}
         </div>
       );
     });
-  const normalRows = renderSlots(build.slots, chalice?.slots);
-  const deepRows = hasDeep ? renderSlots(build.deepSlots, chalice?.deep) : [];
+  const normalRows = renderSlots(build.slots);
+  const deepRows = renderSlots(build.deepSlots);
+
+  // The vessel's six slot colors, normal then Deep of Night — a header-line
+  // summary of what the build's chalice can take, so the slot rows below stay
+  // about the relics.
+  const slotLegend = chalice && (
+    <span className="hidden shrink-0 items-center gap-1 sm:flex" title="Vessel slots — normal, then Deep of Night">
+      {chalice.slots.map((c, i) => (
+        <SlotIconImg key={`n${i}`} color={c} size={17} />
+      ))}
+      <span className="mx-1 h-4 w-px bg-night-600" aria-hidden="true" />
+      {chalice.deep.map((c, i) => (
+        <span key={`d${i}`} className="opacity-70">
+          <SlotIconImg color={c} size={17} />
+        </span>
+      ))}
+    </span>
+  );
 
   // Collapsed summary: the slotted relics as a strip of icons (dimmed slot
   // icons for empty slots; Deep of Night icons after a divider).
@@ -162,7 +203,11 @@ export function BuildCard({
               <span key={`d${i}`} title={`${r.name} (Deep of Night)`} className="opacity-70">
                 <RelicImg src={r.icon} alt={r.name} size={size} />
               </span>
-            ) : null;
+            ) : (
+              <span key={`d${i}`} className="opacity-35">
+                <SlotIconImg color={chalice?.deep[i] ?? "White"} size={size - 4} />
+              </span>
+            );
           })}
         </>
       )}
@@ -296,9 +341,14 @@ export function BuildCard({
               {build.name || "Unnamed build"}
             </h4>
           </div>
-          <p className="truncate font-body text-sm text-parchment-faint">
-            {build.character} · {build.chalice}
-          </p>
+          <div className="flex min-w-0 items-center gap-3">
+            <p className="truncate font-body text-sm text-parchment-faint">
+              {build.character} · {build.chalice}
+            </p>
+            {/* Desktop only — the slot colors belong beside the vessel that
+                grants them, and a phone header has no room for six icons. */}
+            {expanded && slotLegend}
+          </div>
           {!expanded && (
             <>
               {tagChips && <div className="mt-2 flex">{tagChips}</div>}
@@ -350,19 +400,13 @@ export function BuildCard({
       )}
       {/* Desktop: a two-column grid — tags and the Deep of Night header share
           the top row, then each row pairs a normal slot with its deep
-          neighbor so the two sets stay lined up. The three slot rows are
-          explicitly equal (1fr each, so they all take the tallest one's
-          height): a demerit on one side would otherwise stretch just that
-          row and leave the columns reading as two unrelated lists. Mobile:
-          the toggle above picks which set shows. */}
+          neighbor so the two sets stay lined up. Rows size to their own
+          content: a grid row is as tall as its taller cell either way, so
+          the pair still aligns, and a row where both slots are empty stays
+          short instead of stretching to a filled row's height. Mobile: the
+          toggle above picks which set shows. */}
       {expanded && (
-      <div
-        className={`mt-3 ${
-          hasDeep
-            ? "sm:grid sm:grid-cols-2 sm:grid-rows-[auto_repeat(3,minmax(0,1fr))] sm:gap-x-3"
-            : ""
-        }`}
-      >
+      <div className="mt-3 sm:grid sm:grid-cols-2 sm:grid-rows-[auto_repeat(3,auto)] sm:gap-x-3">
         <div>
           {(build.tags?.length ?? 0) > 0 && (
             <div className="flex flex-wrap gap-1 pb-2">
@@ -374,15 +418,16 @@ export function BuildCard({
             </div>
           )}
         </div>
-        {hasDeep && (
-          <p
-            className={`eyebrow pb-2 text-gold-dim sm:border-l sm:border-night-700 sm:pl-4 ${
-              view === "normal" ? "hidden sm:block" : ""
-            }`}
-          >
-            Deep of Night
-          </p>
-        )}
+        {/* Without deep relics there's no mobile toggle, so `view` stays
+            "normal" and this whole side is desktop-only — a phone doesn't
+            scroll past three empty slots. */}
+        <p
+          className={`eyebrow pb-2 text-gold-dim sm:border-l sm:border-night-700 sm:pl-4 ${
+            view === "normal" ? "hidden sm:block" : ""
+          }`}
+        >
+          Deep of Night
+        </p>
         {/* Tighter gaps on mobile: one set shows at a time there, so the
             slots only have to read as separate, not line up with anything. */}
         {[0, 1, 2].map((i) => (
@@ -390,15 +435,13 @@ export function BuildCard({
             <div className={`${i < 2 ? "pb-3 sm:pb-4" : ""} ${view === "deep" ? "hidden sm:block" : ""}`}>
               {normalRows[i]}
             </div>
-            {hasDeep && (
-              <div
-                className={`${i < 2 ? "pb-3 sm:pb-4" : ""} sm:border-l sm:border-night-700 sm:pl-4 ${
-                  view === "normal" ? "hidden sm:block" : ""
-                }`}
-              >
-                {deepRows[i]}
-              </div>
-            )}
+            <div
+              className={`${i < 2 ? "pb-3 sm:pb-4" : ""} sm:border-l sm:border-night-700 sm:pl-4 ${
+                view === "normal" ? "hidden sm:block" : ""
+              }`}
+            >
+              {deepRows[i]}
+            </div>
           </Fragment>
         ))}
       </div>
