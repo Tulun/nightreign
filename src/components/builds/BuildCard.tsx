@@ -238,37 +238,42 @@ export function BuildCard({
     </span>
   );
 
+  // Which slot sets the collapsed strip summarises. A full-width card shows
+  // both, Deep of Night after a divider. A party column (single) shows only
+  // the set on show: six icons at strip size take the whole column, and a
+  // collapsed card that has traded its name and vessel away for a second row
+  // of relics has given up the part that says *which build this is*.
+  const stripSets: ("normal" | "deep")[] = single ? [view] : hasDeep ? ["normal", "deep"] : ["normal"];
+
   // Collapsed summary: the slotted relics as a strip of icons (dimmed slot
-  // icons for empty slots; Deep of Night icons after a divider).
+  // icons for empty slots).
   const iconStrip = (size: number, gap = "gap-1") => (
     <span className={`flex items-center ${gap}`}>
-      {loadout.slots.map((slot, i) => {
-        const r = resolveSlot(slot, relicStore);
-        return r ? (
-          <RelicImg key={`n${i}`} src={r.icon} alt={r.name} size={size} />
-        ) : (
-          <span key={`n${i}`} className="opacity-35">
-            <SlotIconImg color={chalice?.slots[i] ?? "White"} size={size - 4} />
-          </span>
-        );
-      })}
-      {hasDeep && (
-        <>
-          <span className="mx-1 w-px self-stretch bg-night-600" aria-hidden="true" />
-          {loadout.deepSlots.map((slot, i) => {
+      {stripSets.map((set, si) => (
+        <Fragment key={set}>
+          {si > 0 && <span className="mx-1 w-px self-stretch bg-night-600" aria-hidden="true" />}
+          {(set === "deep" ? loadout.deepSlots : loadout.slots).map((slot, i) => {
             const r = resolveSlot(slot, relicStore);
+            const color = (set === "deep" ? chalice?.deep[i] : chalice?.slots[i]) ?? "White";
             return r ? (
-              <span key={`d${i}`} title={`${r.name} (Deep of Night)`} className="opacity-70">
+              /* Deep relics read dimmer than normal ones only where both are
+                 on show — alone in a party column there's nothing to rank
+                 them against, and dimming would just make the strip murky. */
+              <span
+                key={`${set}${i}`}
+                title={set === "deep" ? `${r.name} (Deep of Night)` : undefined}
+                className={set === "deep" && !single ? "opacity-70" : ""}
+              >
                 <RelicImg src={r.icon} alt={r.name} size={size} />
               </span>
             ) : (
-              <span key={`d${i}`} className="opacity-35">
-                <SlotIconImg color={chalice?.deep[i] ?? "White"} size={size - 4} />
+              <span key={`${set}${i}`} className="opacity-35">
+                <SlotIconImg color={color} size={size - 4} />
               </span>
             );
           })}
-        </>
-      )}
+        </Fragment>
+      ))}
     </span>
   );
 

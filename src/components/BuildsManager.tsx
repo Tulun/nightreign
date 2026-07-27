@@ -9,7 +9,7 @@ import { BuildCard } from "@/components/builds/BuildCard";
 import { BuildEditor } from "@/components/builds/BuildEditor";
 import { MyRelics } from "@/components/builds/MyRelics";
 import { TagManager } from "@/components/builds/TagManager";
-import { chalicesFor, CopyLinkButton } from "@/components/builds/shared";
+import { CharacterImg, chalicesFor, CopyLinkButton } from "@/components/builds/shared";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
@@ -652,9 +652,14 @@ export function BuildsManager() {
         <div className="space-y-6">
           {groups.map((g) => (
             <section key={g.name}>
-              <h4 className="eyebrow mb-2 border-b border-night-700 pb-1.5 text-gold-dim">
+              {/* The portrait rides the section heading rather than each
+                  tile: the tiles under it are all the same Nightfarer, so a
+                  face per card would repeat the same picture down a column,
+                  and a heading row has width to spare at every size. */}
+              <h4 className="eyebrow mb-2 flex items-center gap-2 border-b border-night-700 pb-1.5 text-gold-dim">
+                <CharacterImg name={g.name} size={24} />
                 {g.name}
-                <span className="ml-2 font-body text-xs normal-case tracking-normal text-parchment-faint">
+                <span className="font-body text-xs normal-case tracking-normal text-parchment-faint">
                   {g.builds.length}
                 </span>
               </h4>
