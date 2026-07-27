@@ -14,20 +14,24 @@ import { EFFECT_ICON_LABELS, effectIcon } from "@/lib/effectIcon";
  */
 export function EffectIcon({ name, size = 14 }: { name: string; size?: number }) {
   const icon = effectIcon(name);
-  const box = { width: size, height: size };
+  // The glyph centres on the *first* line of the effect rather than the block:
+  // a one-line-tall box (1lh follows whatever line-height the row inherits)
+  // does that at any text size, so a wrapped three-line effect still shows its
+  // icon beside the line it starts on instead of floating above it.
+  const wrap = "flex h-[1lh] shrink-0 items-center";
   if (!icon) {
-    return <span aria-hidden className="shrink-0" style={box} />;
+    return <span aria-hidden className={wrap} style={{ width: size }} />;
   }
   return (
-    <Image
-      src={asset(`/icons/effects/${icon}.png`)}
-      alt=""
-      title={EFFECT_ICON_LABELS[icon]}
-      width={size}
-      height={size}
-      aria-hidden
-      className="mt-[0.15em] shrink-0 object-contain"
-      style={box}
-    />
+    <span aria-hidden className={wrap} style={{ width: size }} title={EFFECT_ICON_LABELS[icon]}>
+      <Image
+        src={asset(`/icons/effects/${icon}.png`)}
+        alt=""
+        width={size}
+        height={size}
+        className="object-contain"
+        style={{ width: size, height: size }}
+      />
+    </span>
   );
 }

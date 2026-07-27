@@ -147,10 +147,12 @@ export function EffectLines({
           }`}
         >
           <span className="flex items-start gap-1.5">
-            <span
-              className="mt-[0.15em] shrink-0 rounded-sm border border-night-600/70"
-              style={{ width: iconSize, height: iconSize }}
-            />
+            <span className="flex h-[1lh] shrink-0 items-center" style={{ width: iconSize }}>
+              <span
+                className="rounded-sm border border-night-600/70"
+                style={{ width: iconSize, height: iconSize }}
+              />
+            </span>
             <span>—</span>
           </span>
         </li>

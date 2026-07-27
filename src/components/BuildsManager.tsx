@@ -19,6 +19,9 @@ import {
   normalizeStore,
   saveStore,
   sortedTags,
+  tagTombstone,
+  withTombstones,
+  withoutTombstones,
   type Build,
   type BuildStore,
   type CustomRelic,
@@ -124,29 +127,41 @@ export function BuildsManager() {
     }));
 
   // ── Tag registry management ────────────────────────────────────────────
+  // A tag deleted before under the same name must stop being deleted when
+  // it's made again — tag tombstones are keyed by name, not by a fresh id.
   const createTag = (name: string) => {
     const tag = name.trim();
-    if (tag) update((s) => ({ ...s, tags: sortedTags([...s.tags, tag]) }));
+    if (tag) {
+      update((s) => withoutTombstones({ ...s, tags: sortedTags([...s.tags, tag]) }, [tagTombstone(tag)]));
+    }
   };
   const retagBuilds = (builds: Build[], fn: (tags: string[]) => string[]) =>
     builds.map((b) => (b.tags?.length ? { ...b, tags: fn(b.tags) } : b));
   const renameTag = (from: string, to: string) => {
     const tag = to.trim();
     if (!tag || tag === from) return;
-    update((s) => ({
-      ...s,
-      tags: sortedTags(s.tags.map((t) => (t === from ? tag : t))),
-      builds: retagBuilds(s.builds, (tags) => sortedTags(tags.map((t) => (t === from ? tag : t)))),
-    }));
+    update((s) =>
+      // The old name is gone (tombstoned so other devices drop it too) and the
+      // new one is live, whatever its history.
+      withTombstones(
+        withoutTombstones(
+          {
+            ...s,
+            tags: sortedTags(s.tags.map((t) => (t === from ? tag : t))),
+            builds: retagBuilds(s.builds, (tags) => sortedTags(tags.map((t) => (t === from ? tag : t)))),
+          },
+          [tagTombstone(tag)],
+        ),
+        [tagTombstone(from)],
+      ),
+    );
     setTagFilter((f) => sortedTags(f.map((t) => (t === from ? tag : t))));
   };
   const deleteTag = (tag: string) => {
     if (!window.confirm(`Delete the tag "${tag}"? It will be removed from all builds.`)) return;
-    update((s) => ({
-      ...s,
-      tags: s.tags.filter((t) => t !== tag),
-      builds: retagBuilds(s.builds, (tags) => tags.filter((t) => t !== tag)),
-    }));
+    // The tombstone does the removing — from the registry here, from the
+    // builds carrying it, and on every other device at its next sync.
+    update((s) => withTombstones(s, [tagTombstone(tag)]));
     setTagFilter((f) => f.filter((t) => t !== tag));
   };
 
@@ -199,9 +214,12 @@ export function BuildsManager() {
     showBuild(build.id);
   };
 
+  // Deletes are recorded, not just applied: the tombstone drops the entry
+  // here and tells the account's other devices to drop it too, instead of the
+  // next sync handing back whatever they still hold.
   const deleteBuild = (id: string) => {
     if (!window.confirm("Delete this build?")) return;
-    update((s) => ({ ...s, builds: s.builds.filter((b) => b.id !== id) }));
+    update((s) => withTombstones(s, [id]));
     // Deleting the build the full view is showing drops back to the list.
     if (openId === id) showList();
   };
@@ -210,11 +228,23 @@ export function BuildsManager() {
     if (!window.confirm("Delete this relic? Builds using it will show an empty slot.")) return;
     const strip = (slots: SlotTriple): SlotTriple =>
       slots.map((s) => (s?.kind === "custom" && s.id === id ? null : s)) as SlotTriple;
-    update((s) => ({
-      ...s,
-      customRelics: s.customRelics.filter((r) => r.id !== id),
-      builds: s.builds.map((b) => ({ ...b, slots: strip(b.slots), deepSlots: strip(b.deepSlots) })),
-    }));
+    const uses = (b: Build) =>
+      [...b.slots, ...b.deepSlots].some((s) => s?.kind === "custom" && s.id === id);
+    update((s) =>
+      withTombstones(
+        {
+          ...s,
+          // Emptying the slot is an edit to that build — without the stamp, a
+          // copy on another device outranks it and puts the slot back.
+          builds: s.builds.map((b) =>
+            uses(b)
+              ? { ...b, slots: strip(b.slots), deepSlots: strip(b.deepSlots), updatedAt: Date.now() }
+              : b,
+          ),
+        },
+        [id],
+      ),
+    );
   };
 
 

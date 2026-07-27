@@ -124,11 +124,35 @@ export interface BuildStore {
   customRelics: CustomRelic[];
   /** User-managed tag registry for organizing builds (kept sorted). */
   tags: string[];
+  /**
+   * Deletions, as key → time deleted (ms epoch). Every merge is a union, so
+   * without these a build or relic deleted on one device is simply handed
+   * back by the next device that still has it. Keys are build and relic ids,
+   * and tagTombstone(name) for tags. See applyTombstones for the rules.
+   */
+  deleted: Record<string, number>;
 }
+
+/** Tombstone key for a tag — builds and relics are keyed by their own id. */
+export const tagTombstone = (tag: string) => `tag:${tag.trim()}`;
+
+/**
+ * How long a deletion is remembered. Tombstones exist to outlive the other
+ * device's copy of what they delete, not forever; a device that rejoins after
+ * months away can resurrect what it holds, which beats growing the store
+ * without bound for the lifetime of an account.
+ */
+const TOMBSTONE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
 const STORAGE_KEY = "nightreign-builds";
 
-export const EMPTY_STORE: BuildStore = { version: 3, builds: [], customRelics: [], tags: [] };
+export const EMPTY_STORE: BuildStore = {
+  version: 3,
+  builds: [],
+  customRelics: [],
+  tags: [],
+  deleted: {},
+};
 
 export const EMPTY_SLOTS: SlotTriple = [null, null, null];
 
@@ -168,6 +192,90 @@ function gameRelicLines(relic: CustomRelic): CustomRelic {
   };
 }
 
+/** Record deletions of the given keys (ids, or tagTombstone(name)). */
+export function withTombstones(store: BuildStore, keys: string[], at = Date.now()): BuildStore {
+  const deleted = { ...store.deleted };
+  for (const k of keys) deleted[k] = at;
+  return applyTombstones({ ...store, deleted });
+}
+
+/**
+ * Forget the deletion of these keys — creating a tag by a name that was
+ * deleted before makes it a live tag again. Ids are never reused, so this is
+ * only ever needed for tags.
+ */
+export function withoutTombstones(store: BuildStore, keys: string[]): BuildStore {
+  const deleted = { ...store.deleted };
+  for (const k of keys) delete deleted[k];
+  return { ...store, deleted };
+}
+
+/** Newest deletion time per key across two stores. */
+export function mergeTombstones(
+  a: Record<string, number> | undefined,
+  b: Record<string, number> | undefined,
+): Record<string, number> {
+  const out = { ...(a ?? {}) };
+  for (const [k, at] of Object.entries(b ?? {})) {
+    if (!(k in out) || at > out[k]) out[k] = at;
+  }
+  return out;
+}
+
+/**
+ * Enforce the tombstones over a store's contents, and drop the ones that no
+ * longer have anything to do:
+ *
+ *   • a build outlives its tombstone if it was edited after the delete (an
+ *     edit on another device beats a stale delete, mirroring the updatedAt
+ *     rule the merges already use) — and the beaten tombstone is dropped, so
+ *     the delete can't come back and win a later round.
+ *   • a relic carries no timestamp, so its tombstone always wins. An edit
+ *     made on one device to a relic another device deleted is lost, the same
+ *     trade the id-clash rule already makes.
+ *   • a tag is removed from the registry and from the builds that predate the
+ *     delete; a build edited afterwards keeps it, and its tag goes back in
+ *     the registry (the same "edit beats stale delete" rule).
+ *   • tombstones past TOMBSTONE_TTL_MS expire.
+ *
+ * Every store passes through here — load, import, and both merges — so the
+ * rules can't be applied in one path and forgotten in another.
+ */
+export function applyTombstones(store: BuildStore, now = Date.now()): BuildStore {
+  const deleted: Record<string, number> = {};
+  for (const [k, at] of Object.entries(store.deleted ?? {})) {
+    if (now - at < TOMBSTONE_TTL_MS) deleted[k] = at;
+  }
+  const survives = (b: Build) => {
+    const at = deleted[b.id];
+    if (at === undefined) return true;
+    if (b.updatedAt > at) {
+      delete deleted[b.id]; // the edit won — stop re-fighting this delete
+      return true;
+    }
+    return false;
+  };
+  const builds = store.builds.filter(survives).map((b) => {
+    const kept = (b.tags ?? []).filter((t) => {
+      const at = deleted[tagTombstone(t)];
+      return at === undefined || b.updatedAt > at;
+    });
+    return kept.length === (b.tags?.length ?? 0) ? b : { ...b, tags: kept };
+  });
+  return {
+    ...store,
+    builds,
+    customRelics: store.customRelics.filter((r) => deleted[r.id] === undefined),
+    // A tag a surviving build still carries stays in the registry — same rule
+    // normalizeStore uses to keep every tag in use declared.
+    tags: sortedTags([
+      ...store.tags.filter((t) => deleted[tagTombstone(t)] === undefined),
+      ...builds.flatMap((b) => b.tags ?? []),
+    ]),
+    deleted,
+  };
+}
+
 /** Validate/migrate a parsed store of any known version; null if unusable. */
 export function normalizeStore(data: unknown): BuildStore | null {
   const d = data as {
@@ -175,6 +283,7 @@ export function normalizeStore(data: unknown): BuildStore | null {
     builds?: Build[];
     customRelics?: CustomRelic[];
     tags?: unknown[];
+    deleted?: Record<string, number>;
   };
   if (!d || !Array.isArray(d.builds) || !Array.isArray(d.customRelics)) return null;
   if (d.version !== 1 && d.version !== 2 && d.version !== 3) return null;
@@ -190,7 +299,7 @@ export function normalizeStore(data: unknown): BuildStore | null {
       relics: b.relics?.map(gameRelicLines),
     }));
   const declared = Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === "string") : [];
-  return {
+  return applyTombstones({
     version: 3,
     // Relics from before the deep flag get a one-time guess, stored
     // explicitly so a user's later correction sticks.
@@ -202,7 +311,20 @@ export function normalizeStore(data: unknown): BuildStore | null {
     // Registry = declared tags plus any a build references (pre-tags stores
     // declare none), so every tag in use survives a merge or hand edit.
     tags: sortedTags([...declared, ...builds.flatMap((b) => b.tags ?? [])]),
-  };
+    // Stores written before tombstones existed simply have no deletions on
+    // record — nothing to migrate.
+    deleted: isTombstoneMap(d.deleted) ? d.deleted : {},
+  });
+}
+
+/** A hand-edited or older store can carry anything here — take it only if it's the right shape. */
+function isTombstoneMap(v: unknown): v is Record<string, number> {
+  return (
+    !!v &&
+    typeof v === "object" &&
+    !Array.isArray(v) &&
+    Object.values(v).every((at) => typeof at === "number" && Number.isFinite(at))
+  );
 }
 
 /** Dedupe + alphabetize a tag list (the registry's canonical form). */
@@ -238,19 +360,24 @@ export function saveStore(store: BuildStore): boolean {
   }
 }
 
-/** Merge an imported store into the current one (imported entries win by id). */
+/**
+ * Merge an imported store into the current one (imported entries win by id).
+ * Both sides' tombstones apply, so importing a backup taken before a deletion
+ * doesn't hand the deleted entries back.
+ */
 export function mergeStores(current: BuildStore, imported: BuildStore): BuildStore {
   const mergeById = <T extends { id: string }>(a: T[], b: T[]): T[] => {
     const map = new Map(a.map((x) => [x.id, x]));
     for (const x of b) map.set(x.id, x);
     return Array.from(map.values());
   };
-  return {
+  return applyTombstones({
     version: 3,
     builds: mergeById(current.builds, imported.builds),
     customRelics: mergeById(current.customRelics, imported.customRelics),
     tags: sortedTags([...current.tags, ...imported.tags]),
-  };
+    deleted: mergeTombstones(current.deleted, imported.deleted),
+  });
 }
 
 export function newId(): string {

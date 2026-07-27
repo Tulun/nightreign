@@ -25,7 +25,13 @@ import {
 import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { cloudRead } from "@/lib/cloudRead";
-import { normalizeStore, sortedTags, type BuildStore } from "@/lib/builds";
+import {
+  applyTombstones,
+  mergeTombstones,
+  normalizeStore,
+  sortedTags,
+  type BuildStore,
+} from "@/lib/builds";
 
 /** Directory entry for the community users page. */
 export interface UserProfile {
@@ -169,6 +175,9 @@ export async function listProfiles(): Promise<UserProfile[]> {
  * `preferLocalRelics` flips that tie-break for the live path when this device
  * has edits it hasn't pushed yet: a relic being edited here must not be reset
  * by a snapshot that predates the edit.
+ *
+ * The union is then cut back by both sides' tombstones — otherwise whichever
+ * device still holds a deleted build or relic hands it straight back.
  */
 export function mergeWithCloud(
   local: BuildStore,
@@ -184,10 +193,11 @@ export function mergeWithCloud(
   for (const r of cloud.customRelics) {
     if (!preferLocalRelics || !relics.has(r.id)) relics.set(r.id, r);
   }
-  return {
+  return applyTombstones({
     version: 3,
     builds: Array.from(builds.values()),
     customRelics: Array.from(relics.values()),
     tags: sortedTags([...local.tags, ...cloud.tags]),
-  };
+    deleted: mergeTombstones(local.deleted, cloud.deleted),
+  });
 }
