@@ -18,10 +18,17 @@ import {
   RELIC_NAME_VOCABULARY,
   parseRelicGroups,
   resolveEffectAlias,
+  screenIsDeep,
   similarity,
 } from "@/lib/effectMatch";
-import { lineTextFromWords } from "@/lib/ocrClean";
-import { dominantIconColor, iconSampleRegion, type IconBox, type RelicColor } from "@/lib/relicColor";
+import { lineFromWords } from "@/lib/ocrClean";
+import {
+  colorFromRelicName,
+  dominantIconColor,
+  iconSampleRegion,
+  type IconBox,
+  type RelicColor,
+} from "@/lib/relicColor";
 
 const ROOT = path.join(__dirname, "..");
 const FIXTURES_DIR = path.join(ROOT, "ocr-eval", "fixtures");
@@ -29,7 +36,7 @@ const CACHE_DIR = path.join(ROOT, "ocr-eval", ".cache");
 
 // Bump when OCR settings change (engine params, preprocessing, tesseract
 // version) so cached OCR results from the old settings are not reused.
-const OCR_CONFIG_KEY = "tesseract7-eng-v3-segment-scored";
+const OCR_CONFIG_KEY = "tesseract7-eng-v4-segment-bbox";
 
 // ── Expected-output fixture format ───────────────────────────────────────
 
@@ -113,10 +120,9 @@ async function ocrLines(worker: Worker, imagePath: string): Promise<OcrLine[]> {
   const { data } = await worker.recognize(imagePath, {}, { text: true, blocks: true });
   const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
     (b.paragraphs ?? []).flatMap((p) =>
-      (p.lines ?? []).map((l) => ({
-        text: lineTextFromWords(l.words ?? [], l.text ?? ""),
-        bbox: l.bbox ?? null,
-      })),
+      (p.lines ?? []).map((l) =>
+        lineFromWords(l.words ?? [], { text: l.text ?? "", bbox: l.bbox ?? null }),
+      ),
     ),
   );
   if (lines.length > 0) return lines;
@@ -152,8 +158,11 @@ interface RgbaImage {
 function decodeImage(imagePath: string): RgbaImage | null {
   const buf = readFileSync(imagePath);
   try {
-    if (/\.png$/i.test(imagePath)) {
-      const png = PNG.sync.read(buf);
+    // Sniff the real format — a fixture can wear the wrong extension.
+    if (buf[0] === 0x89 && buf[1] === 0x50) {
+      // Some tools append metadata after IEND, which pngjs rejects — cut there.
+      const iend = buf.indexOf("IEND");
+      const png = PNG.sync.read(iend >= 0 ? buf.subarray(0, iend + 8) : buf);
       return { width: png.width, height: png.height, data: png.data };
     }
     return jpeg.decode(buf, { useTArray: true, formatAsRGBA: true, maxMemoryUsageInMB: 2048 });
@@ -337,6 +346,7 @@ async function main() {
   const argv = process.argv.slice(2);
   const verbose = argv.includes("--verbose") || argv.includes("-v");
   const useCache = !argv.includes("--no-cache");
+  const dumpColors = argv.includes("--dump-colors");
   const filterIdx = argv.indexOf("--filter");
   const filter = filterIdx >= 0 ? argv[filterIdx + 1] : null;
 
@@ -398,10 +408,10 @@ async function main() {
       for (const l of lines) console.log(`    | ${l.text.trimEnd()}`);
     }
 
-    // Same pipeline as ScreenshotPoolImport in BuildsManager.tsx.
+    // Same pipeline as ScreenshotImport.tsx.
     const texts = lines.map((l) => l.text);
     const groups = parseRelicGroups(texts);
-    const allDeep = groups.some((g) => g.deep);
+    const allDeep = screenIsDeep(groups);
     const img = decodeImage(imagePath);
     const colors = groups.map((g) => {
       // A joined wrapped line has no single OCR line with identical text, so
@@ -411,10 +421,32 @@ async function main() {
         ? (lines.find((l) => l.text.trim() === first) ??
             lines.find((l) => l.text.trim().length >= 8 && first.startsWith(l.text.trim())))?.bbox ?? null
         : null;
-      if (!box || !img) return null;
+      // The app derives the color from a scene name when one was read
+      // (BuildEditor does the same) — pixels are the fallback.
+      const named = colorFromRelicName(g.name);
+      if (named) return named;
+      const idx = groups.indexOf(g) + 1;
+      if (!box || !img) {
+        if (dumpColors) console.log(`  ${image} r${idx}: ${!img ? "image undecodable" : `no bbox for "${first}"`}`);
+        return null;
+      }
       const region = iconSampleRegion(box, img.height);
-      if (!region) return null;
-      return dominantIconColor(cropRgba(img, region));
+      if (!region) {
+        if (dumpColors) console.log(`  ${image} r${idx}: region too small (text x0=${box.x0})`);
+        return null;
+      }
+      const pixels = cropRgba(img, region);
+      const color = dominantIconColor(pixels);
+      if (dumpColors) {
+        console.log(`  ${image} r${idx}: box x0=${box.x0} y0=${box.y0} h=${box.y1 - box.y0} → region x=${Math.round(region.x0)}..${Math.round(region.x0 + region.width)} y=${Math.round(region.y0)}..${Math.round(region.y0 + region.height)} → ${color ?? "null"}`);
+        const base = image.replace(/\.(png|jpe?g)$/i, "");
+        const out = new PNG({ width: Math.round(region.width), height: Math.round(region.height) });
+        out.data = Buffer.from(pixels);
+        const dir = path.join(CACHE_DIR, "colors");
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(path.join(dir, `${base}-r${idx}-${color ?? "null"}.png`), PNG.sync.write(out));
+      }
+      return color;
     });
 
     results.push(scoreFixture(image, fx, groups, allDeep, colors));

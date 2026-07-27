@@ -481,3 +481,12 @@ export function parseRelicGroups(lines: string[], maxGroups = 6): ParsedRelicGro
   }
   return groups.filter((g) => g.name !== null || g.effects.length > 0);
 }
+
+/**
+ * Whether a parsed screenshot shows Deep relics. A screenshot is all-Deep
+ * or all-normal, so the majority of groups decides — one spurious
+ * deep-only match on a normal screen can't flip the whole import.
+ */
+export function screenIsDeep(groups: ParsedRelicGroup[]): boolean {
+  return groups.filter((g) => g.deep).length * 2 > groups.length;
+}

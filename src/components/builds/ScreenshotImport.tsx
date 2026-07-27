@@ -8,10 +8,11 @@
 import { useRef, useState } from "react";
 import { newId, sameCustomRelic, type CustomRelic } from "@/lib/builds";
 import type { Chalice } from "@/lib/chalices";
-import { bestLineMatch, parseRelicGroups } from "@/lib/effectMatch";
+import { bestLineMatch, parseRelicGroups, screenIsDeep } from "@/lib/effectMatch";
 import {
   RELIC_COLORS,
   SlotIconImg,
+  colorFromRelicName,
   effectListId,
   guessGroupColors,
   ocrLines,
@@ -71,7 +72,7 @@ export function ScreenshotPoolImport({
       const texts = ocr.map((l) => l.text);
       const found = parseRelicGroups(texts);
       // A screenshot shows either normal relics or Deep relics — never both.
-      const allDeep = found.some((g) => g.deep);
+      const allDeep = screenIsDeep(found);
       const guessed = await guessGroupColors(
         file,
         found.map((g) => {
@@ -91,10 +92,10 @@ export function ScreenshotPoolImport({
           deep: allDeep,
           lines: [0, 1, 2].map((j) => g.effects[j]?.effect ?? ""),
           demerits: [0, 1, 2].map((j) => g.demerits[j] ?? ""),
-          color: guessed[i],
+          color: colorFromRelicName(g.name) ?? guessed[i],
         })),
       );
-      setColors(found.map((_, i) => guessed[i] ?? "Red"));
+      setColors(found.map((g, i) => colorFromRelicName(g.name) ?? guessed[i] ?? "Red"));
       setAdded(found.map(() => null));
       setStatus(
         found.length > 0
@@ -322,7 +323,7 @@ export function ScreenshotBuildImport({
       const seen = bestLineMatch(texts, chalices.map((c) => c.name));
       setChaliceGuess(seen?.effect ?? null);
       // A screenshot shows either normal relics or Deep relics — never both.
-      const allDeep = found.some((g) => g.deep);
+      const allDeep = screenIsDeep(found);
       // Color: sample the icon region left of each relic's first line.
       const colors = await guessGroupColors(
         file,
@@ -343,7 +344,7 @@ export function ScreenshotBuildImport({
           deep: allDeep,
           lines: [0, 1, 2].map((j) => g.effects[j]?.effect ?? ""),
           demerits: [0, 1, 2].map((j) => g.demerits[j] ?? ""),
-          color: colors[i],
+          color: colorFromRelicName(g.name) ?? colors[i],
         })),
       );
       setTargets(found.map((_, i) => (allDeep ? Math.min(3 + i, 5) : Math.min(i, 2))));

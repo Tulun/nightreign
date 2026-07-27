@@ -24,7 +24,12 @@ Options (note the `--` that separates npm's args from the script's):
 npm run ocr:eval -- --verbose          # also print raw OCR lines per image
 npm run ocr:eval -- --filter deep      # only fixtures whose filename contains "deep"
 npm run ocr:eval -- --no-cache        # force re-OCR (after changing OCR settings)
+npm run ocr:eval -- --dump-colors     # write each color-sample crop to .cache/colors/
 ```
+
+`--dump-colors` also logs the sampled region's coordinates per relic — when a
+color is wrong or unread, look at the dumped crop first; it shows exactly what
+the classifier saw.
 
 If you change anything about how OCR itself runs (engine options,
 preprocessing), bump `OCR_CONFIG_KEY` in `scripts/ocr-eval.ts` so stale cached
