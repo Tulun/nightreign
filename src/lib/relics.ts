@@ -73,6 +73,19 @@ export function splitCharacter(name: string): { character: string; rest: string 
   return { character: name, rest: name };
 }
 
+/**
+ * An effect name in the game's own spelling. The game tags character effects
+ * "[Duchess] …" where parts of the catalogue write "Duchess: …"; rewriting
+ * the colon form here makes the bracket form the one the app shows, matches
+ * against, and saves (see effectMatch.ts for the canonical vocabulary and
+ * builds.ts normalizeStore for the stored-relic migration). Idempotent, so
+ * it's safe to apply anywhere text of unknown vintage surfaces.
+ */
+export function gameEffectName(name: string): string {
+  const m = name.match(/^([A-Za-z]+):\s*(.+)$/);
+  return m && CHARACTER_ORDER.includes(m[1]) ? `[${m[1]}] ${m[2]}` : name;
+}
+
 /** Group character-prefixed effects under their Nightfarer, preserving input order. */
 export function groupByCharacter<T extends { name: string }>(
   items: T[],

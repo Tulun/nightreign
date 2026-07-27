@@ -71,10 +71,10 @@ export function BuildCard({
     slots.map((slot, i) => {
       const resolved = resolveSlot(slot, relicStore);
       return (
-        <div key={i} className="flex items-start gap-2.5">
+        <div key={i} className="flex items-start gap-3">
           {resolved ? (
             <>
-              <RelicImg src={resolved.icon} alt={resolved.name} size={32} />
+              <RelicImg src={resolved.icon} alt={resolved.name} size={48} />
               <div className="min-w-0">
                 <p className="font-body text-base text-parchment">{resolved.name}</p>
                 <EffectLines lines={resolved.lines} size="sm" className="mt-0.5 space-y-0.5" />
@@ -82,7 +82,7 @@ export function BuildCard({
             </>
           ) : (
             <>
-              {colors?.[i] && <SlotIconImg color={colors[i]} size={24} />}
+              {colors?.[i] && <SlotIconImg color={colors[i]} size={40} />}
               <p className="font-body text-sm text-parchment-faint">Empty slot</p>
             </>
           )}
@@ -94,26 +94,26 @@ export function BuildCard({
 
   // Collapsed summary: the slotted relics as a strip of icons (dimmed slot
   // icons for empty slots; Deep of Night icons after a divider).
-  const iconStrip = (
-    <span className="flex items-center gap-1">
+  const iconStrip = (size: number, gap = "gap-1") => (
+    <span className={`flex items-center ${gap}`}>
       {build.slots.map((slot, i) => {
         const r = resolveSlot(slot, relicStore);
         return r ? (
-          <RelicImg key={`n${i}`} src={r.icon} alt={r.name} size={22} />
+          <RelicImg key={`n${i}`} src={r.icon} alt={r.name} size={size} />
         ) : (
           <span key={`n${i}`} className="opacity-35">
-            <SlotIconImg color={chalice?.slots[i] ?? "White"} size={18} />
+            <SlotIconImg color={chalice?.slots[i] ?? "White"} size={size - 4} />
           </span>
         );
       })}
       {hasDeep && (
         <>
-          <span className="mx-1 h-4 w-px bg-night-600" aria-hidden="true" />
+          <span className="mx-1 w-px self-stretch bg-night-600" aria-hidden="true" />
           {build.deepSlots.map((slot, i) => {
             const r = resolveSlot(slot, relicStore);
             return r ? (
               <span key={`d${i}`} title={`${r.name} (Deep of Night)`} className="opacity-70">
-                <RelicImg src={r.icon} alt={r.name} size={22} />
+                <RelicImg src={r.icon} alt={r.name} size={size} />
               </span>
             ) : null;
           })}
@@ -139,20 +139,23 @@ export function BuildCard({
     return (
       <Link
         href={href}
-        className="frame group flex items-center justify-between gap-3 rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700"
+        className="frame group flex items-center gap-4 rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700 sm:gap-6 sm:p-5"
       >
-        <span className="min-w-0">
-          <span className="block truncate font-display font-semibold text-parchment transition-colors group-hover:text-gold-bright">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-display text-lg font-semibold text-parchment transition-colors group-hover:text-gold-bright">
             {build.name || "Unnamed build"}
           </span>
-          <span className="block font-body text-xs text-parchment-faint">
+          <span className="block truncate font-body text-sm text-parchment-faint">
             {build.character} · {build.chalice}
           </span>
-          <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            {iconStrip}
-            {tagChips}
-          </span>
+          {tagChips && <span className="mt-2 flex">{tagChips}</span>}
+          {/* Narrow screens have no room beside the title — the relics drop
+              under it instead, at a size that still fits. */}
+          <span className="mt-2.5 flex sm:hidden">{iconStrip(30, "gap-1.5")}</span>
         </span>
+        {/* The relics are what the card is really about, so they take the
+            width the title doesn't need — big enough to actually read. */}
+        <span className="hidden shrink-0 sm:flex">{iconStrip(44, "gap-2")}</span>
         <span className="shrink-0 text-parchment-faint transition-colors group-hover:text-gold-bright">
           <Chevron open={false} className="" />
         </span>
@@ -182,35 +185,44 @@ export function BuildCard({
             : undefined
         }
       >
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
             {expandable && <Chevron open={expanded} />}
-            <h4 className="min-w-0 truncate font-display font-semibold text-parchment">
+            <h4 className="min-w-0 truncate font-display text-lg font-semibold text-parchment">
               {build.name || "Unnamed build"}
             </h4>
           </div>
-          <p className="font-body text-xs text-parchment-faint">
+          <p className="truncate font-body text-sm text-parchment-faint">
             {build.character} · {build.chalice}
           </p>
           {!expanded && (
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              {iconStrip}
-              {tagChips}
-            </div>
+            <>
+              {tagChips && <div className="mt-2 flex">{tagChips}</div>}
+              {/* Narrow screens have no room beside the title — the relics
+                  drop under it instead, at a size that still fits. */}
+              <div className="mt-2.5 flex sm:hidden">{iconStrip(30, "gap-1.5")}</div>
+            </>
           )}
           {/* Expanded: tags render below, on the grid's top row. */}
         </div>
-        {(onDelete || onShare) && (
-          <div className="flex shrink-0 flex-wrap justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-            {onShare && (
-              <button type="button" onClick={onShare} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">{shareLabel}</button>
+        {(onDelete || onShare || !expanded) && (
+          <div className="flex shrink-0 flex-col items-end gap-2.5">
+            {(onDelete || onShare) && (
+              <div className="flex flex-wrap justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                {onShare && (
+                  <button type="button" onClick={onShare} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">{shareLabel}</button>
+                )}
+                {onEdit && (
+                  <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
+                )}
+                {onDelete && (
+                  <button type="button" onClick={onDelete} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">Delete</button>
+                )}
+              </div>
             )}
-            {onEdit && (
-              <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
-            )}
-            {onDelete && (
-              <button type="button" onClick={onDelete} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">Delete</button>
-            )}
+            {/* Collapsed: the relics are the summary, so they get the width
+                the title doesn't need — under the buttons, not beside them. */}
+            {!expanded && <span className="hidden sm:flex">{iconStrip(44, "gap-2")}</span>}
           </div>
         )}
       </div>

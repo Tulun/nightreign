@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { asset } from "@/lib/assets";
-import { CHARACTER_ORDER } from "@/lib/relics";
+import { CHARACTER_ORDER, gameEffectName } from "@/lib/relics";
 import {
   UNIQUE_RELIC_COLOR_HEX,
   UNIQUE_RELIC_CREDIT,
@@ -103,7 +103,7 @@ function RelicCard({ relic }: { relic: UniqueRelic }) {
       <ul className="mt-1 space-y-0.5">
         {relic.effects.map((effect) => (
           <li key={effect} className="font-body text-sm leading-snug text-parchment-muted">
-            {effect}
+            {gameEffectName(effect)}
           </li>
         ))}
       </ul>

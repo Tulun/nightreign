@@ -10,6 +10,7 @@ import { characterSwaps } from "@/data/statSwaps";
 import { asset } from "@/lib/assets";
 import { uniqueRelics, type UniqueRelicGroup } from "@/data/uniqueRelics";
 import { NORMAL_EFFECT_VOCABULARY, isCurseEffect } from "@/lib/effectMatch";
+import { gameEffectName } from "@/lib/relics";
 import { SCENE_META, relicIcon } from "@/lib/statSwaps";
 import type { SlotColor } from "@/lib/chalices";
 
@@ -151,6 +152,20 @@ function migrateRelicLines(relic: CustomRelic): CustomRelic {
   return { ...relic, effects, demerits: effects.map((_, i) => demerits[i] ?? "") };
 }
 
+/**
+ * Rewrite a relic's lines into the game's own spelling, so what's saved reads
+ * like the relic in game ("Duchess: …" → "[Duchess] …"). Applied on every
+ * load/import, so stores written before this migration convert on their next
+ * save.
+ */
+function gameRelicLines(relic: CustomRelic): CustomRelic {
+  return {
+    ...relic,
+    effects: relic.effects.map(gameEffectName),
+    demerits: relic.demerits?.map(gameEffectName),
+  };
+}
+
 /** Validate/migrate a parsed store of any known version; null if unusable. */
 export function normalizeStore(data: unknown): BuildStore | null {
   const d = data as {
@@ -166,7 +181,12 @@ export function normalizeStore(data: unknown): BuildStore | null {
   // they were someone else's work, and nothing can display them anymore.
   const builds = d.builds
     .filter((b) => !(b as { shared?: boolean }).shared)
-    .map((b) => ({ ...b, deepSlots: b.deepSlots ?? [...EMPTY_SLOTS] as SlotTriple }));
+    .map((b) => ({
+      ...b,
+      deepSlots: b.deepSlots ?? [...EMPTY_SLOTS] as SlotTriple,
+      // Party-member snapshots carry their own relics — migrate those too.
+      relics: b.relics?.map(gameRelicLines),
+    }));
   const declared = Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === "string") : [];
   return {
     version: 3,
@@ -174,6 +194,7 @@ export function normalizeStore(data: unknown): BuildStore | null {
     // explicitly so a user's later correction sticks.
     customRelics: d.customRelics
       .map(migrateRelicLines)
+      .map(gameRelicLines)
       .map((r) => ({ ...r, deep: r.deep ?? inferDeep(r) })),
     builds,
     // Registry = declared tags plus any a build references (pre-tags stores

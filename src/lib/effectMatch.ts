@@ -7,6 +7,7 @@
 import { deepRelics } from "@/data/deepRelics";
 import { relicEffects } from "@/data/relicEffects";
 import { uniqueRelics } from "@/data/uniqueRelics";
+import { gameEffectName } from "@/lib/relics";
 
 // Template effect names ("Improved [Weapon] Attack Power") are expanded into
 // concrete variants so OCR of real UI text ("Improved Greatsword Attack
@@ -98,12 +99,16 @@ function preferName(a: string, b: string): string {
   return lowers(b) > lowers(a) ? b : a;
 }
 
+// Character effects canonicalize to the game's "[Duchess] …" tag even where
+// the catalogue writes "Duchess: …", so the vocabulary, the matcher and the
+// text saved on a relic all speak one spelling (the colon form stays an
+// accepted alias below).
 const CANONICAL_BY_KEY = new Map<string, string>();
 for (const name of [
   ...relicEffects.map((e) => e.name),
   ...deepRelics.map((e) => e.name),
   ...uniqueRelics.flatMap((r) => r.effects),
-].flatMap(expandName)) {
+].flatMap(expandName).map(gameEffectName)) {
   const key = nameKey(name);
   const existing = CANONICAL_BY_KEY.get(key);
   CANONICAL_BY_KEY.set(key, existing ? preferName(existing, name) : name);
@@ -135,7 +140,7 @@ const EFFECT_ALIASES: Record<string, string> = {
   "[Raider] Hit With Character Skill to Reduce Enemy Attack Power":
     "[Raider] Hit With Skill to Reduce Enemy Attack Power",
   "[Undertaker] Attack power increased by landing the final blow of a chain attack":
-    "Undertaker: Attack Power Increased by Landing Chain Attack",
+    "[Undertaker] Attack Power Increased by Landing Chain Attack",
 };
 
 /** "Great Hammer" → "Great Hammers", "Torch" → "Torches"; "Staves" stays. */
@@ -146,15 +151,15 @@ function pluralizeWeapon(w: string): string {
 
 // The game spells out "and" where the catalogue writes "&" (in either stat
 // order — it shows "Reduced Intelligence and Dexterity" for the catalogue's
-// "Reduced Dexterity & Intelligence"), and tags character effects
-// "[Duchess] …" where the catalogue writes "Duchess: …" — accept the
-// in-game phrasing for every such entry (verified in-game).
+// "Reduced Dexterity & Intelligence"). Character tags run the other way now
+// that "[Duchess] …" is canonical: the catalogue's "Duchess: …" spelling is
+// the alias, so older saved text and wiki-styled input still match.
 for (const name of EFFECT_VOCABULARY) {
   if (name.includes(" & ")) EFFECT_ALIASES[name.replace(/ & /g, " and ")] = name;
   const pair = name.match(/^Reduced ([A-Za-z]+) & ([A-Za-z]+)$/);
   if (pair) EFFECT_ALIASES[`Reduced ${pair[2]} and ${pair[1]}`] = name;
-  const prefixed = name.match(/^([A-Z][a-z]+): (.+)$/);
-  if (prefixed) EFFECT_ALIASES[`[${prefixed[1]}] ${prefixed[2]}`] = name;
+  const tagged = name.match(/^\[([A-Za-z]+)\] (.+)$/);
+  if (tagged) EFFECT_ALIASES[`${tagged[1]}: ${tagged[2]}`] = name;
   // Deep tiers of the afflicted-enemy effects: catalogue "Attack Power Up vs
   // Poison-Afflicted Enemy +1", game "Attack power up when facing
   // poison-afflicted enemy +1".

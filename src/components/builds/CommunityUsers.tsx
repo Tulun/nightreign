@@ -138,9 +138,9 @@ function ProfileBuilds({ store, uid }: { store: BuildStore; uid: string }) {
                   {g.builds.length}
                 </span>
               </h4>
-              {/* Link cards are compact, so they pair up on wider screens
-                  instead of leaving half the row empty. */}
-              <div className="grid gap-3 lg:grid-cols-2">
+              {/* Cards pair up once there's room for a full relic strip
+                  beside the title — below that they'd truncate the name. */}
+              <div className="grid gap-3 xl:grid-cols-2">
                 {g.builds.map((b) => (
                   <BuildCard key={b.id} build={b} store={store} href={buildPath(uid, b.id)} />
                 ))}

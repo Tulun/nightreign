@@ -20,6 +20,7 @@ import {
 import { grayInvertStretch } from "@/lib/imagePrep";
 import { lineFromWords } from "@/lib/ocrClean";
 import { dominantIconColor, iconSampleRegion } from "@/lib/relicColor";
+import { gameEffectName } from "@/lib/relics";
 
 export const RELIC_COLORS: CustomRelic["color"][] = ["Red", "Blue", "Green", "Yellow"];
 
@@ -112,8 +113,8 @@ export function EffectLines({
           key={`${l.text}-${i}`}
           className={`font-body text-parchment-muted ${sizeClass} ${divided ? "py-1.5 first:pt-0 last:pb-0" : ""}`}
         >
-          {l.text}
-          {l.demerit && <span className="block pl-3 text-red-300/80">{l.demerit}</span>}
+          {gameEffectName(l.text)}
+          {l.demerit && <span className="block pl-3 text-red-300/80">{gameEffectName(l.demerit)}</span>}
         </li>
       ))}
     </ul>
