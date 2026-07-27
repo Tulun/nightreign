@@ -7,8 +7,26 @@ const isGithubPages = process.env.GITHUB_PAGES === "true";
 const repo = "nightreign"; // GitHub repo name → project-site path segment
 const basePath = isGithubPages ? `/${repo}` : "";
 
+// The dev-only stub backend (src/lib/fakeCloud + its fixtures). lib/cloud.ts
+// picks it with a build-time constant, but a false branch does not stop
+// webpack bundling the module it imported, so without this the stub and its
+// fixture accounts ship to real visitors — inert, but pointless weight.
+// Swapping it for the empty fakeCloud.off keeps it out; resolve.alias does
+// NOT work here (Next's own "@/" alias matches the request first).
+const fakeCloud = process.env.NEXT_PUBLIC_FAKE_CLOUD === "1";
+
 const nextConfig = {
   output: "export", // emit a static site to ./out on `next build`
+  webpack: (config, { webpack }) => {
+    if (!fakeCloud) {
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/lib[\\/]fakeCloud$/, (r) => {
+          r.request = r.request.replace(/fakeCloud$/, "fakeCloud.off");
+        }),
+      );
+    }
+    return config;
+  },
   images: { unoptimized: true }, // no image-optimization server on GitHub Pages
   basePath,
   assetPrefix: isGithubPages ? `/${repo}/` : "",

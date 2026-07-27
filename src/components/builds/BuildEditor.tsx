@@ -30,6 +30,7 @@ import {
   type VariantView,
 } from "@/lib/builds";
 import type { Chalice, SlotColor } from "@/lib/chalices";
+import { loadoutEffectStates } from "@/lib/effectCompat";
 import { CustomRelicEditor } from "./CustomRelicEditor";
 import { RelicPicker } from "./RelicBrowser";
 import { ScreenshotBuildImport } from "./ScreenshotImport";
@@ -253,6 +254,14 @@ export function BuildEditor({
 
   const slotSection = (deep: boolean) => {
     const colors = deep ? chalice.deep : chalice.slots;
+    // Whether each effect lands, judged across the set the slot belongs to —
+    // an override only ever comes from a relic in the same three sockets.
+    const states = loadoutEffectStates(
+      build.character,
+      (deep ? loadout.deepSlots : loadout.slots).map(
+        (slot) => (resolveSlot(slot, store)?.lines ?? []).map((l) => l.text),
+      ),
+    );
     return colors.map((slotColor, index) => {
       const at: SlotRef = { deep, index };
       const isNewHere = newRelicAt?.deep === deep && newRelicAt.index === index;
@@ -290,7 +299,14 @@ export function BuildEditor({
               showDemerits={deep}
             />
           ) : (
-            resolved && <EffectLines lines={resolved.lines} size="sm" className="mt-2 space-y-1" />
+            resolved && (
+              <EffectLines
+                lines={resolved.lines}
+                states={states[index]}
+                size="sm"
+                className="mt-2 space-y-1"
+              />
+            )
           )}
           {isNewHere && (
             <CustomRelicEditor

@@ -22,8 +22,7 @@ import { CopyLinkButton } from "@/components/builds/shared";
 import { NicknameCard } from "@/components/builds/NicknameCard";
 import { MultiSelect } from "@/components/MultiSelect";
 import { cloudErrorMessage } from "@/lib/cloudRead";
-import { listProfiles, pullCloudStore, type UserProfile } from "@/lib/cloudSync";
-import { useAuth } from "@/lib/useAuth";
+import { listProfiles, pullCloudStore, useAuth, type UserProfile } from "@/lib/cloud";
 import {
   EMPTY_STORE,
   buildPath,

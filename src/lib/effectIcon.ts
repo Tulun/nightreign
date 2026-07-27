@@ -206,6 +206,30 @@ export function guessEffectIcon(name: string): EffectIcon | null {
   return statIcon(key);
 }
 
+/**
+ * Effects the game glyphs with an ailment symbol rather than one of the
+ * generic category icons above — those live in public/icons/status/, and the
+ * effect table has no slug for them. Keyed the same way as effectIconTable.
+ */
+const STATUS_ICON_EFFECTS: Record<string, { src: string; label: string }> = {
+  // The gesture that farms your own madness for FP: the game shows the
+  // madness eye here, not an attack or item glyph.
+  // effectIconKey has already dropped the quotes around “Crossed Legs”.
+  "gesture crossed legs builds up madness": { src: "/icons/status/madness.png", label: "Madness" },
+};
+
+/**
+ * The picture and tooltip for an effect line — an ailment symbol where the
+ * game uses one, otherwise the category glyph from public/icons/effects/.
+ * Null when nothing fits, which leaves the row's icon column blank.
+ */
+export function effectIconArt(name: string): { src: string; label: string } | null {
+  const status = STATUS_ICON_EFFECTS[effectIconKey(name)];
+  if (status) return status;
+  const icon = effectIcon(name);
+  return icon ? { src: `/icons/effects/${icon}.png`, label: EFFECT_ICON_LABELS[icon] } : null;
+}
+
 /** The icon for an effect line: wiki-confirmed where known, else guessed. */
 export function effectIcon(name: string): EffectIcon | null {
   const key = effectIconKey(name);

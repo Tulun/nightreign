@@ -30,7 +30,7 @@ import {
   type CustomRelic,
   type SlotTriple,
 } from "@/lib/builds";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/lib/cloud";
 import { useCloudSync } from "@/lib/useCloudSync";
 import { MyNickname } from "@/components/builds/NicknameCard";
 

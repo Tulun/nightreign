@@ -14,6 +14,7 @@ import {
   type FixedRelicOption,
 } from "@/lib/builds";
 import type { SlotColor } from "@/lib/chalices";
+import { soloEffectStates } from "@/lib/effectCompat";
 import { resolveSlot, EffectLines, RelicImg, SlotIconImg, type ResolvedLine } from "./shared";
 
 export function RelicPicker({
@@ -317,6 +318,7 @@ function RelicBrowser({
                     lines={r.effects
                       .map((text, i) => ({ text, demerit: r.demerits?.[i]?.trim() || undefined }))
                       .filter((l) => l.text.trim())}
+                    character={character}
                     active={value?.kind === "custom" && value.id === r.id}
                     onClick={() => onPick({ kind: "custom", id: r.id })}
                   />
@@ -393,7 +395,15 @@ function FixedRelicTable({
                 </span>
               </td>
               <td className="py-2.5 pr-1 align-top">
-                <EffectLines lines={r.effects.map((text) => ({ text }))} size="sm" className="space-y-0.5" />
+                {/* Greyed here as well as on the build — a relic whose pull
+                    is an effect for someone else is worth spotting before
+                    it's slotted, not after. */}
+                <EffectLines
+                  lines={r.effects.map((text) => ({ text }))}
+                  states={soloEffectStates(character, r.effects)}
+                  size="sm"
+                  className="space-y-0.5"
+                />
               </td>
             </tr>
           );
@@ -408,6 +418,7 @@ function RelicBrowserCard({
   icon,
   tag,
   lines,
+  character,
   active,
   onClick,
 }: {
@@ -415,6 +426,8 @@ function RelicBrowserCard({
   icon: string;
   tag?: string;
   lines: ResolvedLine[];
+  /** Nightfarer the relic is being picked for — greys what won't apply. */
+  character: string;
   active: boolean;
   onClick: () => void;
 }) {
@@ -436,7 +449,13 @@ function RelicBrowserCard({
           <span className="rounded border border-night-600 px-1 font-body text-[0.65rem] text-parchment-faint">{tag}</span>
         )}
       </span>
-      <EffectLines lines={lines} size="sm" divided className="mt-2" />
+      <EffectLines
+        lines={lines}
+        states={soloEffectStates(character, lines.map((l) => l.text))}
+        size="sm"
+        divided
+        className="mt-2"
+      />
     </button>
   );
 }

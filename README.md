@@ -11,6 +11,59 @@ npm run dev
 
 Then open http://localhost:3000 — it redirects to the Town Map Seeds view.
 
+### Sample builds for testing
+
+Add `?seed=<name>` to any URL to replace the browser's build store with a
+fixture, so My Builds / My Relics / the party planner are populated without
+entering relics by hand:
+
+```
+http://localhost:3000/builds?seed=demo     sample builds, relics, tags, variants
+http://localhost:3000/builds?seed=empty    wipe back to the first-run state
+```
+
+The page reloads with the parameter stripped. Two guards, both in
+`src/lib/devSeed.ts`: seeding only works on localhost (the deployed site
+ignores the parameter, and the fixture is dynamically imported so it never
+reaches visitors' bundles), and it refuses while signed in — a seeded store
+would sync straight into the account. Refusals show as a notice in the corner.
+Fixtures live in `src/data/devSeeds.ts`; every seeded id starts with `seed-`.
+
+### Fake cloud (testing signed-in and multi-user flows)
+
+Sign-in is a Google popup and the directory is real Firestore, which makes
+anything multi-user awkward to test — and seeding a real account with test
+data is worse. So there's a stub backend: no Firebase, no popup, everything in
+localStorage.
+
+```bash
+npm run dev:fake
+```
+
+Sign in from the header and you're `Nightfarer-fake`, with four other fixture
+accounts, published parties, and a cloud store that deliberately disagrees with
+`?seed=demo` — so the sign-in merge has something real to resolve. Drive it
+from the URL:
+
+```
+?cloud=signin     sign in as the fixture account (?cloud=signout to leave)
+?cloud=reset      back to the fixture accounts, signed out
+?cloud=empty      a directory with nobody in it
+?cloud=timeout    every cloud read fails (also: denied, unavailable)
+```
+
+`?seed=<name>` resets the stub too, so the two stay in step. The account
+`BrokenSync` always fails its store read, so the per-user error path shows up
+inside an otherwise healthy directory. In the console, `window.__fakeCloud`
+exposes `state()`, `reset()`, `scenario()`, `signIn()`, `signOut()` and
+`remoteEdit(uid, fn)` — that last one stands in for another device pushing an
+edit, which is the only way to reach the live-merge branch of `useCloudSync`.
+
+Everything routes through `src/lib/cloud.ts`, which picks the real backend or
+`src/lib/fakeCloud.ts` from `NEXT_PUBLIC_FAKE_CLOUD`; `next.config.mjs` swaps
+the stub for an empty module in any build without the flag, so none of it ships.
+What it can't test: Firestore security rules, and the real popup sign-in.
+
 ## Where things live
 
 - `src/data/sets.ts` — **your data**. The 21 sets (0–20), their weapon name +

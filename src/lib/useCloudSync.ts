@@ -12,15 +12,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { useAuth } from "@/lib/useAuth";
 import {
   ensureProfileName,
   mergeWithCloud,
   pullCloudStore,
   pushCloudStore,
   upsertProfile,
+  useAuth,
   watchCloudStore,
-} from "@/lib/cloudSync";
+} from "@/lib/cloud";
 import type { BuildStore } from "@/lib/builds";
 
 export type SyncStatus = "local" | "syncing" | "synced" | "error";

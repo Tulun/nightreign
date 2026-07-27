@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { asset } from "@/lib/assets";
-import { EFFECT_ICON_LABELS, effectIcon } from "@/lib/effectIcon";
+import { effectIconArt } from "@/lib/effectIcon";
 
 /**
  * The game's own glyph for an effect line — sword for attack power, armor for
@@ -13,19 +13,19 @@ import { EFFECT_ICON_LABELS, effectIcon } from "@/lib/effectIcon";
  * three-line effect read as one effect instead of three.
  */
 export function EffectIcon({ name, size = 14 }: { name: string; size?: number }) {
-  const icon = effectIcon(name);
+  const art = effectIconArt(name);
   // The glyph centres on the *first* line of the effect rather than the block:
   // a one-line-tall box (1lh follows whatever line-height the row inherits)
   // does that at any text size, so a wrapped three-line effect still shows its
   // icon beside the line it starts on instead of floating above it.
   const wrap = "flex h-[1lh] shrink-0 items-center";
-  if (!icon) {
+  if (!art) {
     return <span aria-hidden className={wrap} style={{ width: size }} />;
   }
   return (
-    <span aria-hidden className={wrap} style={{ width: size }} title={EFFECT_ICON_LABELS[icon]}>
+    <span aria-hidden className={wrap} style={{ width: size }} title={art.label}>
       <Image
-        src={asset(`/icons/effects/${icon}.png`)}
+        src={asset(art.src)}
         alt=""
         width={size}
         height={size}

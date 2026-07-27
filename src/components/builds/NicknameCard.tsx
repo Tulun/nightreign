@@ -8,8 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
-import { getProfileName, setProfileName } from "@/lib/cloudSync";
-import { useAuth } from "@/lib/useAuth";
+import { getProfileName, setProfileName, useAuth } from "@/lib/cloud";
 
 /**
  * Controlled card: the caller owns the name so its own copy (a directory

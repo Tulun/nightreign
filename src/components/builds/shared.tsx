@@ -18,6 +18,7 @@ import {
   NORMAL_EFFECT_VOCABULARY,
   pickBestOcrPass,
 } from "@/lib/effectMatch";
+import type { EffectState } from "@/lib/effectCompat";
 import { grayInvertStretch } from "@/lib/imagePrep";
 import { lineFromWords } from "@/lib/ocrClean";
 import { dominantIconColor, iconSampleRegion } from "@/lib/relicColor";
@@ -70,9 +71,35 @@ export function resolveSlot(
   return { name: r.name || `${r.color} relic`, color: r.color, icon: customRelicIcon(r), lines };
 }
 
+/**
+ * The game's red [!], shown on an effect an earlier relic already overrode.
+ * Drawn rather than sourced: the in-game glyph isn't published as an asset
+ * anywhere we pull icons from, and at this size a rounded red badge reads the
+ * same.
+ *
+ * It takes the category glyph's place in the icon column rather than sitting
+ * beside it — the glyph says what an effect *would* do, which is the one thing
+ * that no longer matters here, and the swap puts the warning where the eye
+ * already lands. Same footprint and the same one-line-tall box as EffectIcon,
+ * so the text column doesn't shift.
+ */
+function ClashIcon({ title, size }: { title: string; size: number }) {
+  return (
+    <span className="flex h-[1lh] shrink-0 items-center" style={{ width: size }}>
+      <svg viewBox="0 0 16 16" width={size} height={size} role="img" aria-label="Overridden by an earlier relic">
+        <title>{title}</title>
+        <rect x="1" y="1" width="14" height="14" rx="3.5" fill="#b3341f" />
+        <path d="M8 3.6v5.2" stroke="#ffe7c9" strokeWidth="2.2" strokeLinecap="round" />
+        <circle cx="8" cy="12" r="1.25" fill="#ffe7c9" />
+      </svg>
+    </span>
+  );
+}
+
 /** Effect lines with their demerits, one per row. */
 export function EffectLines({
   lines,
+  states,
   className,
   size = "xs",
   divided = false,
@@ -80,6 +107,14 @@ export function EffectLines({
   pad = 0,
 }: {
   lines: ResolvedLine[];
+  /**
+   * Per-line verdict from lib/effectCompat — parallel to `lines`. A line that
+   * doesn't apply to the build's Nightfarer greys out the way the game greys
+   * it, and one an earlier relic already claimed also picks up the red [!].
+   * Omit it wherever there's no Nightfarer to judge against (the relic pool,
+   * the browser) and every line renders live.
+   */
+  states?: EffectState[];
   className?: string;
   /** "base" for primary reading surfaces (relic cards); "sm" for build cards; "xs" for dense pickers. */
   size?: "xs" | "sm" | "base";
@@ -110,7 +145,10 @@ export function EffectLines({
   const iconSize = size === "base" ? 18 : size === "sm" ? 15 : 13;
   return (
     <ul className={`${divided ? "divide-y divide-night-700" : ""} ${className ?? ""}`}>
-      {lines.map((l, i) => (
+      {lines.map((l, i) => {
+        const state = states?.[i];
+        const dead = state && !state.active;
+        return (
         <li
           key={`${l.text}-${i}`}
           className={`font-body text-parchment-muted ${sizeClass} ${divided ? "py-1.5 first:pt-0 last:pb-0" : ""} ${
@@ -118,8 +156,22 @@ export function EffectLines({
             spread ? "sm:min-h-[3rem]" : ""
           }`}
         >
-          <span className="flex items-start gap-1.5">
-            <EffectIcon name={l.text} size={iconSize} />
+          {/* An effect that doesn't apply is still worth reading — the game
+              leaves it in place and drains the colour out of it, glyph and
+              all, so the text dims and the glyph greys rather than the row
+              disappearing. The fade is aimed at the <img> specifically so it
+              spares the [!], which is meant to catch the eye. */}
+          <span
+            className={`flex items-start gap-1.5 ${
+              dead ? "text-parchment-faint/70 [&_img]:opacity-40 [&_img]:grayscale" : ""
+            }`}
+            title={dead ? state.reason : undefined}
+          >
+            {dead && state.clash ? (
+              <ClashIcon title={state.reason} size={iconSize} />
+            ) : (
+              <EffectIcon name={l.text} size={iconSize} />
+            )}
             <span className="min-w-0">{gameEffectName(l.text)}</span>
           </span>
           {/* A demerit carries no glyph — the red text already reads as the
@@ -134,7 +186,8 @@ export function EffectLines({
             </span>
           )}
         </li>
-      ))}
+        );
+      })}
       {/* Unfilled effect slots: the icon's footprint and a dash, as the game
           shows them. Hidden on mobile, where one slot set shows at a time and
           there is nothing to line up with. */}

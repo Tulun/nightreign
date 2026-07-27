@@ -7,6 +7,7 @@
 import { Fragment, useState } from "react";
 import Link from "next/link";
 import { variantAt, variantCount, variantLabel, type Build, type BuildStore, type SlotTriple } from "@/lib/builds";
+import { loadoutEffectStates } from "@/lib/effectCompat";
 import { chalicesFor, resolveSlot, EffectLines, RelicImg, SlotIconImg } from "./shared";
 
 /** Disclosure chevron for expandable build cards. */
@@ -127,8 +128,15 @@ export function BuildCard({
     Math.max(lineCount(loadout.slots[i]), lineCount(loadout.deepSlots[i])),
   );
 
-  const renderSlots = (slots: SlotTriple) =>
-    slots.map((slot, i) => {
+  // Which of the loadout's effects actually land on this Nightfarer, worked
+  // out per set: the Deep of Night slots are the same three sockets on a Deep
+  // expedition, so a normal relic never overrides a Deep one.
+  const renderSlots = (slots: SlotTriple) => {
+    const states = loadoutEffectStates(
+      build.character,
+      slots.map((slot) => (resolveSlot(slot, relicStore)?.lines ?? []).map((l) => l.text)),
+    );
+    return slots.map((slot, i) => {
       const resolved = resolveSlot(slot, relicStore);
       return (
         <div key={i} className="flex items-start gap-3">
@@ -143,6 +151,7 @@ export function BuildCard({
                     block. Only where the card shows both (hasDeep). */}
                 <EffectLines
                   lines={resolved.lines}
+                  states={states[i]}
                   size="sm"
                   className="mt-0.5 space-y-0.5"
                   spread={hasDeep}
@@ -170,6 +179,7 @@ export function BuildCard({
         </div>
       );
     });
+  };
   const normalRows = renderSlots(loadout.slots);
   const deepRows = renderSlots(loadout.deepSlots);
 

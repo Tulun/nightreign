@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { signInWithGoogle, signOutUser, useAuth } from "@/lib/useAuth";
+import { signInWithGoogle, signOutUser, useAuth } from "@/lib/cloud";
 
 /**
  * Top-bar auth control: a "Sign in" button when signed out, the account's

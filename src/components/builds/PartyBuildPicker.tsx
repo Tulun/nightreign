@@ -17,8 +17,7 @@
 import { useEffect, useState } from "react";
 import { Dropdown } from "@/components/Dropdown";
 import { characterChalices } from "@/data/chalices";
-import { listProfiles, pullCloudStore, type UserProfile } from "@/lib/cloudSync";
-import { useAuth } from "@/lib/useAuth";
+import { listProfiles, pullCloudStore, useAuth, type UserProfile } from "@/lib/cloud";
 import {
   EMPTY_STORE,
   toSharedBuild,

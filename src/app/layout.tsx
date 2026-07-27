@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cinzel, EB_Garamond } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/AppShell";
+import { DevSeed } from "@/components/DevSeed";
 
 const display = Cinzel({
   subsets: ["latin"],
@@ -36,6 +37,7 @@ export default function RootLayout({
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body className="min-h-dvh">
         <AppShell>{children}</AppShell>
+        <DevSeed />
       </body>
     </html>
   );
