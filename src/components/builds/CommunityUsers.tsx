@@ -28,6 +28,7 @@ import {
   buildPath,
   buildShareText,
   buildShareUrl,
+  ownBuildPath,
   sortedTags,
   type Build,
   type BuildStore,
@@ -82,6 +83,33 @@ function ReturnButton({ to }: { to: string }) {
 }
 
 /**
+ * Edit and Delete for a build of your own found here. This directory is
+ * everyone's read-only view of the account's synced copy — the copy you can
+ * actually change is the one in your browser — so both hand the build over to
+ * the Builds page, which owns the editor, the confirm and the tombstone.
+ */
+function OwnerActions({ uid, buildId }: { uid: string; buildId: string }) {
+  return (
+    <>
+      <Link
+        href={ownBuildPath(uid, buildId, "edit")}
+        title="Open this build in the editor, on your Builds page"
+        className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-700"
+      >
+        Edit
+      </Link>
+      <Link
+        href={ownBuildPath(uid, buildId, "delete")}
+        title="Delete this build — your Builds page asks first"
+        className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-red-300"
+      >
+        Delete
+      </Link>
+    </>
+  );
+}
+
+/**
  * A read that failed, with a way to try again. Firestore reads are given a
  * deadline (see cloudRead) precisely so this can replace an endless
  * "Loading…" — a blocked connection otherwise hangs forever in silence.
@@ -112,12 +140,16 @@ function ProfileBuilds({
   store,
   uid,
   from,
+  owned,
 }: {
   store: BuildStore;
   uid: string;
   /** Return path to carry into each build's own page (see withReturn). */
   from: string | null;
+  /** This is the signed-in user's own profile — cards get Edit/Delete. */
+  owned: boolean;
 }) {
+  const router = useRouter();
   const [characterFilter, setCharacterFilter] = useState<string[]>([]);
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [tagMode, setTagMode] = useState<"any" | "all">("any");
@@ -218,6 +250,10 @@ function ProfileBuilds({
                     build={b}
                     store={store}
                     href={withReturn(buildPath(uid, b.id), from)}
+                    // Your own builds are editable — but only where the
+                    // editable copy is, so both actions leave for /builds.
+                    onEdit={owned ? () => router.push(ownBuildPath(uid, b.id, "edit")) : undefined}
+                    onDelete={owned ? () => router.push(ownBuildPath(uid, b.id, "delete")) : undefined}
                   />
                 ))}
               </div>
@@ -323,6 +359,9 @@ export function CommunityUsers() {
               text={buildShareText(build, buildShareUrl(selectedUid, selectedBuildId))}
             />
           )}
+          {build && selectedUid === user?.uid && (
+            <OwnerActions uid={selectedUid} buildId={selectedBuildId} />
+          )}
         </div>
         {storeError ? (
           <LoadError message={storeError} onRetry={retry} />
@@ -339,7 +378,9 @@ export function CommunityUsers() {
                 <Avatar name={selected.displayName} size={36} />
                 <p className="font-body text-sm text-parchment-muted">
                   A build by <span className="font-semibold text-parchment">{selected.displayName}</span>
-                  {selected.uid === user?.uid && " (you)"} — view-only.
+                  {selected.uid === user?.uid
+                    ? " (you) — view-only here; Edit and Delete open your own copy."
+                    : " — view-only."}
                 </p>
               </div>
             )}
@@ -376,8 +417,9 @@ export function CommunityUsers() {
               <div>
                 <h3 className="font-display text-xl font-semibold text-parchment">{selected.displayName}</h3>
                 <p className="font-body text-xs text-parchment-faint">
-                  {selected.uid === user?.uid ? "This is you. " : ""}
-                  Builds are view-only — open one for its own page and a share link.
+                  {selected.uid === user?.uid
+                    ? "This is you — open a build for its own page and a share link, or edit and delete your own copy from here."
+                    : "Builds are view-only — open one for its own page and a share link."}
                 </p>
               </div>
             </div>
@@ -386,7 +428,13 @@ export function CommunityUsers() {
             ) : !selectedStore ? (
               <p className="font-body text-sm text-parchment-faint">Loading builds…</p>
             ) : (
-              <ProfileBuilds key={selectedUid} store={selectedStore} uid={selectedUid} from={from} />
+              <ProfileBuilds
+                key={selectedUid}
+                store={selectedStore}
+                uid={selectedUid}
+                from={from}
+                owned={selectedUid === user?.uid}
+              />
             )}
           </>
         )}

@@ -51,11 +51,15 @@ const POSSESSION_ITEMS = [
  * effect line up ("Magic/Fire/Lightning/Holy Attack Up +2" → the existing
  * "Fire Attack Power Up +2" entry, not a second spelling of it).
  */
-const AFFLICTED = ["Poison", "Rot", "Frost"].map((s) => `Attack Power Up vs ${s}-Afflicted Enemy`);
+/** In-game status wording → the catalogue's old abbreviation, kept as an alias. */
+const AFFLICTED_LEGACY: Record<string, string> = {
+  poison: "Poison", "scarlet rot": "Rot", frostbite: "Frost",
+};
+const AFFLICTED = Object.keys(AFFLICTED_LEGACY).map((s) => `Attack power up when facing ${s}-afflicted enemy`);
 const NAME_GROUPS: [string, string[]][] = [
   ["Magic/Fire/Lightning/Holy Attack Up", ELEMENTS.map((e) => `${e} Attack Power Up`)],
-  ["Attack Power Up vs Poison/Rot/Frost-Afflicted Enemy", AFFLICTED],
-  ["Attack Power Up vs Frost/Poison/Rot-Afflicted Enemy", AFFLICTED],
+  ["Attack power up when facing poison/scarlet rot/frostbite-afflicted enemy", AFFLICTED],
+  ["Attack power up when facing frostbite/poison/scarlet rot-afflicted enemy", AFFLICTED],
   ["Sleep/Madness in Vicinity Improves Attack Power",
     ["Sleep", "Madness"].map((s) => `${s} in Vicinity Improves Attack Power`)],
   // The game shows these as separate per-spell-type lines ("Improved
@@ -175,12 +179,21 @@ for (const name of EFFECT_VOCABULARY) {
   if (pair) EFFECT_ALIASES[`Reduced ${pair[2]} and ${pair[1]}`] = name;
   const tagged = name.match(/^\[([A-Za-z]+)\] (.+)$/);
   if (tagged) EFFECT_ALIASES[`${tagged[1]}: ${tagged[2]}`] = name;
-  // Deep tiers of the afflicted-enemy effects: catalogue "Attack Power Up vs
-  // Poison-Afflicted Enemy +1", game "Attack power up when facing
-  // poison-afflicted enemy +1".
-  const afflicted = name.match(/^Attack Power Up vs ([A-Za-z]+)-Afflicted Enemy( \+\d)?$/);
-  if (afflicted) {
-    EFFECT_ALIASES[`Attack power up when facing ${afflicted[1].toLowerCase()}-afflicted enemy${afflicted[2] ?? ""}`] = name;
+  // The afflicted-enemy and grease effects are named for what the game shows,
+  // so here the *catalogue's* old abbreviations are the aliases — kept so
+  // relics saved before the rename, and wiki-styled input, still match. The
+  // deep tiers had no alias at all under the old naming ("Frost-Afflicted"
+  // where the game says frostbite; "Attack Power Up After Using Grease"
+  // against a sentence the game writes out in full), so a tiered line fell
+  // back on the untiered normal entry and silently lost its tier.
+  const afflicted = name.match(/^Attack power up when facing ([a-z ]+)-afflicted enemy( \+\d)?$/);
+  if (afflicted && AFFLICTED_LEGACY[afflicted[1]]) {
+    EFFECT_ALIASES[`Attack Power Up vs ${AFFLICTED_LEGACY[afflicted[1]]}-Afflicted Enemy${afflicted[2] ?? ""}`] = name;
+  }
+  const grease = name.match(/^Physical attack power increases after using grease items( \+\d)?$/);
+  if (grease) {
+    EFFECT_ALIASES[`Attack Power Up After Using Grease${grease[1] ?? ""}`] = name;
+    if (!grease[1]) EFFECT_ALIASES["Attack power increases after using grease items"] = name;
   }
   // The game pluralizes the weapon class where the catalogue is singular —
   // "Improved Attack Power with 3+ Colossal Weapons Equipped", "Dormant

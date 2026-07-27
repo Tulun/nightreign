@@ -59,6 +59,11 @@ export function BuildsManager() {
   const openId = params.get("b");
   const isNew = openId === "new";
   const isEditing = isNew || params.get("edit") !== null;
+  // ?delete=1 — a delete asked for from somewhere without the store in hand
+  // (your own build on its community page). Deleting happens here, where the
+  // store and its tombstones are, and only after the same confirm as the
+  // button below.
+  const wantsDelete = !isNew && params.get("delete") !== null;
   // Whose build the URL claims to be (see withOwner). Absent on links made
   // while signed out, and on anything older than that change.
   const ownerUid = params.get("u");
@@ -126,6 +131,26 @@ export function BuildsManager() {
     if (store.builds.some((b) => b.id === openId)) return;
     router.replace(buildPath(ownerUid, openId));
   }, [store, openId, isNew, ownerUid, user, router]);
+
+  // A ?delete=1 link, asked once and only for a build this browser actually
+  // holds — a missing one falls through to the message below, and re-asking
+  // on every render would be worse than saying nothing. Either answer strips
+  // the intent from the URL, so a refresh doesn't ask again.
+  const deleteAsked = useRef(false);
+  useEffect(() => {
+    if (!store || !openId || !wantsDelete || deleteAsked.current) return;
+    const build = store.builds.find((b) => b.id === openId);
+    if (!build) return;
+    deleteAsked.current = true;
+    if (!window.confirm(`Delete "${build.name.trim() || "Unnamed build"}"?`)) {
+      router.replace(
+        `/builds?b=${encodeURIComponent(openId)}${ownerUid ? `&u=${encodeURIComponent(ownerUid)}` : ""}`,
+      );
+      return;
+    }
+    setStore((s) => withTombstones(s ?? EMPTY_STORE, [openId]));
+    router.replace("/builds");
+  }, [store, openId, wantsDelete, ownerUid, router]);
 
   if (!store) {
     return <p className="font-body text-sm text-parchment-faint">Loading saved builds…</p>;

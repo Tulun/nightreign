@@ -71,8 +71,9 @@ function ActionIcon({ kind }: { kind: "edit" | "delete" }) {
  * when onEdit is given); with neither it's a
  * read-only preview (community profiles, party views). `expandable` cards
  * start collapsed to a one-line summary (relic icons + tags) and expand on
- * click; with `href` the whole card is a link into the build's own page,
- * and with `onOpen` it's a grid tile that opens the build in place.
+ * click; with `href` the whole card is a link into the build's own page —
+ * carrying the actions alongside the link, if it was given any — and with
+ * `onOpen` it's a grid tile that opens the build in place.
  */
 export function BuildCard({
   build,
@@ -292,11 +293,40 @@ export function BuildCard({
   // expands in place and the arrow sits on the trailing edge (a leading
   // chevron would read as a disclosure triangle it isn't).
   if (href) {
-    return (
-      <Link
-        href={href}
-        className="frame group flex items-center gap-4 rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700 sm:gap-6 sm:p-5"
-      >
+    // Actions on a link card (your own build, listed on your community
+    // profile) can't sit *inside* the link — a button in an anchor is neither
+    // valid nor clickable — so the link becomes an overlay behind the row and
+    // the buttons, being positioned, stay on top of it.
+    const actions = (onEdit || onDelete) && (
+      <span className="relative flex shrink-0 gap-1">
+        {onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            title="Edit build"
+            aria-label={`Edit ${build.name || "Unnamed build"}`}
+            className="rounded border border-night-600 p-1.5 text-parchment-muted transition-colors hover:border-gold-dim hover:text-gold-bright"
+          >
+            <ActionIcon kind="edit" />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            title="Delete build"
+            aria-label={`Delete ${build.name || "Unnamed build"}`}
+            className="rounded border border-night-600 p-1.5 text-parchment-muted transition-colors hover:border-red-400/60 hover:text-red-300"
+          >
+            <ActionIcon kind="delete" />
+          </button>
+        )}
+      </span>
+    );
+    const cardClass =
+      "frame group flex items-center gap-4 rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700 sm:gap-6 sm:p-5";
+    const row = (
+      <>
         <span className="min-w-0 flex-1">
           <span className="block truncate font-display text-lg font-semibold text-parchment transition-colors group-hover:text-gold-bright">
             {build.name || "Unnamed build"}
@@ -313,10 +343,28 @@ export function BuildCard({
         {/* The relics are what the card is really about, so they take the
             width the title doesn't need — big enough to actually read. */}
         <span className="hidden shrink-0 sm:flex">{iconStrip(44, "gap-2")}</span>
+        {actions}
         <span className="shrink-0 text-parchment-faint transition-colors group-hover:text-gold-bright">
           <Chevron open={false} className="" />
         </span>
-      </Link>
+      </>
+    );
+    if (!actions) {
+      return (
+        <Link href={href} className={cardClass}>
+          {row}
+        </Link>
+      );
+    }
+    return (
+      <article className={`relative ${cardClass}`}>
+        <Link
+          href={href}
+          className="absolute inset-0 rounded-md"
+          aria-label={`Open ${build.name || "Unnamed build"}`}
+        />
+        {row}
+      </article>
     );
   }
 

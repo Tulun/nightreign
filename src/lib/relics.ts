@@ -170,7 +170,7 @@ export const RELIC_VALUES: Record<string, string> = {
   "Fire Attack Power Up": "+4.5% / +5.5% / +6.5% fire damage",
   "Lightning Attack Power Up": "+4.5% / +5.5% / +6.5% lightning damage",
   "Holy Attack Power Up": "+4.5% / +5.5% / +6.5% holy damage",
-  "Attack power increases after using grease items": "+10% physical for 30s (grease duration)",
+  "Physical attack power increases after using grease items": "+10% physical for 30s (grease duration)",
   "Taking attacks improves attack power": "+15% for 10s after taking a hit (refreshes; not if blocked)",
   "Improved Initial Standard Attack": "+15% on the first light attack of a chain",
   "Improved Guard Counters": "+17% guard counter damage",

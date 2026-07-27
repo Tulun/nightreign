@@ -70,6 +70,10 @@ export function BuildEditor({
   // Which loadout variant the editor is working on (0 = the build's own).
   const [variant, setVariant] = useState(0);
   const [newRelicAt, setNewRelicAt] = useState<SlotRef | null>(null);
+  // Slots switched into line-by-line editing (see slotSection). A slot reads
+  // as the relic by default — six slots' worth of open effect inputs is a
+  // wall of form fields where what the user is working on is a build.
+  const [editing, setEditing] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
   // Relics a chalice swap emptied out, reported until the next swap.
   const [cleared, setCleared] = useState<{ chalice: string; count: number } | null>(null);
@@ -77,11 +81,19 @@ export function BuildEditor({
   const chalices = chalicesFor(build.character);
   const chalice = chalices.find((c) => c.name === loadout.chalice) ?? chalices[0];
 
+  const slotKey = (at: SlotRef) => `${at.deep ? "d" : "n"}${at.index}`;
+  const toggleEditing = (at: SlotRef) =>
+    setEditing((cur) =>
+      cur.includes(slotKey(at)) ? cur.filter((k) => k !== slotKey(at)) : [...cur, slotKey(at)],
+    );
+
   // A pending new-relic form points at a slot of the variant it was opened
   // on — close it rather than carry it across to another loadout's slot.
+  // Open effect inputs belong to the slot they were opened on too.
   const switchVariant = (i: number) => {
     setVariant(i);
     setNewRelicAt(null);
+    setEditing([]);
     setCleared(null);
   };
 
@@ -153,8 +165,10 @@ export function BuildEditor({
       slots[at.index] = slot;
       return withVariantPatch(b, variant, { [key]: slots });
     });
-    // Filling a slot supersedes its pending new-relic form.
+    // Filling a slot supersedes its pending new-relic form, and the relic
+    // that leaves takes its open effect inputs with it.
     setNewRelicAt((cur) => (cur && cur.deep === at.deep && cur.index === at.index ? null : cur));
+    setEditing((cur) => cur.filter((k) => k !== slotKey(at)));
   };
 
   // Reuse an identical pool relic instead of adding a duplicate — the same
@@ -234,6 +248,7 @@ export function BuildEditor({
     if (filled > 1 && !window.confirm(`Clear all ${filled} relics from the ${what}?`)) return;
     setBuild((b) => withVariantPatch(b, variant, { [key]: [...EMPTY_SLOTS] as SlotTriple }));
     setNewRelicAt((cur) => (cur && cur.deep === deep ? null : cur));
+    setEditing((cur) => cur.filter((k) => k.startsWith(deep ? "n" : "d")));
   };
 
   const slotSection = (deep: boolean) => {
@@ -245,6 +260,11 @@ export function BuildEditor({
       const resolved = resolveSlot(value, store);
       const customRelic =
         value?.kind === "custom" ? store.customRelics.find((r) => r.id === value.id) : undefined;
+      // A relic with nothing on it yet has nothing to read, so it opens
+      // straight into its inputs; anything else reads as the relic until the
+      // user asks to edit it.
+      const blank = !!customRelic && !customRelic.effects.some((e) => e.trim());
+      const editingLines = !!customRelic && (blank || editing.includes(slotKey(at)));
       return (
         <div key={index} className="frame rounded-md bg-night-900/60 p-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -257,9 +277,11 @@ export function BuildEditor({
               value={value}
               onChange={(slot) => setSlot(at, slot)}
               onNewRelic={() => setNewRelicAt(isNewHere ? null : at)}
+              editingLines={editingLines}
+              onToggleLines={customRelic && !blank ? () => toggleEditing(at) : undefined}
             />
           </div>
-          {customRelic ? (
+          {editingLines && customRelic ? (
             // Custom relics stay editable line by line, right in the slot.
             <RelicLineInputs
               relic={customRelic}
@@ -268,7 +290,7 @@ export function BuildEditor({
               showDemerits={deep}
             />
           ) : (
-            resolved && <EffectLines lines={resolved.lines} className="mt-1.5 space-y-0.5" />
+            resolved && <EffectLines lines={resolved.lines} size="sm" className="mt-2 space-y-1" />
           )}
           {isNewHere && (
             <CustomRelicEditor

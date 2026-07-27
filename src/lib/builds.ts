@@ -527,6 +527,18 @@ export function buildPath(uid: string, buildId: string): string {
   return `/builds/users?u=${encodeURIComponent(uid)}&b=${encodeURIComponent(buildId)}`;
 }
 
+/**
+ * Path of one of your *own* builds on the Builds page — the editable copy,
+ * which lives in this browser rather than in the account. `action` opens it
+ * straight into the editor, or asks to delete it (the Builds page confirms
+ * before anything goes). The uid rides along so a link passed on to someone
+ * else is still recognisable as yours (see BuildsManager's withOwner).
+ */
+export function ownBuildPath(uid: string, buildId: string, action?: "edit" | "delete"): string {
+  const suffix = action === "edit" ? "&edit=1" : action === "delete" ? "&delete=1" : "";
+  return `/builds?b=${encodeURIComponent(buildId)}&u=${encodeURIComponent(uid)}${suffix}`;
+}
+
 /** The same link, absolute and base-path-aware — what Share copies. */
 export function buildShareUrl(uid: string, buildId: string): string {
   const path = asset(buildPath(uid, buildId));

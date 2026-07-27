@@ -24,6 +24,8 @@ export function RelicPicker({
   value,
   onChange,
   onNewRelic,
+  editingLines,
+  onToggleLines,
 }: {
   character: string;
   slotColor: SlotColor;
@@ -32,6 +34,10 @@ export function RelicPicker({
   value: BuildSlot;
   onChange: (slot: BuildSlot) => void;
   onNewRelic: () => void;
+  /** Whether the slot below is showing its effect inputs (custom relics). */
+  editingLines?: boolean;
+  /** Given for a slot whose relic can have its lines edited in place. */
+  onToggleLines?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const resolved = resolveSlot(value, store);
@@ -40,7 +46,22 @@ export function RelicPicker({
     <div className="min-w-0 flex-1">
       {resolved ? (
         <div className="flex min-w-0 items-center gap-2">
-          <span className="min-w-0 flex-1 truncate font-body text-sm text-parchment">{resolved.name}</span>
+          <span className="min-w-0 flex-1 truncate font-body text-base text-parchment">{resolved.name}</span>
+          {onToggleLines && (
+            <button
+              type="button"
+              onClick={onToggleLines}
+              aria-pressed={!!editingLines}
+              title="Edit this relic's effect lines"
+              className={`shrink-0 rounded border px-2 py-0.5 font-body text-xs transition-colors ${
+                editingLines
+                  ? "border-gold-faint text-gold-bright"
+                  : "border-night-600 text-parchment-muted hover:text-gold-bright"
+              }`}
+            >
+              {editingLines ? "Done" : "Edit lines"}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -195,7 +216,9 @@ function RelicBrowser({
     else if (firstFixed) onPick({ kind: "fixed", name: firstFixed.name });
   };
 
-  const cardGrid = "grid items-start gap-2 sm:grid-cols-2 xl:grid-cols-3";
+  // Stretched rather than items-start: cards in a row end level, so the grid
+  // reads as rows of relics instead of a ragged stack.
+  const cardGrid = "grid gap-3 sm:grid-cols-2 xl:grid-cols-3";
 
   return (
     <div
@@ -209,7 +232,7 @@ function RelicBrowser({
         role="dialog"
         aria-modal="true"
         aria-label="Choose a relic"
-        className="relative flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-md border border-night-500 bg-night-850 shadow-lift"
+        className="relative flex max-h-[85vh] w-full max-w-6xl flex-col overflow-hidden rounded-md border border-night-500 bg-night-850 shadow-lift"
       >
         <div className="flex items-center gap-2 border-b border-night-600 px-4 py-3">
           <SlotIconImg color={slotColor} size={22} />
@@ -353,21 +376,24 @@ function FixedRelicTable({
                 active ? "bg-night-700" : "hover:bg-night-800"
               }`}
             >
-              <td className="w-[40%] min-w-44 py-2 pl-1 pr-3 align-top">
+              {/* A name needs far less room than three effect lines do, so the
+                  name column is sized to the longest relic name rather than to
+                  a share of the table — the rest goes to the effects. */}
+              <td className="w-[38%] min-w-40 py-2.5 pl-1 pr-4 align-top sm:w-[1%] sm:min-w-52 sm:whitespace-nowrap">
                 <span className="flex items-center gap-2">
-                  <RelicImg src={r.icon} alt="" size={24} />
-                  <span className={`font-body text-sm ${active ? "text-gold-bright" : "text-parchment"}`}>
+                  <RelicImg src={r.icon} alt="" size={28} />
+                  <span className={`font-body text-base ${active ? "text-gold-bright" : "text-parchment"}`}>
                     {r.name}
                   </span>
                   {r.character && r.character !== character && (
-                    <span className="shrink-0 rounded border border-night-600 px-1 font-body text-[0.6rem] text-parchment-faint">
+                    <span className="shrink-0 rounded border border-night-600 px-1 font-body text-[0.65rem] text-parchment-faint">
                       {r.character}
                     </span>
                   )}
                 </span>
               </td>
-              <td className="py-2 pr-1 align-top">
-                <EffectLines lines={r.effects.map((text) => ({ text }))} className="space-y-0.5" />
+              <td className="py-2.5 pr-1 align-top">
+                <EffectLines lines={r.effects.map((text) => ({ text }))} size="sm" className="space-y-0.5" />
               </td>
             </tr>
           );
@@ -392,23 +418,25 @@ function RelicBrowserCard({
   active: boolean;
   onClick: () => void;
 }) {
+  // flex-col: a button centres its content, which would float a short card's
+  // title away from the top once its row stretches to a common height.
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`frame w-full rounded-md p-3 text-left transition-colors ${
+      className={`frame flex h-full w-full flex-col items-stretch rounded-md p-3 text-left transition-colors ${
         active ? "bg-night-700" : "bg-night-800 hover:bg-night-700"
       }`}
       style={active ? { borderColor: "#c9a227" } : undefined}
     >
       <span className="flex items-center gap-2">
-        <RelicImg src={icon} alt="" size={24} />
-        <span className={`font-body text-sm ${active ? "text-gold-bright" : "text-parchment"}`}>{name}</span>
+        <RelicImg src={icon} alt="" size={28} />
+        <span className={`font-body text-base ${active ? "text-gold-bright" : "text-parchment"}`}>{name}</span>
         {tag && (
-          <span className="rounded border border-night-600 px-1 font-body text-[0.6rem] text-parchment-faint">{tag}</span>
+          <span className="rounded border border-night-600 px-1 font-body text-[0.65rem] text-parchment-faint">{tag}</span>
         )}
       </span>
-      <EffectLines lines={lines} divided className="mt-2" />
+      <EffectLines lines={lines} size="sm" divided className="mt-2" />
     </button>
   );
 }

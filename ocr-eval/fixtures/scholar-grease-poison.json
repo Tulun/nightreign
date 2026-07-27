@@ -1,0 +1,43 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "Items confer effect to all nearby allies",
+        "Improved Affinity Damage Negation +2",
+        "Poise +3"
+      ],
+      "demerits": [
+        null,
+        "Taking Damage Causes Frost Buildup",
+        null
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Physical attack power increases after using grease items +1",
+        "Attack power up when facing poison-afflicted enemy +2",
+        "Attack power up when facing frostbite-afflicted enemy +1"
+      ],
+      "demerits": [
+        "Taking Damage Causes Poison Buildup",
+        "Reduced Faith and Strength",
+        "Taking Damage Causes Blood Loss Buildup"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Scholar] Improved Endurance and Dexterity, Reduced Intelligence and Arcane",
+        "Improved Affinity Attack Power"
+      ],
+      "demerits": [
+        null,
+        null
+      ]
+    }
+  ],
+  "notes": "Relic Rites equip screen (phone photo of TV): no relic names or per-relic icons, so names are null and colors are left unscored. Blank rows between effects are empty curse slots. Covers the tiered in-game phrasings for the grease and frostbite-afflicted effects."
+}

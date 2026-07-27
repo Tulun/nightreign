@@ -25,7 +25,7 @@ export const relicEffects: RelicEffect[] = [
   { name: "Holy Attack Power Up", category: "attack" },
   { name: "Holy Attack Power Up +1", category: "attack" },
   { name: "Holy Attack Power Up +2", category: "attack" },
-  { name: "Attack power increases after using grease items", category: "attack" },
+  { name: "Physical attack power increases after using grease items", category: "attack" },
   { name: "Taking attacks improves attack power", category: "attack" },
   { name: "Improved Initial Standard Attack", category: "attack" },
   { name: "Improved Guard Counters", category: "attack" },
