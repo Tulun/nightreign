@@ -37,6 +37,18 @@ export interface PartyMember {
   uid: string | null;
   /** The owner's directory name, frozen at pick time. */
   ownerName: string;
+  /**
+   * The source build's id in its owner's store. Only an identity hint — the
+   * snapshot is what the party renders — so the picker can mark which build
+   * (and variant) a filled slot currently holds. Absent on older parties.
+   */
+  buildId?: string;
+  /**
+   * Which of the build's loadouts the snapshot is, by its tab label. Only set
+   * when the source build actually has variants — a build with a single
+   * loadout has nothing to disambiguate.
+   */
+  variantLabel?: string;
   /** Self-contained snapshot: the build plus the custom relics it uses. */
   build: SharedBuild;
 }
@@ -87,6 +99,10 @@ export function normalizeParty(data: unknown): Party | null {
     return {
       uid: typeof m.uid === "string" && m.uid ? m.uid : null,
       ownerName: m.ownerName,
+      ...(typeof m.buildId === "string" && m.buildId ? { buildId: m.buildId } : {}),
+      ...(typeof m.variantLabel === "string" && m.variantLabel
+        ? { variantLabel: m.variantLabel }
+        : {}),
       build: m.build,
     };
   }) as PartySlots;
@@ -121,8 +137,12 @@ export function saveParty(party: Party): boolean {
   }
 }
 
-/** [ownerName, uid ("" = none), packed build] — 0 marks an empty slot. */
-type PackedMember = 0 | [string, string, PackedBuild];
+/**
+ * [ownerName, uid ("" = none), packed build, variant label, build id] — 0
+ * marks an empty slot. The last two were added later, so links minted before
+ * them stop at the packed build and decode with those undefined.
+ */
+type PackedMember = 0 | [string, string, PackedBuild, string?, string?];
 
 interface PartyPayload {
   v: 1;
@@ -139,7 +159,9 @@ export async function encodeParty(party: Party): Promise<string> {
     n: party.name,
     ...(party.blurb.trim() ? { d: party.blurb.trim() } : {}),
     m: party.slots.map((s): PackedMember =>
-      s ? [s.ownerName, s.uid ?? "", packSharedBuild(s.build)] : 0,
+      s
+        ? [s.ownerName, s.uid ?? "", packSharedBuild(s.build), s.variantLabel ?? "", s.buildId ?? ""]
+        : 0,
     ),
   };
   return compressJson(payload);
@@ -241,11 +263,17 @@ export async function decodeParty(encoded: string): Promise<Party | null> {
   }
   const slots = d.m.map((m): PartyMember | null => {
     if (!Array.isArray(m)) return null;
-    const [ownerName, uid, packed] = m;
+    const [ownerName, uid, packed, variantLabel, buildId] = m;
     if (typeof ownerName !== "string") return null;
     const build = unpackSharedBuild(packed as PackedBuild);
     if (!build) return null;
-    return { uid: typeof uid === "string" && uid ? uid : null, ownerName, build };
+    return {
+      uid: typeof uid === "string" && uid ? uid : null,
+      ownerName,
+      ...(typeof buildId === "string" && buildId ? { buildId } : {}),
+      ...(typeof variantLabel === "string" && variantLabel ? { variantLabel } : {}),
+      build,
+    };
   }) as PartySlots;
   return {
     name: typeof d.n === "string" ? d.n : "",

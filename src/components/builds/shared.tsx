@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import Image from "next/image";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { characterChalices, grailChalices } from "@/data/chalices";
 import { asset } from "@/lib/assets";
 import { customRelicIcon, fixedRelics, type BuildSlot, type BuildStore, type CustomRelic } from "@/lib/builds";
@@ -158,6 +158,51 @@ export function EffectLines({
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * Copies a link to the clipboard, with a prompt fallback where it's blocked
+ * (clipboard writes need a secure context and can be denied outright).
+ * `disabled` is for a link that isn't shareable yet — the button stays put
+ * and `title` says why, rather than appearing out of nowhere once it is.
+ */
+export function CopyLinkButton({
+  url,
+  text,
+  label = "Copy link",
+  disabled = false,
+  title,
+}: {
+  url: string;
+  /** Copied instead of the bare url — a caption plus the link (see buildShareText). */
+  text?: string;
+  label?: string;
+  disabled?: boolean;
+  title?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text ?? url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // A prompt's input is one line, so the caption can't survive it —
+      // fall back to the part that has to arrive intact, the link.
+      window.prompt("Copy this link:", url);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={() => void copy()}
+      disabled={disabled}
+      title={title}
+      className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted transition-colors hover:bg-night-700 hover:text-parchment disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-night-800 disabled:hover:text-parchment-muted"
+    >
+      {copied ? "Link copied ✓" : label}
+    </button>
   );
 }
 

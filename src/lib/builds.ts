@@ -487,6 +487,21 @@ export function buildShareUrl(uid: string, buildId: string): string {
 }
 
 /**
+ * What Copy link actually puts on the clipboard: what the build *is*, a
+ * blank line, then the link. Pasted into WhatsApp or Messenger a bare URL
+ * says nothing until (and unless) a preview loads, so the caption carries
+ * the name, Nightfarer and chalice — and the blank line keeps the URL alone
+ * on its own line, which is what those apps linkify and unfurl.
+ */
+export function buildShareText(
+  build: Pick<Build, "name" | "character" | "chalice">,
+  url: string,
+): string {
+  const name = build.name.trim() || "Unnamed build";
+  return `${name} — ${build.character}, ${build.chalice}\n\n${url}`;
+}
+
+/**
  * Whether two custom relics are the same relic: same deep-ness, same color,
  * and same effect lines (including each line's demerit). Re-importing a
  * relic that's already in the pool reuses the existing entry — a duplicate
@@ -563,10 +578,16 @@ const unpackSlot = (s: unknown): BuildSlot => {
 /**
  * Snapshot a build for travel: only the wire fields (no id/timestamps, notes
  * and labels stay home) plus the custom relics its slots actually use.
+ *
+ * A build with variants is snapshotted one loadout at a time — variantIdx
+ * picks which, and the snapshot carries that loadout as the build's own. A
+ * party slot is one Nightfarer running one set of relics, so the variant is
+ * chosen when the slot is filled rather than travelling as a tab strip.
  */
-export function toSharedBuild(build: Build, store: BuildStore): SharedBuild {
+export function toSharedBuild(build: Build, store: BuildStore, variantIdx = 0): SharedBuild {
+  const loadout = variantAt(build, Math.min(Math.max(variantIdx, 0), variantCount(build) - 1));
   const used = new Set(
-    [...build.slots, ...build.deepSlots].flatMap((s) => (s?.kind === "custom" ? [s.id] : [])),
+    [...loadout.slots, ...loadout.deepSlots].flatMap((s) => (s?.kind === "custom" ? [s.id] : [])),
   );
   // A build that carries its own relics (a party-member snapshot) resolves
   // slots from those; the pool covers everything else.
@@ -576,9 +597,9 @@ export function toSharedBuild(build: Build, store: BuildStore): SharedBuild {
     build: {
       name: build.name,
       character: build.character,
-      chalice: build.chalice,
-      slots: build.slots,
-      deepSlots: build.deepSlots,
+      chalice: loadout.chalice,
+      slots: loadout.slots,
+      deepSlots: loadout.deepSlots,
       notes: "",
     },
     relics: Array.from(byId.values()).filter((r) => used.has(r.id)),

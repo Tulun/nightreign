@@ -7,6 +7,10 @@
 //  static export can't prerender /users/{uid}/{buildId} paths, so the ids
 //  ride the query string). Both are readable without signing in — signing
 //  in only adds syncing and the nickname editor.
+//
+//  A &from=<path> on either link is where the visit came from (a party
+//  slot's "profile →", say) and puts a button back there on the page, so a
+//  detour into a profile isn't a one-way trip out of wherever you were.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
@@ -14,6 +18,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { characterChalices } from "@/data/chalices";
 import { BuildCard } from "@/components/builds/BuildCard";
+import { CopyLinkButton } from "@/components/builds/shared";
 import { MultiSelect } from "@/components/MultiSelect";
 import { cloudErrorMessage } from "@/lib/cloudRead";
 import { listProfiles, pullCloudStore, setProfileName, type UserProfile } from "@/lib/cloudSync";
@@ -21,6 +26,7 @@ import { useAuth } from "@/lib/useAuth";
 import {
   EMPTY_STORE,
   buildPath,
+  buildShareText,
   buildShareUrl,
   sortedTags,
   type Build,
@@ -39,6 +45,39 @@ function Avatar({ name, size }: { name: string; size: number }) {
     >
       <span className="font-display font-bold text-gold">{name.charAt(0).toUpperCase()}</span>
     </span>
+  );
+}
+
+/**
+ * The return path a &from= carries, or null if it isn't one this app can
+ * navigate to — only in-app paths, never an absolute or protocol-relative
+ * URL someone pasted into the link.
+ */
+function safeReturnPath(v: string | null): string | null {
+  return v && v.startsWith("/") && !v.startsWith("//") ? v : null;
+}
+
+/** What the return button says, going by where it points. */
+function returnLabel(path: string): string {
+  if (path.startsWith("/builds/party")) return "← Back to the party";
+  if (path.startsWith("/builds")) return "← Back to builds";
+  return "← Back";
+}
+
+/** Carry a return path onto another in-app link (all of ours have a query). */
+function withReturn(href: string, from: string | null): string {
+  return from ? `${href}&from=${encodeURIComponent(from)}` : href;
+}
+
+/** Button back to wherever a &from= link came from. */
+function ReturnButton({ to }: { to: string }) {
+  return (
+    <Link
+      href={to}
+      className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-gold-dim hover:bg-night-700 hover:text-gold-bright"
+    >
+      {returnLabel(to)}
+    </Link>
   );
 }
 
@@ -69,7 +108,16 @@ function LoadError({ message, onRetry }: { message: string; onRetry?: () => void
  * ones they have builds for) and the tags in use on those builds. Mounted
  * with key={uid}, so filters reset when switching profiles.
  */
-function ProfileBuilds({ store, uid }: { store: BuildStore; uid: string }) {
+function ProfileBuilds({
+  store,
+  uid,
+  from,
+}: {
+  store: BuildStore;
+  uid: string;
+  /** Return path to carry into each build's own page (see withReturn). */
+  from: string | null;
+}) {
   const [characterFilter, setCharacterFilter] = useState<string[]>([]);
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [tagMode, setTagMode] = useState<"any" | "all">("any");
@@ -165,7 +213,12 @@ function ProfileBuilds({ store, uid }: { store: BuildStore; uid: string }) {
                   beside the title — below that they'd truncate the name. */}
               <div className="grid gap-3 xl:grid-cols-2">
                 {g.builds.map((b) => (
-                  <BuildCard key={b.id} build={b} store={store} href={buildPath(uid, b.id)} />
+                  <BuildCard
+                    key={b.id}
+                    build={b}
+                    store={store}
+                    href={withReturn(buildPath(uid, b.id), from)}
+                  />
                 ))}
               </div>
             </section>
@@ -173,29 +226,6 @@ function ProfileBuilds({ store, uid }: { store: BuildStore; uid: string }) {
         </div>
       )}
     </div>
-  );
-}
-
-/** Copies a link to the clipboard, with a prompt fallback where it's blocked. */
-function CopyLinkButton({ url, label = "Copy link" }: { url: string; label?: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      window.prompt("Copy this link:", url);
-    }
-  };
-  return (
-    <button
-      type="button"
-      onClick={() => void copy()}
-      className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
-    >
-      {copied ? "Link copied ✓" : label}
-    </button>
   );
 }
 
@@ -207,6 +237,8 @@ export function CommunityUsers() {
   const params = useSearchParams();
   const selectedUid = params.get("u");
   const selectedBuildId = params.get("b");
+  // Where this visit came from, if it was linked from elsewhere in the app.
+  const from = safeReturnPath(params.get("from"));
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   // The selected user's synced store; their builds resolve against it.
   const [selectedStore, setSelectedStore] = useState<BuildStore | null>(null);
@@ -278,13 +310,19 @@ export function CommunityUsers() {
     return (
       <div>
         <div className="mb-5 flex flex-wrap items-center gap-2">
+          {from && <ReturnButton to={from} />}
           <Link
-            href={`/builds/users?u=${encodeURIComponent(selectedUid)}`}
+            href={withReturn(`/builds/users?u=${encodeURIComponent(selectedUid)}`, from)}
             className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
           >
             ← {owner ? `${owner}’s builds` : "All builds"}
           </Link>
-          {build && <CopyLinkButton url={buildShareUrl(selectedUid, selectedBuildId)} />}
+          {build && (
+            <CopyLinkButton
+              url={buildShareUrl(selectedUid, selectedBuildId)}
+              text={buildShareText(build, buildShareUrl(selectedUid, selectedBuildId))}
+            />
+          )}
         </div>
         {storeError ? (
           <LoadError message={storeError} onRetry={retry} />
@@ -317,13 +355,16 @@ export function CommunityUsers() {
     const selected = profiles.find((p) => p.uid === selectedUid);
     return (
       <div>
-        <button
-          type="button"
-          onClick={() => router.push("/builds/users")}
-          className="frame mb-5 rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
-        >
-          ← All users
-        </button>
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          {from && <ReturnButton to={from} />}
+          <button
+            type="button"
+            onClick={() => router.push("/builds/users")}
+            className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
+          >
+            ← All users
+          </button>
+        </div>
         {!selected ? (
           <p className="font-body text-sm text-parchment-faint">
             No such user — the link may be stale, or they haven&rsquo;t synced yet.
@@ -345,7 +386,7 @@ export function CommunityUsers() {
             ) : !selectedStore ? (
               <p className="font-body text-sm text-parchment-faint">Loading builds…</p>
             ) : (
-              <ProfileBuilds key={selectedUid} store={selectedStore} uid={selectedUid} />
+              <ProfileBuilds key={selectedUid} store={selectedStore} uid={selectedUid} from={from} />
             )}
           </>
         )}

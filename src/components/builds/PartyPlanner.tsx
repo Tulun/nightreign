@@ -15,7 +15,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BuildCard } from "@/components/builds/BuildCard";
 import { PartyBuildPicker } from "@/components/builds/PartyBuildPicker";
 import { EMPTY_STORE, type Build } from "@/lib/builds";
@@ -61,6 +61,13 @@ export function SlotSection({
   onChoose?: () => void;
   onClear?: () => void;
 }) {
+  // Profile links carry where to come back to, so a visit to the owner's
+  // profile isn't a one-way trip out of the party. A party opened from a #p=
+  // hash link has already had its hash cleared, so that one returns to the
+  // parties list rather than to the shared party itself.
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
+  const returnTo = `${pathname}${search ? `?${search}` : ""}`;
   // The snapshot carries its own relics; BuildCard resolves against those.
   const build: Build | null = member
     ? { ...member.build.build, id: `party-${index}`, updatedAt: 0, relics: member.build.relics }
@@ -77,11 +84,21 @@ export function SlotSection({
             </span>
             {member.uid && (
               <Link
-                href={`/builds/users?u=${encodeURIComponent(member.uid)}`}
+                href={`/builds/users?u=${encodeURIComponent(member.uid)}&from=${encodeURIComponent(returnTo)}`}
                 className="font-body text-xs text-gold-dim hover:text-gold-bright"
               >
                 profile →
               </Link>
+            )}
+            {/* Which of the build's loadouts this slot runs — only builds
+                with variants carry one. */}
+            {member.variantLabel && (
+              <span
+                title="Loadout variant"
+                className="rounded border border-night-600 bg-night-900 px-1.5 py-0.5 font-body text-xs text-parchment-muted"
+              >
+                {member.variantLabel}
+              </span>
             )}
           </span>
         )}
@@ -90,9 +107,10 @@ export function SlotSection({
             <button
               type="button"
               onClick={onChoose}
+              title="Pick a different player, build, or loadout for this slot"
               className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright"
             >
-              Swap build
+              Swap…
             </button>
             <button
               type="button"
@@ -322,6 +340,7 @@ export function PartyPlanner() {
       {pickerSlot !== null && (
         <PartyBuildPicker
           slotIndex={pickerSlot}
+          current={party.slots[pickerSlot]}
           onPick={(member) => {
             setSlot(pickerSlot, member);
             setPickerSlot(null);

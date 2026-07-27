@@ -1,12 +1,17 @@
 "use client";
 
 // ─────────────────────────────────────────────────────────────────────────
-//  Two-step modal for filling a party slot: pick a player from the
-//  community directory, then pick one of their synced builds. Cloud-only
-//  on purpose — device-local builds are ignored, so every slot points at
-//  a real community profile. The chosen build is snapshotted
-//  (toSharedBuild) so the party stays intact even if the owner later
-//  edits or deletes it.
+//  Modal for filling a party slot, in up to three steps: pick a player,
+//  pick one of their synced builds, and — when that build carries variants
+//  — pick which loadout the slot runs. Cloud-only on purpose: device-local
+//  builds are ignored, so every slot points at a real community profile.
+//  What lands in the slot is a snapshot (toSharedBuild) of the chosen
+//  loadout, so the party stays intact even if the owner later edits or
+//  deletes the build.
+//
+//  Swapping a filled slot opens straight on its current player, with the
+//  build and variant it holds marked — the player dropdown re-picks someone
+//  else without a trip back to the list.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
@@ -14,7 +19,17 @@ import { Dropdown } from "@/components/Dropdown";
 import { characterChalices } from "@/data/chalices";
 import { listProfiles, pullCloudStore, type UserProfile } from "@/lib/cloudSync";
 import { useAuth } from "@/lib/useAuth";
-import { EMPTY_STORE, toSharedBuild, type Build, type BuildStore } from "@/lib/builds";
+import {
+  EMPTY_STORE,
+  toSharedBuild,
+  variantAt,
+  variantCount,
+  variantLabel,
+  type Build,
+  type BuildStore,
+  type VariantView,
+} from "@/lib/builds";
+import type { SlotColor } from "@/lib/chalices";
 import type { PartyMember } from "@/lib/party";
 import { resolveSlot, RelicImg, SlotIconImg, chalicesFor } from "./shared";
 
@@ -30,43 +45,81 @@ function Avatar({ name, size }: { name: string; size: number }) {
   );
 }
 
-/** Collapsed-card style relic strip: slot icons dimmed where empty. */
-function IconStrip({ build, store }: { build: Build; store: BuildStore }) {
-  const relicStore = build.relics?.length
-    ? { ...store, customRelics: [...store.customRelics, ...build.relics] }
-    : store;
-  const chalice = chalicesFor(build.character).find((c) => c.name === build.chalice);
+/** "in this slot" marker on the build/variant the slot already holds. */
+function CurrentChip() {
+  return (
+    <span className="rounded border border-gold-faint px-1.5 py-0.5 font-body text-[0.65rem] uppercase tracking-wide text-gold-dim">
+      in this slot
+    </span>
+  );
+}
+
+/**
+ * Collapsed-card style relic strip: slot icons dimmed where empty, with the
+ * Deep of Night set after a divider where the loadout fills any — two
+ * variants of one build often differ only there, and a strip that stopped at
+ * the normal slots would show them as the same three relics twice.
+ */
+function IconStrip({
+  character,
+  loadout,
+  store,
+}: {
+  character: string;
+  loadout: VariantView;
+  store: BuildStore;
+}) {
+  const chalice = chalicesFor(character).find((c) => c.name === loadout.chalice);
+  const hasDeep = loadout.deepSlots.some(Boolean);
+  const strip = (slots: VariantView["slots"], colors: (SlotColor | undefined)[], deep: boolean) =>
+    slots.map((slot, i) => {
+      const r = resolveSlot(slot, store);
+      return r ? (
+        <span key={i} className={deep ? "opacity-70" : undefined}>
+          <RelicImg src={r.icon} alt={deep ? `${r.name} (Deep of Night)` : r.name} size={22} />
+        </span>
+      ) : (
+        <span key={i} className="opacity-35">
+          <SlotIconImg color={colors[i] ?? "White"} size={18} />
+        </span>
+      );
+    });
   return (
     <span className="flex shrink-0 items-center gap-1">
-      {build.slots.map((slot, i) => {
-        const r = resolveSlot(slot, relicStore);
-        return r ? (
-          <RelicImg key={i} src={r.icon} alt={r.name} size={22} />
-        ) : (
-          <span key={i} className="opacity-35">
-            <SlotIconImg color={chalice?.slots[i] ?? "White"} size={18} />
-          </span>
-        );
-      })}
+      {strip(loadout.slots, chalice?.slots ?? [], false)}
+      {hasDeep && (
+        <>
+          <span className="mx-1 h-5 w-px bg-night-600" aria-hidden="true" />
+          {strip(loadout.deepSlots, chalice?.deep ?? [], true)}
+        </>
+      )}
     </span>
   );
 }
 
 export function PartyBuildPicker({
   slotIndex,
+  current,
   onPick,
   onClose,
 }: {
   slotIndex: number;
+  /** What the slot holds now (swap), or null when filling an empty slot. */
+  current?: PartyMember | null;
   onPick: (member: PartyMember) => void;
   onClose: () => void;
 }) {
   const user = useAuth();
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Step 1 result — null while still on the player list.
-  const [owner, setOwner] = useState<{ uid: string; name: string } | null>(null);
+  // Step 1 result — null while still on the player list. A swap starts on
+  // the member's own player, so the common case is one click, not three.
+  const [owner, setOwner] = useState<{ uid: string; name: string } | null>(
+    current?.uid ? { uid: current.uid, name: current.ownerName } : null,
+  );
   const [ownerStore, setOwnerStore] = useState<BuildStore | null>(null);
+  // Step 2 result — the build whose loadouts step 3 is choosing between.
+  const [pending, setPending] = useState<Build | null>(null);
   const [q, setQ] = useState("");
   const [character, setCharacter] = useState("");
 
@@ -83,21 +136,47 @@ export function PartyBuildPicker({
     };
   }, []);
 
-  const selectOwner = (uid: string, name: string) => {
-    setOwner({ uid, name });
-    setCharacter("");
+  // The selected player's builds, refetched whenever the player changes
+  // (including the seeded one a swap opens on).
+  useEffect(() => {
+    if (!owner) return;
+    let cancelled = false;
     setOwnerStore(null);
-    pullCloudStore(uid)
-      .then((s) => setOwnerStore(s ?? EMPTY_STORE))
+    pullCloudStore(owner.uid)
+      .then((s) => !cancelled && setOwnerStore(s ?? EMPTY_STORE))
       .catch((err) => {
         console.error("Loading user's builds failed:", err);
-        setError("Couldn't load this user's builds — try again in a moment.");
+        if (!cancelled) setError("Couldn't load this user's builds — try again in a moment.");
       });
+    return () => {
+      cancelled = true;
+    };
+  }, [owner]);
+
+  const selectOwner = (uid: string, name: string) => {
+    if (uid === owner?.uid) return;
+    setError(null);
+    setCharacter("");
+    setPending(null);
+    setOwner({ uid, name });
   };
 
-  const pick = (b: Build) => {
+  const pick = (b: Build, variantIdx: number) => {
     if (!owner || !ownerStore) return;
-    onPick({ uid: owner.uid, ownerName: owner.name, build: toSharedBuild(b, ownerStore) });
+    onPick({
+      uid: owner.uid,
+      ownerName: owner.name,
+      buildId: b.id,
+      // Only a build with variants has a loadout worth naming.
+      ...(variantCount(b) > 1 ? { variantLabel: variantLabel(b, variantIdx) } : {}),
+      build: toSharedBuild(b, ownerStore, variantIdx),
+    });
+  };
+
+  /** Choosing a build: straight into the slot, or on to its loadouts. */
+  const chooseBuild = (b: Build) => {
+    if (variantCount(b) > 1) setPending(b);
+    else pick(b, 0);
   };
 
   const filteredProfiles = (profiles ?? []).filter(
@@ -121,6 +200,17 @@ export function PartyBuildPicker({
     }))
     .filter((c) => c.count > 0);
 
+  // Which build/variant the slot holds now, so the lists can mark it.
+  const isCurrentBuild = (b: Build) => !!current?.buildId && current.buildId === b.id && current.uid === owner?.uid;
+  const isCurrentVariant = (b: Build, i: number) =>
+    isCurrentBuild(b) && (current?.variantLabel ?? variantLabel(b, 0)) === variantLabel(b, i);
+
+  const title = pending
+    ? `${pending.name || "Unnamed build"} — choose a loadout`
+    : owner
+      ? `${owner.name}’s builds`
+      : `Slot ${slotIndex + 1} — choose a player`;
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
@@ -136,26 +226,30 @@ export function PartyBuildPicker({
         className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-md border border-night-500 bg-night-850 shadow-lift"
       >
         <div className="flex items-center gap-2 border-b border-night-600 px-4 py-3">
-          {owner && (
+          {(owner || pending) && (
             <button
               type="button"
               onClick={() => {
-                setOwner(null);
-                setOwnerStore(null);
+                if (pending) setPending(null);
+                else {
+                  setOwner(null);
+                  setOwnerStore(null);
+                  setError(null);
+                }
               }}
-              className="rounded border border-night-600 px-2 py-0.5 font-body text-sm text-parchment-muted hover:text-parchment"
+              className="shrink-0 rounded border border-night-600 px-2 py-0.5 font-body text-sm text-parchment-muted hover:text-parchment"
             >
-              ← Players
+              {pending ? "← Builds" : "← Players"}
             </button>
           )}
           <h3 className="min-w-0 truncate font-display text-lg font-semibold text-parchment">
-            {owner ? `${owner.name}’s builds` : `Slot ${slotIndex + 1} — choose a player`}
+            {title}
           </h3>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="ml-auto rounded border border-night-600 px-2 py-0.5 font-body text-sm text-parchment-muted hover:text-parchment"
+            className="ml-auto shrink-0 rounded border border-night-600 px-2 py-0.5 font-body text-sm text-parchment-muted hover:text-parchment"
           >
             ✕
           </button>
@@ -198,6 +292,7 @@ export function PartyBuildPicker({
                         </span>
                         <span className="block font-body text-xs text-parchment-faint">
                           {p.buildCount} {p.buildCount === 1 ? "build" : "builds"}
+                          {p.uid === current?.uid && " · in this slot"}
                         </span>
                       </span>
                     </button>
@@ -210,11 +305,67 @@ export function PartyBuildPicker({
             </>
           ) : !ownerStore ? (
             <p className="font-body text-sm text-parchment-faint">Loading builds…</p>
+          ) : pending ? (
+            // ── Step 3: which loadout of that build ────────────────────
+            <>
+              <p className="mb-3 font-body text-sm text-parchment-muted">
+                {pending.character} · this build has {variantCount(pending)} loadouts — the slot
+                takes one of them.
+              </p>
+              <div className="grid gap-2">
+                {Array.from({ length: variantCount(pending) }, (_, i) => {
+                  const loadout = variantAt(pending, i);
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => pick(pending, i)}
+                      className="frame flex w-full items-center gap-3 rounded-md bg-night-800 p-3 text-left transition-colors hover:bg-night-700"
+                    >
+                      <IconStrip
+                        character={pending.character}
+                        loadout={loadout}
+                        store={relicStoreFor(pending, ownerStore)}
+                      />
+                      <span className="min-w-0">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="truncate font-display font-semibold text-parchment">
+                            {variantLabel(pending, i)}
+                          </span>
+                          {isCurrentVariant(pending, i) && <CurrentChip />}
+                        </span>
+                        <span className="block truncate font-body text-xs text-parchment-faint">
+                          {loadout.chalice}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
           ) : (
             // ── Step 2: their builds ───────────────────────────────────
             <>
-              {ownerCharacters.length > 1 && (
-                <div className="mb-3">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                {/* Swapping the player without stepping back — the whole
+                    directory is right here. */}
+                {(profiles?.length ?? 0) > 1 && (
+                  <Dropdown
+                    value={owner.uid}
+                    onChange={(uid) => {
+                      const p = profiles?.find((x) => x.uid === uid);
+                      if (p) selectOwner(p.uid, p.displayName);
+                    }}
+                    clearable={false}
+                    searchable={(profiles?.length ?? 0) > 8}
+                    options={(profiles ?? []).map((p) => ({
+                      value: p.uid,
+                      label: `${p.displayName}${p.uid === user?.uid ? " (you)" : ""}`,
+                    }))}
+                    className="w-52"
+                  />
+                )}
+                {ownerCharacters.length > 1 && (
                   <Dropdown
                     value={character}
                     onChange={setCharacter}
@@ -225,32 +376,48 @@ export function PartyBuildPicker({
                     }))}
                     className="w-52"
                   />
-                </div>
-              )}
+                )}
+              </div>
               {visibleBuilds.length === 0 ? (
                 <p className="font-body text-sm text-parchment-faint">
                   {character ? "No builds for this Nightfarer." : "No builds to pick from yet."}
                 </p>
               ) : (
                 <div className="grid gap-2">
-                  {visibleBuilds.map((b) => (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => pick(b)}
-                      className="frame flex w-full items-center gap-3 rounded-md bg-night-800 p-3 text-left transition-colors hover:bg-night-700"
-                    >
-                      <IconStrip build={b} store={ownerStore} />
-                      <span className="min-w-0">
-                        <span className="block truncate font-display font-semibold text-parchment">
-                          {b.name || "Unnamed build"}
+                  {visibleBuilds.map((b) => {
+                    const variants = variantCount(b);
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => chooseBuild(b)}
+                        className="frame flex w-full items-center gap-3 rounded-md bg-night-800 p-3 text-left transition-colors hover:bg-night-700"
+                      >
+                        <IconStrip
+                          character={b.character}
+                          loadout={variantAt(b, 0)}
+                          store={relicStoreFor(b, ownerStore)}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="truncate font-display font-semibold text-parchment">
+                              {b.name || "Unnamed build"}
+                            </span>
+                            {isCurrentBuild(b) && <CurrentChip />}
+                          </span>
+                          <span className="block truncate font-body text-xs text-parchment-faint">
+                            {b.character} · {b.chalice}
+                            {variants > 1 && ` · ${variants} loadouts`}
+                          </span>
                         </span>
-                        <span className="block font-body text-xs text-parchment-faint">
-                          {b.character} · {b.chalice}
-                        </span>
-                      </span>
-                    </button>
-                  ))}
+                        {variants > 1 && (
+                          <span className="shrink-0 font-body text-xs text-gold-dim">
+                            choose loadout →
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -259,4 +426,11 @@ export function PartyBuildPicker({
       </div>
     </div>
   );
+}
+
+/** The pool a build's slots resolve against (its own relics win, as ever). */
+function relicStoreFor(build: Build, store: BuildStore): BuildStore {
+  return build.relics?.length
+    ? { ...store, customRelics: [...store.customRelics, ...build.relics] }
+    : store;
 }

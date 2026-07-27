@@ -9,10 +9,12 @@ import { BuildCard } from "@/components/builds/BuildCard";
 import { BuildEditor } from "@/components/builds/BuildEditor";
 import { MyRelics } from "@/components/builds/MyRelics";
 import { TagManager } from "@/components/builds/TagManager";
-import { chalicesFor } from "@/components/builds/shared";
+import { chalicesFor, CopyLinkButton } from "@/components/builds/shared";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
+  buildShareText,
+  buildShareUrl,
   loadStore,
   mergeStores,
   newId,
@@ -27,6 +29,7 @@ import {
   type CustomRelic,
   type SlotTriple,
 } from "@/lib/builds";
+import { useAuth } from "@/lib/useAuth";
 import { useCloudSync } from "@/lib/useCloudSync";
 
 /** Shared look for the toolbar above a single build. */
@@ -44,7 +47,8 @@ const TOOLBAR_BTN =
  * its editor can be linked and survive a refresh: ?b=<id> is one build,
  * ?b=<id>&edit=1 its editor, and ?b=new a build that doesn't exist yet.
  * These links are personal — the builds are in this browser, not on the
- * server; the shareable link is on a build's Community Builds page.
+ * server. What travels is the build's Community Builds page, which Copy
+ * share link on the open build hands over (see buildShareUrl).
  */
 export function BuildsManager() {
   const [store, setStore] = useState<BuildStore | null>(null);
@@ -68,6 +72,9 @@ export function BuildsManager() {
   const [storageBroken, setStorageBroken] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const syncStatus = useCloudSync(store, setStore);
+  // Only for the share link — the account's uid is what a build's community
+  // page is addressed by. Sync itself is entirely useCloudSync's business.
+  const user = useAuth();
 
   // A single selected Nightfarer seeds the next new build; "all" falls back
   // to the first of the roster.
@@ -332,6 +339,18 @@ export function BuildsManager() {
   }
 
   if (openBuild) {
+    // This page is personal — ?b= reads out of *this* browser, so the link
+    // to hand someone is the build's page in the community directory, which
+    // exists only once the build has reached the account. Signed out or
+    // mid-sync the button stays put and says why it can't copy yet.
+    const shareUrl = user ? buildShareUrl(user.uid, openBuild.id) : "";
+    const shareBlocked = !user
+      ? "Sign in to sync your builds — a share link points at your account’s copy."
+      : openBuild.public === false
+        ? "This build is hidden from your community profile."
+        : syncStatus !== "synced"
+          ? "Saving to your account — the link works once this build has synced."
+          : undefined;
     return (
       <div>
         {storageBanner}
@@ -346,6 +365,13 @@ export function BuildsManager() {
           >
             Edit
           </button>
+          <CopyLinkButton
+            url={shareUrl}
+            text={buildShareText(openBuild, shareUrl)}
+            label="Copy share link"
+            disabled={!!shareBlocked}
+            title={shareBlocked ?? "Copies this build’s community page — anyone can open it, view-only."}
+          />
           <button
             type="button"
             onClick={() => deleteBuild(openBuild.id)}
