@@ -11,6 +11,16 @@ no per-item wiring, you just drop a correctly-named file in the right folder.
 - `small-shields/<id>.png`, `medium-shields/<id>.png` — small/medium shields,
   keyed by id in `src/data/shields.ts`.
 - `cocktails/`, `elements/`, `status/` — art for those features.
+- `effects/<category>.png` — the small glyphs the game shows beside each relic
+  effect line (sword = attack, armor = defense, bag = item, …). 80×80 RGBA, the
+  game's own `GSBg` ("grey square background") variant — the one used in the
+  relic effect list, so a row on the site matches what you read in-game.
+  Sourced from [Eldenpedia](https://eldenring.wiki.gg/wiki/Nightreign:Relics),
+  which publishes them as `ERN_Effect_Icon_GSBg_<Category>.png`; filenames here
+  are the kebab-case category (`Weapon_Skill_Up` → `weapon-skill-up.png`).
+  The set is complete for generic categories. Variants that exist in-game but
+  aren't here: `NoBg` (frameless, used in the buff HUD), `GDBg` (diamond, used
+  for affinities and resistances), `BSBg` (blue, used for character abilities).
 
 ## Adding weapon / shield art
 

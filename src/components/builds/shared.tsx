@@ -21,6 +21,7 @@ import { grayInvertStretch } from "@/lib/imagePrep";
 import { lineFromWords } from "@/lib/ocrClean";
 import { dominantIconColor, iconSampleRegion } from "@/lib/relicColor";
 import { gameEffectName } from "@/lib/relics";
+import { EffectIcon } from "@/components/EffectIcon";
 
 export const RELIC_COLORS: CustomRelic["color"][] = ["Red", "Blue", "Green", "Yellow"];
 
@@ -106,6 +107,10 @@ export function EffectLines({
 }) {
   const sizeClass =
     size === "base" ? "text-base leading-relaxed" : size === "sm" ? "text-sm leading-relaxed" : "text-xs leading-snug";
+  // The glyph tracks the text size, and the row is a flex pair so a wrapped
+  // effect indents under its own first line instead of running back under the
+  // icon — which is what separates crowded lines on a phone.
+  const iconSize = size === "base" ? 18 : size === "sm" ? 15 : 13;
   return (
     <ul className={`${divided ? "divide-y divide-night-700" : ""} ${className ?? ""}`}>
       {lines.map((l, i) => (
@@ -113,8 +118,21 @@ export function EffectLines({
           key={`${l.text}-${i}`}
           className={`font-body text-parchment-muted ${sizeClass} ${divided ? "py-1.5 first:pt-0 last:pb-0" : ""}`}
         >
-          {gameEffectName(l.text)}
-          {l.demerit && <span className="block pl-3 text-red-300/80">{gameEffectName(l.demerit)}</span>}
+          <span className="flex items-start gap-1.5">
+            <EffectIcon name={l.text} size={iconSize} />
+            <span className="min-w-0">{gameEffectName(l.text)}</span>
+          </span>
+          {/* A demerit carries no glyph — the red text already reads as the
+              cost, and a second icon competes with the effect it belongs to.
+              It indents to the effect's text column instead. */}
+          {l.demerit && (
+            <span
+              className="mt-0.5 block text-red-300/80"
+              style={{ paddingLeft: iconSize + 6 }}
+            >
+              {gameEffectName(l.demerit)}
+            </span>
+          )}
         </li>
       ))}
     </ul>

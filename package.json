@@ -10,7 +10,8 @@
     "preview:pages": "npx --yes serve out",
     "start": "next start",
     "lint": "next lint",
-    "ocr:eval": "tsx scripts/ocr-eval.ts"
+    "ocr:eval": "tsx scripts/ocr-eval.ts",
+    "icons:effects": "tsx scripts/effect-icons.ts"
   },
   "dependencies": {
     "firebase": "^12.16.0",

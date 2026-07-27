@@ -13,6 +13,7 @@ import {
   type RelicEffect,
   type RelicGroup,
 } from "@/lib/relics";
+import { EffectIcon } from "@/components/EffectIcon";
 
 export function RelicEffects() {
   const [group, setGroup] = useState<RelicGroup | "all">("all");
@@ -126,7 +127,13 @@ export function RelicEffects() {
                       <div className="grid grid-cols-1 gap-x-5 gap-y-0.5 md:grid-cols-2">
                         {cg.items.map(({ item, rest }) => (
                           <div key={item.name} className="border-b border-night-800/70 py-1">
-                            <span className="font-body text-sm text-parchment-muted">{rest}</span>
+                            {/* Icon resolves off the full name (the table is
+                                keyed that way); the row shows just the rest,
+                                since the heading already names the Nightfarer. */}
+                            <span className="flex items-start gap-1.5 font-body text-sm text-parchment-muted">
+                              <EffectIcon name={item.name} size={15} />
+                              <span className="min-w-0">{rest}</span>
+                            </span>
                             {RELIC_VALUES[item.name] && (
                               <p className="mt-0.5 font-body text-[0.7rem] text-gold-dim">{RELIC_VALUES[item.name]}</p>
                             )}
@@ -167,8 +174,11 @@ function GroupedRows({ items }: { items: RelicEffect[] }) {
     <div className="grid grid-cols-1 gap-x-5 gap-y-0.5 md:grid-cols-2">
       {groupTiers(items).map((g) => (
         <div key={g.base} className="border-b border-night-800/70 py-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-body text-sm text-parchment-muted">{g.base}</span>
+          <div className="flex items-start justify-between gap-2">
+            <span className="flex min-w-0 items-start gap-1.5 font-body text-sm text-parchment-muted">
+              <EffectIcon name={g.base} size={15} />
+              <span className="min-w-0">{g.base}</span>
+            </span>
             <span className="flex shrink-0 items-center gap-1">
               {g.stackable && (
                 <span
