@@ -28,32 +28,61 @@ function Chevron({ open, className = "text-parchment-faint" }: { open: boolean; 
   );
 }
 
+/** Pencil / trash glyphs for the tile's Edit and Delete actions. */
+function ActionIcon({ kind }: { kind: "edit" | "delete" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {kind === "edit" ? (
+        <>
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+        </>
+      ) : (
+        <>
+          <path d="M3 6h18" />
+          <path d="M8 6V4h8v2" />
+          <path d="M19 6l-1 14H6L5 6" />
+          <path d="M10 11v5M14 11v5" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 /**
  * One saved build. With onDelete it's an interactive card (Delete, plus Edit
- * when onEdit is given, and Share when onShare is); with neither it's a
+ * when onEdit is given); with neither it's a
  * read-only preview (community profiles, party views). `expandable` cards
  * start collapsed to a one-line summary (relic icons + tags) and expand on
- * click; with `href` the whole card is a link into the build's own page
- * instead.
+ * click; with `href` the whole card is a link into the build's own page,
+ * and with `onOpen` it's a grid tile that opens the build in place.
  */
 export function BuildCard({
   build,
   store,
   href,
+  onOpen,
   onEdit,
   onDelete,
-  onShare,
-  shareLabel = "Share",
   expandable = false,
 }: {
   build: Build;
   store: BuildStore;
   /** Link into this build's own page — makes the card a click-through. */
   href?: string;
+  /** Same idea as `href`, for views that open the build without a route. */
+  onOpen?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
-  onShare?: () => void;
-  shareLabel?: string;
   expandable?: boolean;
 }) {
   const [expanded, setExpanded] = useState(!expandable);
@@ -132,6 +161,63 @@ export function BuildCard({
     </span>
   );
 
+  // Grid tile: the whole card opens the build's own view, with Edit and
+  // Delete as glyphs in the corner so several tiles fit across a row. The
+  // click target is an overlay behind the content (which stays inert) —
+  // that keeps the action buttons out of a nested-button situation.
+  if (onOpen) {
+    return (
+      <article className="frame group relative flex flex-col rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700">
+        <button
+          type="button"
+          onClick={onOpen}
+          className="absolute inset-0 rounded-md"
+          aria-label={`Open ${build.name || "Unnamed build"}`}
+        />
+        <div className="pointer-events-none relative flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <h4 className="truncate font-display text-lg font-semibold text-parchment transition-colors group-hover:text-gold-bright">
+              {build.name || "Unnamed build"}
+            </h4>
+            <p className="truncate font-body text-sm text-parchment-faint">
+              {build.character} · {build.chalice}
+            </p>
+          </div>
+          {(onEdit || onDelete) && (
+            <div className="pointer-events-auto flex shrink-0 gap-1">
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  title="Edit build"
+                  aria-label={`Edit ${build.name || "Unnamed build"}`}
+                  className="rounded border border-night-600 p-1.5 text-parchment-muted transition-colors hover:border-gold-dim hover:text-gold-bright"
+                >
+                  <ActionIcon kind="edit" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  title="Delete build"
+                  aria-label={`Delete ${build.name || "Unnamed build"}`}
+                  className="rounded border border-night-600 p-1.5 text-parchment-muted transition-colors hover:border-red-400/60 hover:text-red-300"
+                >
+                  <ActionIcon kind="delete" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+        {tagChips && <div className="pointer-events-none relative mt-2 flex">{tagChips}</div>}
+        {/* The relics are what the tile is really about — they sit under the
+            title so the card stays narrow enough to grid. */}
+        <div className="pointer-events-none relative mt-3 flex">{iconStrip(38, "gap-1.5")}</div>
+      </article>
+    );
+  }
+
   // Link card: the whole tile navigates to the build's own page, so it never
   // expands in place and the arrow sits on the trailing edge (a leading
   // chevron would read as a disclosure triangle it isn't).
@@ -205,13 +291,10 @@ export function BuildCard({
           )}
           {/* Expanded: tags render below, on the grid's top row. */}
         </div>
-        {(onDelete || onShare || !expanded) && (
+        {(onDelete || !expanded) && (
           <div className="flex shrink-0 flex-col items-end gap-2.5">
-            {(onDelete || onShare) && (
+            {onDelete && (
               <div className="flex flex-wrap justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                {onShare && (
-                  <button type="button" onClick={onShare} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">{shareLabel}</button>
-                )}
                 {onEdit && (
                   <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
                 )}

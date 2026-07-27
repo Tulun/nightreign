@@ -45,6 +45,8 @@ export function BuildsManager() {
   const [tagMode, setTagMode] = useState<"any" | "all">("any");
   const [managingTags, setManagingTags] = useState(false);
   const [editing, setEditing] = useState<Build | null>(null);
+  // Which build the full view is showing (by id, so edits to it show up).
+  const [viewingId, setViewingId] = useState<string | null>(null);
   // A localStorage write failed (quota, private mode, storage disabled) —
   // edits now live only in this tab, so warn until a write succeeds again.
   const [storageBroken, setStorageBroken] = useState(false);
@@ -189,6 +191,8 @@ export function BuildsManager() {
   const deleteBuild = (id: string) => {
     if (!window.confirm("Delete this build?")) return;
     update((s) => ({ ...s, builds: s.builds.filter((b) => b.id !== id) }));
+    // Deleting the build the full view is showing drops back to the list.
+    setViewingId((v) => (v === id ? null : v));
   };
 
   // Copy a link straight to this build's page in the community directory.
@@ -237,6 +241,41 @@ export function BuildsManager() {
       window.alert("That file doesn't look like a Nightreign builds export.");
     }
   };
+
+  // ── Single build view ──────────────────────────────────────────────────
+  // Opened by clicking a tile in the list: the same full card the community
+  // pages show, with this build's actions on a toolbar above it.
+  const viewing = viewingId ? store.builds.find((b) => b.id === viewingId) : undefined;
+  if (viewing) {
+    const btn =
+      "frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment";
+    return (
+      <div>
+        {storageBanner}
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => setViewingId(null)} className={btn}>
+            ← Back to builds
+          </button>
+          <button type="button" onClick={() => setEditing(viewing)} className={`${btn} text-gold-bright`}>
+            Edit
+          </button>
+          {user && (
+            <button type="button" onClick={() => void shareBuild(viewing.id)} className={btn}>
+              {copiedId === viewing.id ? "Link copied ✓" : "Copy link"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => deleteBuild(viewing.id)}
+            className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-red-300"
+          >
+            Delete
+          </button>
+        </div>
+        <BuildCard build={viewing} store={store} />
+      </div>
+    );
+  }
 
   const tagFilterControls = store.tags.length > 0 && (
     <>
@@ -424,19 +463,17 @@ export function BuildsManager() {
                   {g.builds.length}
                 </span>
               </h4>
-              {/* Single column: cards lay normal and Deep of Night side by
-                  side internally, so they want the full page width. */}
-              <div className="grid gap-3">
+              {/* Tiles: each is a summary that opens the build's own view, so
+                  a row fits several instead of one full-width card each. */}
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {g.builds.map((b) => (
                   <BuildCard
                     key={b.id}
                     build={b}
                     store={store}
-                    expandable
+                    onOpen={() => setViewingId(b.id)}
                     onEdit={() => setEditing(b)}
                     onDelete={() => deleteBuild(b.id)}
-                    onShare={user ? () => void shareBuild(b.id) : undefined}
-                    shareLabel={copiedId === b.id ? "Link copied ✓" : "Share"}
                   />
                 ))}
               </div>
