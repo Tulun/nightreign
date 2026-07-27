@@ -14,7 +14,6 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { characterChalices } from "@/data/chalices";
 import { BuildCard } from "@/components/builds/BuildCard";
-import { Dropdown } from "@/components/Dropdown";
 import { MultiSelect } from "@/components/MultiSelect";
 import { listProfiles, pullCloudStore, setProfileName, type UserProfile } from "@/lib/cloudSync";
 import { useAuth } from "@/lib/useAuth";
@@ -48,7 +47,7 @@ function Avatar({ name, size }: { name: string; size: number }) {
  * with key={uid}, so filters reset when switching profiles.
  */
 function ProfileBuilds({ store, uid }: { store: BuildStore; uid: string }) {
-  const [character, setCharacter] = useState("");
+  const [characterFilter, setCharacterFilter] = useState<string[]>([]);
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [tagMode, setTagMode] = useState<"any" | "all">("any");
 
@@ -69,21 +68,29 @@ function ProfileBuilds({ store, uid }: { store: BuildStore; uid: string }) {
       ? tagFilter.some((t) => b.tags?.includes(t))
       : tagFilter.every((t) => b.tags?.includes(t)));
   const builds = visible
-    .filter((b) => !character || b.character === character)
-    .filter(matchesTags)
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    .filter((b) => characterFilter.length === 0 || characterFilter.includes(b.character))
+    .filter(matchesTags);
+  // One section per Nightfarer, in the roster's own order, newest build first
+  // within each — easier to scan than one long mixed list.
+  const groups = characters
+    .map((c) => ({
+      name: c.name,
+      builds: builds.filter((b) => b.character === c.name).sort((a, b) => b.updatedAt - a.updatedAt),
+    }))
+    .filter((g) => g.builds.length > 0);
 
   return (
     <div>
       {(characters.length > 1 || tags.length > 0) && (
         <div className="mb-5 flex flex-wrap items-center gap-2">
           {characters.length > 1 && (
-            <Dropdown
-              value={character}
-              onChange={setCharacter}
-              placeholder="All Nightfarers"
+            <MultiSelect
+              values={characterFilter}
               options={characters.map((c) => ({ value: c.name, label: `${c.name} (${c.count})` }))}
+              onChange={setCharacterFilter}
+              placeholder="All Nightfarers"
               className="w-52"
+              showValues
             />
           )}
           {tags.length > 0 && (
@@ -119,14 +126,26 @@ function ProfileBuilds({ store, uid }: { store: BuildStore; uid: string }) {
           )}
         </div>
       )}
-      {builds.length === 0 ? (
+      {groups.length === 0 ? (
         <p className="font-body text-sm text-parchment-faint">No builds match the filters.</p>
       ) : (
-        // Link cards are compact, so they pair up on wider screens instead of
-        // leaving half the row empty.
-        <div className="grid gap-3 lg:grid-cols-2">
-          {builds.map((b) => (
-            <BuildCard key={b.id} build={b} store={store} href={buildPath(uid, b.id)} />
+        <div className="space-y-6">
+          {groups.map((g) => (
+            <section key={g.name}>
+              <h4 className="eyebrow mb-2 border-b border-night-700 pb-1.5 text-gold-dim">
+                {g.name}
+                <span className="ml-2 font-body text-xs normal-case tracking-normal text-parchment-faint">
+                  {g.builds.length}
+                </span>
+              </h4>
+              {/* Link cards are compact, so they pair up on wider screens
+                  instead of leaving half the row empty. */}
+              <div className="grid gap-3 lg:grid-cols-2">
+                {g.builds.map((b) => (
+                  <BuildCard key={b.id} build={b} store={store} href={buildPath(uid, b.id)} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}

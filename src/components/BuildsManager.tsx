@@ -38,8 +38,8 @@ import { useCloudSync } from "@/lib/useCloudSync";
 export function BuildsManager() {
   const [store, setStore] = useState<BuildStore | null>(null);
   const [view, setView] = useState<"builds" | "relics">("builds");
-  // Character filter for the build list — "" shows all Nightfarers.
-  const [character, setCharacter] = useState("");
+  // Character filter for the build list — empty shows all Nightfarers.
+  const [characterFilter, setCharacterFilter] = useState<string[]>([]);
   // Tag filter — empty means all builds; otherwise builds matching any of
   // the selected tags ("any") or carrying every one of them ("all").
   const [tagFilter, setTagFilter] = useState<string[]>([]);
@@ -136,9 +136,11 @@ export function BuildsManager() {
               ...s,
               builds: [...s.builds.filter((b) => b.id !== build.id), { ...build, updatedAt: Date.now() }],
             }));
-            // Keep the saved build visible: leave "All" alone, but move a
-            // character filter to the build's character.
-            setCharacter((c) => (c ? build.character : c));
+            // Keep the saved build visible: leave "All" alone, but widen a
+            // character filter that would hide the build just saved.
+            setCharacterFilter((c) =>
+              c.length === 0 || c.includes(build.character) ? c : [...c, build.character],
+            );
             setView("builds");
             setEditing(null);
           }}
