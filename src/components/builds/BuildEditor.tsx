@@ -28,7 +28,6 @@ import {
   chalicesFor,
   colorFromRelicName,
   resolveSlot,
-  EffectDatalists,
   EffectLines,
   RelicLineInputs,
   SlotIconImg,
@@ -312,8 +311,6 @@ export function BuildEditor({
           Cancel
         </button>
       </div>
-
-      <EffectDatalists />
     </div>
   );
 }

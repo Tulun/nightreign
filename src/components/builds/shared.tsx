@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import Image from "next/image";
+import { useId } from "react";
 import { characterChalices, grailChalices } from "@/data/chalices";
 import { asset } from "@/lib/assets";
 import { customRelicIcon, fixedRelics, type BuildSlot, type BuildStore, type CustomRelic } from "@/lib/builds";
@@ -28,35 +29,13 @@ export const RELIC_COLORS: CustomRelic["color"][] = ["Red", "Blue", "Green", "Ye
 /** Everything clickable when creating a Deep relic: effects plus curses. */
 export const DEEP_CREATE_VOCABULARY = [...DEEP_EFFECT_VOCABULARY, ...CURSE_VOCABULARY].sort();
 
-/** The datalist id for an effect input of the given relic kind. */
-export const effectListId = (deep: boolean) => (deep ? "effect-vocab-deep" : "effect-vocab-normal");
-
 /**
- * Shared autocomplete lists for effect inputs — one per relic kind, so a
- * relic only ever suggests effects that can legally roll on it, plus the
- * curse list for demerit lines.
+ * The effects an input should suggest for a relic of the given kind — a relic
+ * only ever suggests effects that can legally roll on it. Demerit inputs take
+ * CURSE_VOCABULARY instead.
  */
-export function EffectDatalists() {
-  return (
-    <>
-      <datalist id="effect-vocab-normal">
-        {NORMAL_EFFECT_VOCABULARY.map((e) => (
-          <option key={e} value={e} />
-        ))}
-      </datalist>
-      <datalist id="effect-vocab-deep">
-        {DEEP_EFFECT_VOCABULARY.map((e) => (
-          <option key={e} value={e} />
-        ))}
-      </datalist>
-      <datalist id="effect-vocab-curse">
-        {CURSE_VOCABULARY.map((e) => (
-          <option key={e} value={e} />
-        ))}
-      </datalist>
-    </>
-  );
-}
+export const effectVocabulary = (deep: boolean) =>
+  deep ? DEEP_EFFECT_VOCABULARY : NORMAL_EFFECT_VOCABULARY;
 
 /** Slot address within a build: normal or Deep of Night, index 0–2. */
 export type SlotRef = { deep: boolean; index: number };
@@ -335,6 +314,59 @@ export function RelicImg({ src, alt, size = 32 }: { src: string; alt: string; si
   );
 }
 
+/** Characters typed before an effect input starts suggesting. */
+const SUGGEST_AFTER = 2;
+/** Suggestions offered at once — a long list is a wall, not a shortlist. */
+const SUGGEST_LIMIT = 25;
+
+/**
+ * Effect input with its own autocomplete list, narrowed to what's been typed.
+ * The shared full-vocabulary datalists (EffectDatalists) drop hundreds of
+ * effects over the page the moment an empty field is clicked, which is
+ * useless as a suggestion — here nothing is offered until the field has
+ * something to filter on.
+ */
+export function EffectSuggestInput({
+  value,
+  onChange,
+  vocab,
+  placeholder,
+  className,
+  disabled = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  vocab: string[];
+  placeholder: string;
+  className: string;
+  disabled?: boolean;
+}) {
+  const listId = useId();
+  const q = value.trim().toLowerCase();
+  const options =
+    q.length < SUGGEST_AFTER
+      ? []
+      : vocab.filter((e) => e.toLowerCase().includes(q)).slice(0, SUGGEST_LIMIT);
+  return (
+    <>
+      <input
+        type="text"
+        value={value}
+        list={listId}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={className}
+      />
+      <datalist id={listId}>
+        {options.map((e) => (
+          <option key={e} value={e} />
+        ))}
+      </datalist>
+    </>
+  );
+}
+
 /**
  * Editable effect lines for a pool relic — each effect input gets a demerit
  * input beneath it (demerits are tied to their line on Deep relics). The
@@ -369,20 +401,18 @@ export function RelicLineInputs({
     <div className={`space-y-1.5 ${className ?? ""}`}>
       {[0, 1, 2].map((i) => (
         <div key={i} className="space-y-1">
-          <input
-            type="text"
+          <EffectSuggestInput
             value={relic.effects[i] ?? ""}
-            list={effectListId(!!relic.deep)}
-            onChange={(e) => setEffect(i, e.target.value)}
+            vocab={effectVocabulary(!!relic.deep)}
+            onChange={(v) => setEffect(i, v)}
             placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
             className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
           />
           {showDemerits && (relic.effects[i] ?? "").trim() !== "" && (
-            <input
-              type="text"
+            <EffectSuggestInput
               value={relic.demerits?.[i] ?? ""}
-              list="effect-vocab-curse"
-              onChange={(e) => setDemerit(i, e.target.value)}
+              vocab={CURSE_VOCABULARY}
+              onChange={(v) => setDemerit(i, v)}
               placeholder="Demerit (optional)"
               className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40"
             />

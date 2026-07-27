@@ -23,6 +23,13 @@ const WEAPON_CLASSES = [
 ];
 const ELEMENTS = ["Magic", "Fire", "Lightning", "Holy"];
 const STATUSES = ["Poison", "Scarlet Rot", "Blood Loss", "Frostbite", "Sleep", "Madness", "Death Blight"];
+/**
+ * The curse line names its status the short way — "Taking Damage Causes Rot
+ * Buildup", "… Frost Buildup" (both verified in-game), where the resistance
+ * effects use the full status name. Only this one template expands with them.
+ */
+const CURSE_STATUSES = ["Poison", "Rot", "Blood Loss", "Frost", "Sleep", "Madness", "Death Blight"];
+const CURSE_STATUS_TEMPLATE = "Taking Damage Causes [Status] Buildup";
 
 /** The "[Item] in possession…" pool: crystal/cracked tears and perfume items. */
 const POSSESSION_ITEMS = [
@@ -75,7 +82,7 @@ function expandName(name: string): string[] {
       if (!token) return [v];
       const list =
         token === "[Element]" ? ELEMENTS
-        : token === "[Status]" ? STATUSES
+        : token === "[Status]" ? (v === CURSE_STATUS_TEMPLATE ? CURSE_STATUSES : STATUSES)
         : token === "[Item]" ? POSSESSION_ITEMS
         : WEAPON_CLASSES;
       return list.map((x) => v.split(token).join(x));
@@ -134,7 +141,6 @@ const EFFECT_ALIASES: Record<string, string> = {
     "Max FP permanently increased after releasing Sorcerer's Rise mechanism",
   "Reduced Damage Negation After Evading": "Repeated Evasions Lower Damage Negation",
   "Extended Spell Duration": "Extend Spell Duration",
-  "Taking Damage Causes Frost Buildup": "Taking Damage Causes Frostbite Buildup",
   "Max stamina increased for each great enemy defeated at a Great Encampment":
     "Max Stamina increased per Great Encampment boss",
   "[Raider] Hit With Character Skill to Reduce Enemy Attack Power":
@@ -142,6 +148,15 @@ const EFFECT_ALIASES: Record<string, string> = {
   "[Undertaker] Attack power increased by landing the final blow of a chain attack":
     "[Undertaker] Attack Power Increased by Landing Chain Attack",
 };
+
+// The catalogue's full status names still resolve to the curse's in-game short
+// ones ("… Scarlet Rot Buildup" → "… Rot Buildup"), so wiki-styled input and
+// relics saved before the rename keep matching.
+STATUSES.forEach((status, i) => {
+  if (status === CURSE_STATUSES[i]) return;
+  EFFECT_ALIASES[CURSE_STATUS_TEMPLATE.replace("[Status]", status)] =
+    CURSE_STATUS_TEMPLATE.replace("[Status]", CURSE_STATUSES[i]);
+});
 
 /** "Great Hammer" → "Great Hammers", "Torch" → "Torches"; "Staves" stays. */
 function pluralizeWeapon(w: string): string {

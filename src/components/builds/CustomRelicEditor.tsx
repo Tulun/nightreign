@@ -76,10 +76,14 @@ export function CustomRelicEditor({
 
   const query = q.trim().toLowerCase();
   // Only effects that can legally roll on this relic kind — the Deep pool
-  // also lists curses, which addEffect routes to a demerit line.
-  const vocab = (isDeep ? DEEP_CREATE_VOCABULARY : NORMAL_EFFECT_VOCABULARY).filter(
-    (e) => !query || e.toLowerCase().includes(query),
-  );
+  // also lists curses, which addEffect routes to a demerit line. Nothing is
+  // listed until there's a search to narrow it: the whole pool is hundreds of
+  // effects long, which buries the rest of the form rather than helping.
+  const vocab = query
+    ? (isDeep ? DEEP_CREATE_VOCABULARY : NORMAL_EFFECT_VOCABULARY).filter((e) =>
+        e.toLowerCase().includes(query),
+      )
+    : [];
   const chosen = new Set([...draft.effects, ...draft.demerits].filter((e) => e.trim()));
 
   const save = () => {
@@ -187,6 +191,12 @@ export function CustomRelicEditor({
             placeholder="Search effects…"
             className="frame w-full rounded bg-night-900 px-3 py-1.5 font-body text-sm text-parchment placeholder:text-parchment-faint"
           />
+          {!query ? (
+            <p className="mt-2 font-body text-xs text-parchment-faint">
+              Type a few letters to find an effect — or fill the lines above, which suggest
+              as you type.
+            </p>
+          ) : (
           <div className="mt-2 max-h-60 overflow-y-auto rounded-md border border-night-700">
             {vocab.map((e) => {
               const isDemerit = isDeep && isCurseEffect(e);
@@ -214,6 +224,7 @@ export function CustomRelicEditor({
               <p className="px-2.5 py-2 font-body text-xs text-parchment-faint">Nothing matches “{q}”.</p>
             )}
           </div>
+          )}
 
           <SingleRelicParse onPick={addEffect} />
         </div>

@@ -8,12 +8,13 @@
 import { useRef, useState } from "react";
 import { newId, sameCustomRelic, type CustomRelic } from "@/lib/builds";
 import type { Chalice } from "@/lib/chalices";
-import { bestLineMatch, parseRelicGroups, screenIsDeep } from "@/lib/effectMatch";
+import { CURSE_VOCABULARY, bestLineMatch, parseRelicGroups, screenIsDeep } from "@/lib/effectMatch";
 import {
   RELIC_COLORS,
   SlotIconImg,
   colorFromRelicName,
-  effectListId,
+  EffectSuggestInput,
+  effectVocabulary,
   guessGroupColors,
   ocrLines,
   type SlotRef,
@@ -258,20 +259,18 @@ export function ScreenshotPoolImport({
                   <div className="mt-2 space-y-1.5">
                     {g.lines.map((line, li) => (
                       <div key={li} className="space-y-1">
-                        <input
-                          type="text"
+                        <EffectSuggestInput
                           value={line}
-                          list={effectListId(g.deep)}
-                          onChange={(e) => setLine(i, li, e.target.value)}
+                          vocab={effectVocabulary(g.deep)}
+                          onChange={(v) => setLine(i, li, v)}
                           placeholder={`Effect ${li + 1}${li === 0 ? "" : " (optional)"}`}
                           className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint"
                         />
                         {g.deep && line.trim() !== "" && (
-                          <input
-                            type="text"
+                          <EffectSuggestInput
                             value={g.demerits[li] ?? ""}
-                            list="effect-vocab-curse"
-                            onChange={(e) => setDemerit(i, li, e.target.value)}
+                            vocab={CURSE_VOCABULARY}
+                            onChange={(v) => setDemerit(i, li, v)}
                             placeholder="Demerit (optional)"
                             className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40"
                           />
@@ -499,22 +498,20 @@ export function ScreenshotBuildImport({
               <div className="mt-2 space-y-1.5">
                 {g.lines.map((line, li) => (
                   <div key={li} className="space-y-1">
-                    <input
-                      type="text"
+                    <EffectSuggestInput
                       value={line}
-                      list={effectListId(g.deep)}
+                      vocab={effectVocabulary(g.deep)}
                       disabled={applied[i]}
-                      onChange={(e) => setLine(i, li, e.target.value)}
+                      onChange={(v) => setLine(i, li, v)}
                       placeholder={`Effect ${li + 1}${li === 0 ? "" : " (optional)"}`}
                       className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint disabled:opacity-60"
                     />
                     {g.deep && line.trim() !== "" && (
-                      <input
-                        type="text"
+                      <EffectSuggestInput
                         value={g.demerits[li] ?? ""}
-                        list="effect-vocab-curse"
+                        vocab={CURSE_VOCABULARY}
                         disabled={applied[i]}
-                        onChange={(e) => setDemerit(i, li, e.target.value)}
+                        onChange={(v) => setDemerit(i, li, v)}
                         placeholder="Demerit (optional)"
                         className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40 disabled:opacity-60"
                       />

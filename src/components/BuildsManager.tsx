@@ -9,7 +9,7 @@ import { BuildCard } from "@/components/builds/BuildCard";
 import { BuildEditor } from "@/components/builds/BuildEditor";
 import { MyRelics } from "@/components/builds/MyRelics";
 import { TagManager } from "@/components/builds/TagManager";
-import { chalicesFor, EffectDatalists } from "@/components/builds/shared";
+import { chalicesFor } from "@/components/builds/shared";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
@@ -529,8 +529,6 @@ export function BuildsManager() {
           onDelete={deleteCustomRelic}
         />
       )}
-
-      <EffectDatalists />
     </div>
   );
 }

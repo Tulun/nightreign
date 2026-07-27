@@ -18,6 +18,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   serverTimestamp,
   setDoc,
 } from "firebase/firestore";
@@ -107,6 +108,37 @@ export async function pullCloudStore(uid: string): Promise<BuildStore | null> {
   }
 }
 
+/**
+ * Watch an account's store for writes from its *other* devices, calling
+ * `onChange` with each new copy. Without this a tab only ever reads the cloud
+ * once, at sign-in: a relic added on a phone stays invisible on a laptop
+ * that's already open, and the laptop's next debounced push overwrites it.
+ *
+ * Our own writes are filtered out: the local echo (hasPendingWrites) is
+ * skipped outright, and the server acknowledgement of the same content is
+ * recognized by the caller comparing it to what it last pushed.
+ *
+ * Returns the unsubscribe function. A listener failure (rules, offline) is
+ * logged and ends the subscription — the sign-in merge remains the fallback.
+ */
+export function watchCloudStore(uid: string, onChange: (store: BuildStore) => void): () => void {
+  return onSnapshot(
+    storeDoc(uid),
+    (snap) => {
+      if (snap.metadata.hasPendingWrites) return;
+      const raw = snap.data()?.store;
+      if (typeof raw !== "string") return;
+      try {
+        const parsed = normalizeStore(JSON.parse(raw));
+        if (parsed) onChange(parsed);
+      } catch {
+        // An unparseable cloud copy is nothing this tab can act on.
+      }
+    },
+    (err) => console.error("Cloud watch failed:", err),
+  );
+}
+
 /** Every signed-up account, most recently synced first. */
 export async function listProfiles(): Promise<UserProfile[]> {
   const snap = await cloudRead(() => getDocs(collection(db, "users")));
@@ -128,19 +160,30 @@ export async function listProfiles(): Promise<UserProfile[]> {
 }
 
 /**
- * Sign-in merge of the device's store with the account's cloud copy. Builds
- * clash by id and the newer updatedAt wins (edits from another device beat a
- * stale local copy, and vice versa). Custom relics carry no timestamp, so on
- * an id clash the cloud copy wins — matching mergeStores' imported-wins rule.
+ * Merge of the device's store with the account's cloud copy — at sign-in, and
+ * again for every live update from another device. Builds clash by id and the
+ * newer updatedAt wins (edits from another device beat a stale local copy, and
+ * vice versa). Custom relics carry no timestamp, so on an id clash the cloud
+ * copy wins — matching mergeStores' imported-wins rule.
+ *
+ * `preferLocalRelics` flips that tie-break for the live path when this device
+ * has edits it hasn't pushed yet: a relic being edited here must not be reset
+ * by a snapshot that predates the edit.
  */
-export function mergeWithCloud(local: BuildStore, cloud: BuildStore): BuildStore {
+export function mergeWithCloud(
+  local: BuildStore,
+  cloud: BuildStore,
+  preferLocalRelics = false,
+): BuildStore {
   const builds = new Map(local.builds.map((b) => [b.id, b]));
   for (const b of cloud.builds) {
     const l = builds.get(b.id);
     if (!l || b.updatedAt >= l.updatedAt) builds.set(b.id, b);
   }
   const relics = new Map(local.customRelics.map((r) => [r.id, r]));
-  for (const r of cloud.customRelics) relics.set(r.id, r);
+  for (const r of cloud.customRelics) {
+    if (!preferLocalRelics || !relics.has(r.id)) relics.set(r.id, r);
+  }
   return {
     version: 3,
     builds: Array.from(builds.values()),

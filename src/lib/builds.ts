@@ -9,7 +9,7 @@
 import { characterSwaps } from "@/data/statSwaps";
 import { asset } from "@/lib/assets";
 import { uniqueRelics, type UniqueRelicGroup } from "@/data/uniqueRelics";
-import { NORMAL_EFFECT_VOCABULARY, isCurseEffect } from "@/lib/effectMatch";
+import { NORMAL_EFFECT_VOCABULARY, isCurseEffect, resolveEffectAlias } from "@/lib/effectMatch";
 import { gameEffectName } from "@/lib/relics";
 import { SCENE_META, relicIcon } from "@/lib/statSwaps";
 import type { SlotColor } from "@/lib/chalices";
@@ -154,15 +154,17 @@ function migrateRelicLines(relic: CustomRelic): CustomRelic {
 
 /**
  * Rewrite a relic's lines into the game's own spelling, so what's saved reads
- * like the relic in game ("Duchess: …" → "[Duchess] …"). Applied on every
- * load/import, so stores written before this migration convert on their next
- * save.
+ * like the relic in game ("Duchess: …" → "[Duchess] …", "… Scarlet Rot
+ * Buildup" → "… Rot Buildup"). Applied on every load/import, so stores
+ * written before these renames convert on their next save; text that isn't a
+ * known effect passes through untouched.
  */
 function gameRelicLines(relic: CustomRelic): CustomRelic {
+  const line = (s: string) => resolveEffectAlias(gameEffectName(s));
   return {
     ...relic,
-    effects: relic.effects.map(gameEffectName),
-    demerits: relic.demerits?.map(gameEffectName),
+    effects: relic.effects.map(line),
+    demerits: relic.demerits?.map(line),
   };
 }
 
