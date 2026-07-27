@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { BuildsManager } from "@/components/BuildsManager";
 
 export default function BuildsPage() {
@@ -17,7 +18,13 @@ export default function BuildsPage() {
         </p>
       </header>
 
-      <BuildsManager />
+      {/* useSearchParams (the ?b= open-build link) requires a Suspense
+          boundary to statically export. */}
+      <Suspense
+        fallback={<p className="font-body text-sm text-parchment-faint">Loading saved builds…</p>}
+      >
+        <BuildsManager />
+      </Suspense>
     </div>
   );
 }

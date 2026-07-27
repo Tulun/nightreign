@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { characterChalices } from "@/data/chalices";
 import { MultiSelect } from "@/components/MultiSelect";
 import { BuildCard } from "@/components/builds/BuildCard";
@@ -12,7 +13,6 @@ import { chalicesFor, EffectDatalists } from "@/components/builds/shared";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
-  buildShareUrl,
   loadStore,
   mergeStores,
   newId,
@@ -24,19 +24,33 @@ import {
   type CustomRelic,
   type SlotTriple,
 } from "@/lib/builds";
-import { useAuth } from "@/lib/useAuth";
 import { useCloudSync } from "@/lib/useCloudSync";
+
+/** Shared look for the toolbar above a single build. */
+const TOOLBAR_BTN =
+  "frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment";
 
 /**
  * User builds, stored locally in the browser and — when signed in — mirrored
  * to the account (see useCloudSync). The list view shows saved builds per
- * Nightfarer; the editor is a full-width view with searchable relic pickers,
- * Deep of Night slots, and a whole-screenshot importer that fills slots from
- * a photo.
+ * Nightfarer; opening one gives it its own page, with the editor — searchable
+ * relic pickers, Deep of Night slots, and a whole-screenshot importer — in
+ * that same view.
+ *
+ * Which build is open lives in the URL rather than in state, so a build and
+ * its editor can be linked and survive a refresh: ?b=<id> is one build,
+ * ?b=<id>&edit=1 its editor, and ?b=new a build that doesn't exist yet.
+ * These links are personal — the builds are in this browser, not on the
+ * server; the shareable link is on a build's Community Builds page.
  */
 export function BuildsManager() {
   const [store, setStore] = useState<BuildStore | null>(null);
   const [view, setView] = useState<"builds" | "relics">("builds");
+  const router = useRouter();
+  const params = useSearchParams();
+  const openId = params.get("b");
+  const isNew = openId === "new";
+  const isEditing = isNew || params.get("edit") !== null;
   // Character filter for the build list — empty shows all Nightfarers.
   const [characterFilter, setCharacterFilter] = useState<string[]>([]);
   // Tag filter — empty means all builds; otherwise builds matching any of
@@ -44,21 +58,42 @@ export function BuildsManager() {
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [tagMode, setTagMode] = useState<"any" | "all">("any");
   const [managingTags, setManagingTags] = useState(false);
-  const [editing, setEditing] = useState<Build | null>(null);
-  // Which build the full view is showing (by id, so edits to it show up).
-  const [viewingId, setViewingId] = useState<string | null>(null);
+  // The unsaved build behind ?b=new — it has no store entry to read back.
+  const [draft, setDraft] = useState<Build | null>(null);
   // A localStorage write failed (quota, private mode, storage disabled) —
   // edits now live only in this tab, so warn until a write succeeds again.
   const [storageBroken, setStorageBroken] = useState(false);
-  // Which build's share link was just copied (resets the label after a beat).
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
-  const user = useAuth();
   const syncStatus = useCloudSync(store, setStore);
+
+  // A single selected Nightfarer seeds the next new build; "all" falls back
+  // to the first of the roster.
+  const newBuildCharacter =
+    characterFilter.length === 1 ? characterFilter[0] : characterChalices[0].name;
 
   useEffect(() => {
     setStore(loadStore());
   }, []);
+
+  // Make the draft once per visit to ?b=new (so its id — and the editor keyed
+  // on it — stay put across renders), and drop it when the editor closes.
+  useEffect(() => {
+    setDraft((d) => {
+      if (!isNew) return null;
+      return (
+        d ?? {
+          id: newId(),
+          name: "",
+          character: newBuildCharacter,
+          chalice: chalicesFor(newBuildCharacter)[0].name,
+          slots: [...EMPTY_SLOTS] as SlotTriple,
+          deepSlots: [...EMPTY_SLOTS] as SlotTriple,
+          notes: "",
+          updatedAt: Date.now(),
+        }
+      );
+    });
+  }, [isNew, newBuildCharacter]);
 
   // Persist every change (the post-load write just re-saves what was loaded,
   // and doubles as an early probe for broken storage).
@@ -72,6 +107,12 @@ export function BuildsManager() {
 
   const update = (fn: (s: BuildStore) => BuildStore) =>
     setStore((prev) => fn(prev ?? EMPTY_STORE));
+
+  // ── Navigation: every view of this page is a URL ───────────────────────
+  const showList = () => router.push("/builds");
+  const showBuild = (id: string) => router.push(`/builds?b=${encodeURIComponent(id)}`);
+  const editBuild = (id: string) => router.push(`/builds?b=${encodeURIComponent(id)}&edit=1`);
+  const startNew = () => router.push("/builds?b=new");
 
   const addCustomRelic = (relic: CustomRelic) =>
     update((s) => ({ ...s, customRelics: [...s.customRelics, relic] }));
@@ -124,36 +165,6 @@ export function BuildsManager() {
     </section>
   );
 
-  if (editing) {
-    return (
-      <div>
-        {storageBanner}
-        <BuildEditor
-          key={editing.id}
-          initial={editing}
-          store={store}
-          onSave={(build) => {
-            update((s) => ({
-              ...s,
-              builds: [...s.builds.filter((b) => b.id !== build.id), { ...build, updatedAt: Date.now() }],
-            }));
-            // Keep the saved build visible: leave "All" alone, but widen a
-            // character filter that would hide the build just saved.
-            setCharacterFilter((c) =>
-              c.length === 0 || c.includes(build.character) ? c : [...c, build.character],
-            );
-            setView("builds");
-            setEditing(null);
-          }}
-          onCancel={() => setEditing(null)}
-          onAddCustomRelic={addCustomRelic}
-          onUpdateCustomRelic={updateCustomRelic}
-          onCreateTag={createTag}
-        />
-      </div>
-    );
-  }
-
   const ownBuilds = store.builds;
   const matchesTagFilter = (b: Build) =>
     tagFilter.length === 0 ||
@@ -172,42 +183,27 @@ export function BuildsManager() {
     }))
     .filter((g) => g.builds.length > 0);
 
-  // A single selected Nightfarer seeds the next new build; "all" falls back
-  // to the first of the roster.
-  const newBuildCharacter =
-    characterFilter.length === 1 ? characterFilter[0] : characterChalices[0].name;
-  const startNew = () =>
-    setEditing({
-      id: newId(),
-      name: "",
-      character: newBuildCharacter,
-      chalice: chalicesFor(newBuildCharacter)[0].name,
-      slots: [...EMPTY_SLOTS] as SlotTriple,
-      deepSlots: [...EMPTY_SLOTS] as SlotTriple,
-      notes: "",
-      updatedAt: Date.now(),
-    });
+  const saveBuild = (build: Build) => {
+    update((s) => ({
+      ...s,
+      builds: [...s.builds.filter((b) => b.id !== build.id), { ...build, updatedAt: Date.now() }],
+    }));
+    // Keep the saved build visible on the list behind it: leave "All" alone,
+    // but widen a character filter that would hide the build just saved.
+    setCharacterFilter((c) =>
+      c.length === 0 || c.includes(build.character) ? c : [...c, build.character],
+    );
+    setView("builds");
+    // Saving lands on the build's own page — for a new build, that's the
+    // first URL it has.
+    showBuild(build.id);
+  };
 
   const deleteBuild = (id: string) => {
     if (!window.confirm("Delete this build?")) return;
     update((s) => ({ ...s, builds: s.builds.filter((b) => b.id !== id) }));
     // Deleting the build the full view is showing drops back to the list.
-    setViewingId((v) => (v === id ? null : v));
-  };
-
-  // Copy a link straight to this build's page in the community directory.
-  // Only offered while signed in — the link reads the synced copy, so there
-  // is nothing for a visitor to load without an account behind it.
-  const shareBuild = async (id: string) => {
-    if (!user) return;
-    const url = buildShareUrl(user.uid, id);
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 2500);
-    } catch {
-      window.prompt("Copy this link:", url);
-    }
+    if (openId === id) showList();
   };
 
   const deleteCustomRelic = (id: string) => {
@@ -242,37 +238,78 @@ export function BuildsManager() {
     }
   };
 
-  // ── Single build view ──────────────────────────────────────────────────
-  // Opened by clicking a tile in the list: the same full card the community
-  // pages show, with this build's actions on a toolbar above it.
-  const viewing = viewingId ? store.builds.find((b) => b.id === viewingId) : undefined;
-  if (viewing) {
-    const btn =
-      "frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment";
+  // ── One build's own page: ?b=<id>, and ?b=<id>&edit=1 to change it ─────
+  // The build behind the URL — the unsaved draft for ?b=new, otherwise the
+  // stored build, so edits to it show up here.
+  const openBuild = isNew ? draft : openId ? store.builds.find((b) => b.id === openId) : undefined;
+
+  if (openId && !openBuild) {
+    // Either the draft hasn't been created yet (a render away) or the id is
+    // stale — a deleted build, or a link from another browser, since these
+    // builds live in this one.
+    return (
+      <div>
+        {storageBanner}
+        {isNew ? (
+          <p className="font-body text-sm text-parchment-faint">Starting a new build…</p>
+        ) : (
+          <>
+            <button type="button" onClick={showList} className={TOOLBAR_BTN}>
+              ← Back to builds
+            </button>
+            <p className="mt-4 font-body text-sm text-parchment-faint">
+              No such build in this browser — it may have been deleted, or saved on
+              another device. Sign in to sync your builds, or import a backup.
+            </p>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (openBuild && isEditing) {
+    return (
+      <div>
+        {storageBanner}
+        <BuildEditor
+          key={openBuild.id}
+          initial={openBuild}
+          store={store}
+          backLabel={isNew ? "← All builds" : "← Back to build"}
+          onSave={saveBuild}
+          onCancel={() => (isNew ? showList() : showBuild(openBuild.id))}
+          onAddCustomRelic={addCustomRelic}
+          onUpdateCustomRelic={updateCustomRelic}
+          onCreateTag={createTag}
+        />
+      </div>
+    );
+  }
+
+  if (openBuild) {
     return (
       <div>
         {storageBanner}
         <div className="mb-5 flex flex-wrap items-center gap-2">
-          <button type="button" onClick={() => setViewingId(null)} className={btn}>
+          <button type="button" onClick={showList} className={TOOLBAR_BTN}>
             ← Back to builds
           </button>
-          <button type="button" onClick={() => setEditing(viewing)} className={`${btn} text-gold-bright`}>
-            Edit
-          </button>
-          {user && (
-            <button type="button" onClick={() => void shareBuild(viewing.id)} className={btn}>
-              {copiedId === viewing.id ? "Link copied ✓" : "Copy link"}
-            </button>
-          )}
           <button
             type="button"
-            onClick={() => deleteBuild(viewing.id)}
+            onClick={() => editBuild(openBuild.id)}
+            className={`${TOOLBAR_BTN} text-gold-bright`}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => deleteBuild(openBuild.id)}
             className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-red-300"
           >
             Delete
           </button>
         </div>
-        <BuildCard build={viewing} store={store} />
+        <BuildCard build={openBuild} store={store} />
       </div>
     );
   }
@@ -471,8 +508,8 @@ export function BuildsManager() {
                     key={b.id}
                     build={b}
                     store={store}
-                    onOpen={() => setViewingId(b.id)}
-                    onEdit={() => setEditing(b)}
+                    onOpen={() => showBuild(b.id)}
+                    onEdit={() => editBuild(b.id)}
                     onDelete={() => deleteBuild(b.id)}
                   />
                 ))}

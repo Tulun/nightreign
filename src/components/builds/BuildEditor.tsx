@@ -40,6 +40,7 @@ export function BuildEditor({
   store,
   onSave,
   onCancel,
+  backLabel = "← All builds",
   onAddCustomRelic,
   onUpdateCustomRelic,
   onCreateTag,
@@ -48,6 +49,8 @@ export function BuildEditor({
   store: BuildStore;
   onSave: (b: Build) => void;
   onCancel: () => void;
+  /** Where leaving the editor goes back to — the list, or the build's page. */
+  backLabel?: string;
   onAddCustomRelic: (r: CustomRelic) => void;
   onUpdateCustomRelic: (r: CustomRelic) => void;
   onCreateTag: (name: string) => void;
@@ -197,7 +200,7 @@ export function BuildEditor({
   return (
     <div>
       <button type="button" onClick={onCancel} className="mb-4 font-body text-sm text-parchment-muted hover:text-gold-bright">
-        ← All builds
+        {backLabel}
       </button>
 
       {/* Character first, then chalice and slots follow from it. */}
