@@ -103,7 +103,57 @@ export function MyRelics({
         r.effects.some((e) => e.toLowerCase().includes(q)) ||
         (r.demerits ?? []).some((e) => e.toLowerCase().includes(q)),
     )
-    .sort((a, b) => COLOR_ORDER[a.color] - COLOR_ORDER[b.color] || (a.name || "z").localeCompare(b.name || "z"));
+    // Color, then normal before Deep of Night, then by name.
+    .sort(
+      (a, b) =>
+        COLOR_ORDER[a.color] - COLOR_ORDER[b.color] ||
+        Number(!!a.deep) - Number(!!b.deep) ||
+        (a.name || "z").localeCompare(b.name || "z"),
+    );
+
+  // One section per relic color, in slot order — the pool reads as the four
+  // colors rather than one long run of cards.
+  const groups = RELIC_COLORS.map((color) => ({
+    color,
+    relics: shown.filter((r) => r.color === color),
+  })).filter((g) => g.relics.length > 0);
+
+  const relicCard = (r: CustomRelic) =>
+    editingId === r.id ? (
+      <RelicCardEditor key={r.id} relic={r} onUpdate={onUpdate} onDone={() => setEditingId(null)} />
+    ) : (
+      <div key={r.id} className="frame flex items-start gap-2.5 rounded-md bg-night-800 p-3">
+        <RelicImg src={customRelicIcon(r)} alt={r.color} size={36} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-2">
+            <p className="min-w-0 truncate font-body text-base font-semibold text-parchment">
+              {r.name || `${r.color} relic`}
+              {r.deep && (
+                <span className="ml-1.5 rounded border border-gold-dim/40 px-1 py-px align-middle font-body text-xs font-normal uppercase tracking-wide text-gold-dim">
+                  Deep
+                </span>
+              )}
+            </p>
+            <div className="flex shrink-0 gap-1">
+              <IconButton label="Edit relic" onClick={() => setEditingId(r.id)}>
+                <PencilIcon />
+              </IconButton>
+              <IconButton label="Delete relic" danger onClick={() => onDelete(r.id)}>
+                <TrashIcon />
+              </IconButton>
+            </div>
+          </div>
+          <EffectLines
+            divided
+            size="base"
+            className="mt-1.5"
+            lines={r.effects
+              .map((text, i) => ({ text, demerit: r.demerits?.[i]?.trim() || undefined }))
+              .filter((l) => l.text.trim())}
+          />
+        </div>
+      </div>
+    );
 
   return (
     <div>
@@ -166,44 +216,21 @@ export function MyRelics({
       {shown.length === 0 && (
         <p className="mt-3 font-body text-xs text-parchment-faint">No relics match.</p>
       )}
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {shown.map((r) =>
-          editingId === r.id ? (
-            <RelicCardEditor key={r.id} relic={r} onUpdate={onUpdate} onDone={() => setEditingId(null)} />
-          ) : (
-            <div key={r.id} className="frame flex items-start gap-2.5 rounded-md bg-night-800 p-3">
-              <RelicImg src={customRelicIcon(r)} alt={r.color} size={36} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="min-w-0 truncate font-body text-base font-semibold text-parchment">
-                    {r.name || `${r.color} relic`}
-                    {r.deep && (
-                      <span className="ml-1.5 rounded border border-gold-dim/40 px-1 py-px align-middle font-body text-xs font-normal uppercase tracking-wide text-gold-dim">
-                        Deep
-                      </span>
-                    )}
-                  </p>
-                  <div className="flex shrink-0 gap-1">
-                    <IconButton label="Edit relic" onClick={() => setEditingId(r.id)}>
-                      <PencilIcon />
-                    </IconButton>
-                    <IconButton label="Delete relic" danger onClick={() => onDelete(r.id)}>
-                      <TrashIcon />
-                    </IconButton>
-                  </div>
-                </div>
-                <EffectLines
-                  divided
-                  size="base"
-                  className="mt-1.5"
-                  lines={r.effects
-                    .map((text, i) => ({ text, demerit: r.demerits?.[i]?.trim() || undefined }))
-                    .filter((l) => l.text.trim())}
-                />
-              </div>
+      <div className="mt-3 space-y-5">
+        {groups.map((g) => (
+          <section key={g.color}>
+            <h4 className="eyebrow mb-2 flex items-center gap-1.5 border-b border-night-700 pb-1.5 text-gold-dim">
+              <SlotIconImg color={g.color} size={14} />
+              {g.color}
+              <span className="font-body text-xs normal-case tracking-normal text-parchment-faint">
+                {g.relics.length}
+              </span>
+            </h4>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {g.relics.map(relicCard)}
             </div>
-          ),
-        )}
+          </section>
+        ))}
       </div>
       {creator}
     </div>

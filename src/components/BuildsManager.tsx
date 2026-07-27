@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { characterChalices } from "@/data/chalices";
-import { Dropdown } from "@/components/Dropdown";
 import { MultiSelect } from "@/components/MultiSelect";
 import { BuildCard } from "@/components/builds/BuildCard";
 import { BuildEditor } from "@/components/builds/BuildEditor";
@@ -160,11 +159,21 @@ export function BuildsManager() {
       ? tagFilter.some((t) => b.tags?.includes(t))
       : tagFilter.every((t) => b.tags?.includes(t)));
   const builds = ownBuilds
-    .filter((b) => !character || b.character === character)
-    .filter(matchesTagFilter)
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    .filter((b) => characterFilter.length === 0 || characterFilter.includes(b.character))
+    .filter(matchesTagFilter);
+  // One section per Nightfarer, in the roster's own order, newest build first
+  // within each — easier to scan than one long mixed list.
+  const groups = characterChalices
+    .map((c) => ({
+      name: c.name,
+      builds: builds.filter((b) => b.character === c.name).sort((a, b) => b.updatedAt - a.updatedAt),
+    }))
+    .filter((g) => g.builds.length > 0);
 
-  const newBuildCharacter = character || characterChalices[0].name;
+  // A single selected Nightfarer seeds the next new build; "all" falls back
+  // to the first of the roster.
+  const newBuildCharacter =
+    characterFilter.length === 1 ? characterFilter[0] : characterChalices[0].name;
   const startNew = () =>
     setEditing({
       id: newId(),
@@ -328,15 +337,16 @@ export function BuildsManager() {
         <>
       {/* Toolbar */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
-        <Dropdown
-          value={character}
-          onChange={setCharacter}
-          placeholder="All Nightfarers"
+        <MultiSelect
+          values={characterFilter}
           options={characterChalices.map((c) => {
             const count = ownBuilds.filter((b) => b.character === c.name).length;
             return { value: c.name, label: count > 0 ? `${c.name} (${count})` : c.name };
           })}
+          onChange={setCharacterFilter}
+          placeholder="All Nightfarers"
           className="w-52"
+          showValues
         />
         {tagFilterControls}
         <button type="button" onClick={startNew} className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600">
@@ -396,27 +406,41 @@ export function BuildsManager() {
         />
       )}
 
-      {builds.length === 0 ? (
+      {groups.length === 0 ? (
         <p className="font-body text-sm text-parchment-faint">
           {tagFilter.length > 0
             ? "No builds match the selected tags."
-            : `No builds ${character ? `for ${character} ` : ""}yet — create one, or import a backup.`}
+            : `No builds ${
+                characterFilter.length > 0 ? `for ${characterFilter.join(" or ")} ` : ""
+              }yet — create one, or import a backup.`}
         </p>
       ) : (
-        // Single column: cards lay normal and Deep of Night side by side
-        // internally, so they want the full page width.
-        <div className="grid gap-3">
-          {builds.map((b) => (
-            <BuildCard
-              key={b.id}
-              build={b}
-              store={store}
-              expandable
-              onEdit={() => setEditing(b)}
-              onDelete={() => deleteBuild(b.id)}
-              onShare={user ? () => void shareBuild(b.id) : undefined}
-              shareLabel={copiedId === b.id ? "Link copied ✓" : "Share"}
-            />
+        <div className="space-y-6">
+          {groups.map((g) => (
+            <section key={g.name}>
+              <h4 className="eyebrow mb-2 border-b border-night-700 pb-1.5 text-gold-dim">
+                {g.name}
+                <span className="ml-2 font-body text-xs normal-case tracking-normal text-parchment-faint">
+                  {g.builds.length}
+                </span>
+              </h4>
+              {/* Single column: cards lay normal and Deep of Night side by
+                  side internally, so they want the full page width. */}
+              <div className="grid gap-3">
+                {g.builds.map((b) => (
+                  <BuildCard
+                    key={b.id}
+                    build={b}
+                    store={store}
+                    expandable
+                    onEdit={() => setEditing(b)}
+                    onDelete={() => deleteBuild(b.id)}
+                    onShare={user ? () => void shareBuild(b.id) : undefined}
+                    shareLabel={copiedId === b.id ? "Link copied ✓" : "Share"}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
