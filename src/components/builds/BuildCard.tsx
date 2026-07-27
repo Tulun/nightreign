@@ -5,16 +5,17 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import { Fragment, useState } from "react";
+import Link from "next/link";
 import { type Build, type BuildStore, type SlotTriple } from "@/lib/builds";
 import type { SlotColor } from "@/lib/chalices";
 import { chalicesFor, resolveSlot, EffectLines, RelicImg, SlotIconImg } from "./shared";
 
 /** Disclosure chevron for expandable build cards. */
-function Chevron({ open }: { open: boolean }) {
+function Chevron({ open, className = "text-parchment-faint" }: { open: boolean; className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
-      className={`h-3.5 w-3.5 shrink-0 text-parchment-faint transition-transform ${open ? "rotate-90" : ""}`}
+      className={`h-3.5 w-3.5 shrink-0 transition-transform ${className} ${open ? "rotate-90" : ""}`}
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
@@ -29,21 +30,30 @@ function Chevron({ open }: { open: boolean }) {
 
 /**
  * One saved build. With onDelete it's an interactive card (Delete, plus Edit
- * when onEdit is given); with neither it's a read-only preview (community
- * profiles, party views). `expandable` cards start collapsed to a one-line
- * summary (relic icons + tags) and expand on click.
+ * when onEdit is given, and Share when onShare is); with neither it's a
+ * read-only preview (community profiles, party views). `expandable` cards
+ * start collapsed to a one-line summary (relic icons + tags) and expand on
+ * click; with `href` the whole card is a link into the build's own page
+ * instead.
  */
 export function BuildCard({
   build,
   store,
+  href,
   onEdit,
   onDelete,
+  onShare,
+  shareLabel = "Share",
   expandable = false,
 }: {
   build: Build;
   store: BuildStore;
+  /** Link into this build's own page — makes the card a click-through. */
+  href?: string;
   onEdit?: () => void;
   onDelete?: () => void;
+  onShare?: () => void;
+  shareLabel?: string;
   expandable?: boolean;
 }) {
   const [expanded, setExpanded] = useState(!expandable);
@@ -112,6 +122,44 @@ export function BuildCard({
     </span>
   );
 
+  const tagChips = (build.tags?.length ?? 0) > 0 && (
+    <span className="flex flex-wrap gap-1">
+      {build.tags!.map((t) => (
+        <span key={t} className="rounded border border-night-600 bg-night-900 px-1.5 py-0.5 font-body text-xs text-parchment-muted">
+          {t}
+        </span>
+      ))}
+    </span>
+  );
+
+  // Link card: the whole tile navigates to the build's own page, so it never
+  // expands in place and the arrow sits on the trailing edge (a leading
+  // chevron would read as a disclosure triangle it isn't).
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="frame group flex items-center justify-between gap-3 rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700"
+      >
+        <span className="min-w-0">
+          <span className="block truncate font-display font-semibold text-parchment transition-colors group-hover:text-gold-bright">
+            {build.name || "Unnamed build"}
+          </span>
+          <span className="block font-body text-xs text-parchment-faint">
+            {build.character} · {build.chalice}
+          </span>
+          <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {iconStrip}
+            {tagChips}
+          </span>
+        </span>
+        <span className="shrink-0 text-parchment-faint transition-colors group-hover:text-gold-bright">
+          <Chevron open={false} className="" />
+        </span>
+      </Link>
+    );
+  }
+
   return (
     <article className="frame rounded-md bg-night-800 p-4">
       <div
@@ -147,25 +195,22 @@ export function BuildCard({
           {!expanded && (
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
               {iconStrip}
-              {(build.tags?.length ?? 0) > 0 && (
-                <span className="flex flex-wrap gap-1">
-                  {build.tags!.map((t) => (
-                    <span key={t} className="rounded border border-night-600 bg-night-900 px-1.5 py-0.5 font-body text-xs text-parchment-muted">
-                      {t}
-                    </span>
-                  ))}
-                </span>
-              )}
+              {tagChips}
             </div>
           )}
           {/* Expanded: tags render below, on the grid's top row. */}
         </div>
-        {onDelete && (
+        {(onDelete || onShare) && (
           <div className="flex shrink-0 flex-wrap justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+            {onShare && (
+              <button type="button" onClick={onShare} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">{shareLabel}</button>
+            )}
             {onEdit && (
               <button type="button" onClick={onEdit} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright">Edit</button>
             )}
-            <button type="button" onClick={onDelete} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">Delete</button>
+            {onDelete && (
+              <button type="button" onClick={onDelete} className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-red-300">Delete</button>
+            )}
           </div>
         )}
       </div>

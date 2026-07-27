@@ -3,12 +3,14 @@
 // ─────────────────────────────────────────────────────────────────────────
 //  Community directory: everyone who has signed in and synced, and a
 //  read-only view of any user's public builds. Profiles are addressable as
-//  /builds/users?u=<uid> (a static export can't prerender /users/{uid}
-//  paths, so the id rides the query string) and readable without signing
-//  in — signing in only adds syncing and the nickname editor.
+//  /builds/users?u=<uid>, and a single build as ?u=<uid>&b=<buildId> (a
+//  static export can't prerender /users/{uid}/{buildId} paths, so the ids
+//  ride the query string). Both are readable without signing in — signing
+//  in only adds syncing and the nickname editor.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { characterChalices } from "@/data/chalices";
 import { BuildCard } from "@/components/builds/BuildCard";
@@ -16,7 +18,14 @@ import { Dropdown } from "@/components/Dropdown";
 import { MultiSelect } from "@/components/MultiSelect";
 import { listProfiles, pullCloudStore, setProfileName, type UserProfile } from "@/lib/cloudSync";
 import { useAuth } from "@/lib/useAuth";
-import { EMPTY_STORE, sortedTags, type Build, type BuildStore } from "@/lib/builds";
+import {
+  EMPTY_STORE,
+  buildPath,
+  buildShareUrl,
+  sortedTags,
+  type Build,
+  type BuildStore,
+} from "@/lib/builds";
 
 /**
  * Initial-letter tile. Deliberately not the Google photo: profiles publish
@@ -38,7 +47,7 @@ function Avatar({ name, size }: { name: string; size: number }) {
  * ones they have builds for) and the tags in use on those builds. Mounted
  * with key={uid}, so filters reset when switching profiles.
  */
-function ProfileBuilds({ store }: { store: BuildStore }) {
+function ProfileBuilds({ store, uid }: { store: BuildStore; uid: string }) {
   const [character, setCharacter] = useState("");
   const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [tagMode, setTagMode] = useState<"any" | "all">("any");
@@ -113,9 +122,11 @@ function ProfileBuilds({ store }: { store: BuildStore }) {
       {builds.length === 0 ? (
         <p className="font-body text-sm text-parchment-faint">No builds match the filters.</p>
       ) : (
-        <div className="grid gap-3">
+        // Link cards are compact, so they pair up on wider screens instead of
+        // leaving half the row empty.
+        <div className="grid gap-3 lg:grid-cols-2">
           {builds.map((b) => (
-            <BuildCard key={b.id} build={b} store={store} expandable />
+            <BuildCard key={b.id} build={b} store={store} href={buildPath(uid, b.id)} />
           ))}
         </div>
       )}
@@ -123,11 +134,37 @@ function ProfileBuilds({ store }: { store: BuildStore }) {
   );
 }
 
+/** Copies a link to the clipboard, with a prompt fallback where it's blocked. */
+function CopyLinkButton({ url, label = "Copy link" }: { url: string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      window.prompt("Copy this link:", url);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={() => void copy()}
+      className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
+    >
+      {copied ? "Link copied ✓" : label}
+    </button>
+  );
+}
+
 export function CommunityUsers() {
   const user = useAuth();
   const router = useRouter();
-  // Profile selection lives in the URL so profiles can be linked directly.
-  const selectedUid = useSearchParams().get("u");
+  // Profile and build selection live in the URL so both can be linked
+  // directly: ?u=<uid> is a profile, ?u=<uid>&b=<id> a single build.
+  const params = useSearchParams();
+  const selectedUid = params.get("u");
+  const selectedBuildId = params.get("b");
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   // The selected user's synced store; their builds resolve against it.
   const [selectedStore, setSelectedStore] = useState<BuildStore | null>(null);
@@ -172,6 +209,48 @@ export function CommunityUsers() {
     return <p className="font-body text-sm text-parchment-faint">Loading users…</p>;
   }
 
+  // ── Single build view: the shareable page for one loadout ──────────────
+  if (selectedUid && selectedBuildId) {
+    const selected = profiles.find((p) => p.uid === selectedUid);
+    const owner = selected?.displayName;
+    const build = selectedStore?.builds.find(
+      (b) => b.id === selectedBuildId && b.public !== false,
+    );
+    return (
+      <div>
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <Link
+            href={`/builds/users?u=${encodeURIComponent(selectedUid)}`}
+            className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
+          >
+            ← {owner ? `${owner}’s builds` : "All builds"}
+          </Link>
+          {build && <CopyLinkButton url={buildShareUrl(selectedUid, selectedBuildId)} />}
+        </div>
+        {!selectedStore ? (
+          <p className="font-body text-sm text-parchment-faint">Loading build…</p>
+        ) : !build ? (
+          <p className="font-body text-sm text-parchment-faint">
+            No such build — the link may be stale, or it&rsquo;s no longer shared.
+          </p>
+        ) : (
+          <>
+            {selected && (
+              <div className="mb-4 flex items-center gap-3">
+                <Avatar name={selected.displayName} size={36} />
+                <p className="font-body text-sm text-parchment-muted">
+                  A build by <span className="font-semibold text-parchment">{selected.displayName}</span>
+                  {selected.uid === user?.uid && " (you)"} — view-only.
+                </p>
+              </div>
+            )}
+            <BuildCard build={build} store={selectedStore} />
+          </>
+        )}
+      </div>
+    );
+  }
+
   // ── Profile view: one user's public builds, read-only ──────────────────
   if (selectedUid) {
     const selected = profiles.find((p) => p.uid === selectedUid);
@@ -196,14 +275,14 @@ export function CommunityUsers() {
                 <h3 className="font-display text-xl font-semibold text-parchment">{selected.displayName}</h3>
                 <p className="font-body text-xs text-parchment-faint">
                   {selected.uid === user?.uid ? "This is you. " : ""}
-                  Builds are view-only — nothing here joins your own collection.
+                  Builds are view-only — open one for its own page and a share link.
                 </p>
               </div>
             </div>
             {!selectedStore ? (
               <p className="font-body text-sm text-parchment-faint">Loading builds…</p>
             ) : (
-              <ProfileBuilds key={selectedUid} store={selectedStore} />
+              <ProfileBuilds key={selectedUid} store={selectedStore} uid={selectedUid} />
             )}
           </>
         )}

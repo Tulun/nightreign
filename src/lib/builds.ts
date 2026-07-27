@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import { characterSwaps } from "@/data/statSwaps";
+import { asset } from "@/lib/assets";
 import { uniqueRelics, type UniqueRelicGroup } from "@/data/uniqueRelics";
 import { NORMAL_EFFECT_VOCABULARY, isCurseEffect } from "@/lib/effectMatch";
 import { SCENE_META, relicIcon } from "@/lib/statSwaps";
@@ -231,6 +232,21 @@ export function mergeStores(current: BuildStore, imported: BuildStore): BuildSto
 
 export function newId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Path of one build's own page in the community directory. A static export
+ * can't prerender /users/{uid}/{buildId}, so both ids ride the query string
+ * (same trick as the profile links).
+ */
+export function buildPath(uid: string, buildId: string): string {
+  return `/builds/users?u=${encodeURIComponent(uid)}&b=${encodeURIComponent(buildId)}`;
+}
+
+/** The same link, absolute and base-path-aware — what Share copies. */
+export function buildShareUrl(uid: string, buildId: string): string {
+  const path = asset(buildPath(uid, buildId));
+  return typeof window === "undefined" ? path : `${window.location.origin}${path}`;
 }
 
 /**

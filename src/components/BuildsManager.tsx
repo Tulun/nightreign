@@ -13,6 +13,7 @@ import { chalicesFor, EffectDatalists } from "@/components/builds/shared";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
+  buildShareUrl,
   loadStore,
   mergeStores,
   newId,
@@ -24,6 +25,7 @@ import {
   type CustomRelic,
   type SlotTriple,
 } from "@/lib/builds";
+import { useAuth } from "@/lib/useAuth";
 import { useCloudSync } from "@/lib/useCloudSync";
 
 /**
@@ -47,7 +49,10 @@ export function BuildsManager() {
   // A localStorage write failed (quota, private mode, storage disabled) —
   // edits now live only in this tab, so warn until a write succeeds again.
   const [storageBroken, setStorageBroken] = useState(false);
+  // Which build's share link was just copied (resets the label after a beat).
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const user = useAuth();
   const syncStatus = useCloudSync(store, setStore);
 
   useEffect(() => {
@@ -173,6 +178,21 @@ export function BuildsManager() {
   const deleteBuild = (id: string) => {
     if (!window.confirm("Delete this build?")) return;
     update((s) => ({ ...s, builds: s.builds.filter((b) => b.id !== id) }));
+  };
+
+  // Copy a link straight to this build's page in the community directory.
+  // Only offered while signed in — the link reads the synced copy, so there
+  // is nothing for a visitor to load without an account behind it.
+  const shareBuild = async (id: string) => {
+    if (!user) return;
+    const url = buildShareUrl(user.uid, id);
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((c) => (c === id ? null : c)), 2500);
+    } catch {
+      window.prompt("Copy this link:", url);
+    }
   };
 
   const deleteCustomRelic = (id: string) => {
@@ -385,7 +405,16 @@ export function BuildsManager() {
         // internally, so they want the full page width.
         <div className="grid gap-3">
           {builds.map((b) => (
-            <BuildCard key={b.id} build={b} store={store} expandable onEdit={() => setEditing(b)} onDelete={() => deleteBuild(b.id)} />
+            <BuildCard
+              key={b.id}
+              build={b}
+              store={store}
+              expandable
+              onEdit={() => setEditing(b)}
+              onDelete={() => deleteBuild(b.id)}
+              onShare={user ? () => void shareBuild(b.id) : undefined}
+              shareLabel={copiedId === b.id ? "Link copied ✓" : "Share"}
+            />
           ))}
         </div>
       )}

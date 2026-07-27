@@ -12,7 +12,8 @@ export default function BuildsUsersPage() {
         </h2>
         <p className="mt-2 max-w-prose font-body text-parchment-muted">
           Everyone who has signed in and synced their builds. Open a profile to
-          browse their loadouts — view-only, nothing joins your own collection.
+          browse their loadouts, then open a build for its own page and a link
+          you can share — view-only, nothing joins your own collection.
         </p>
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
           <Link
