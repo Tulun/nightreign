@@ -122,10 +122,9 @@ export function MyRelics({
     );
   }
 
-  // The relic being edited stays on screen whatever the filters say — edits
-  // land live, so filtering it out mid-edit (clearing the effect you searched
-  // for, recoloring it) would yank the editor away under the cursor. Filtering
-  // catches up once Done closes the editor.
+  // The relic being edited stays on screen whatever the filters say — an open
+  // editor holding unsaved edits shouldn't vanish because the filters moved
+  // under it. Filtering catches up once the editor closes.
   const shown = relics
     .filter(
       (r) =>
@@ -155,7 +154,15 @@ export function MyRelics({
 
   const relicCard = (r: CustomRelic) =>
     editingId === r.id ? (
-      <RelicCardEditor key={r.id} relic={r} onUpdate={onUpdate} onDone={() => setEditingId(null)} />
+      <RelicCardEditor
+        key={r.id}
+        relic={r}
+        onSave={(edited) => {
+          onUpdate(edited);
+          setEditingId(null);
+        }}
+        onCancel={() => setEditingId(null)}
+      />
     ) : (
       <div key={r.id} className="frame flex items-start gap-2.5 rounded-md bg-night-800 p-3">
         <RelicImg src={customRelicIcon(r)} alt={r.color} size={36} />
@@ -326,29 +333,51 @@ export function MyRelics({
   );
 }
 
-/** In-place editor for a pool relic: name, color, and each effect line. */
+/**
+ * In-place editor for a pool relic: name, color, and each effect line. Edits
+ * live in a draft until Save (or Enter) commits them — keystrokes used to
+ * write straight through to the stored pool, so a refresh mid-edit kept
+ * half-typed lines and cleared effects the user hadn't committed to.
+ */
 function RelicCardEditor({
   relic,
-  onUpdate,
-  onDone,
+  onSave,
+  onCancel,
 }: {
   relic: CustomRelic;
-  onUpdate: (r: CustomRelic) => void;
-  onDone: () => void;
+  onSave: (r: CustomRelic) => void;
+  onCancel: () => void;
 }) {
+  const [draft, setDraft] = useState(relic);
+  const onUpdate = setDraft;
+
   return (
-    <div className="frame rounded-md border-night-500 bg-night-800 p-3">
+    <form
+      className="frame rounded-md border-night-500 bg-night-800 p-3"
+      onSubmit={(e) => {
+        // Enter in any of the text inputs submits — the editor's inner
+        // buttons are all type="button", so only Save gets here.
+        e.preventDefault();
+        onSave(draft);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          onCancel();
+        }
+      }}
+    >
       <div className="flex items-center gap-2">
         <input
           type="text"
-          value={relic.name}
-          onChange={(e) => onUpdate({ ...relic, name: e.target.value })}
+          value={draft.name}
+          onChange={(e) => onUpdate({ ...draft, name: e.target.value })}
           placeholder="Relic name"
           className="frame w-full rounded bg-night-900 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
         />
         <select
-          value={relic.color}
-          onChange={(e) => onUpdate({ ...relic, color: e.target.value as CustomRelic["color"] })}
+          value={draft.color}
+          onChange={(e) => onUpdate({ ...draft, color: e.target.value as CustomRelic["color"] })}
           className="frame rounded bg-night-900 px-2 py-1 font-body text-sm text-parchment"
         >
           {RELIC_COLORS.map((c) => (
@@ -356,7 +385,7 @@ function RelicCardEditor({
           ))}
         </select>
       </div>
-      {/* Normal vs Deep decides which slots the relic fits. Going normal
+      {/* Normal vs Deep decides which slots the draft fits. Going normal
           drops demerits — only Deep relics carry them. */}
       <div className="mt-2 flex items-center gap-1.5">
         {([false, true] as const).map((isDeep) => (
@@ -366,13 +395,13 @@ function RelicCardEditor({
             onClick={() =>
               onUpdate(
                 isDeep
-                  ? { ...relic, deep: true }
-                  : { ...relic, deep: false, demerits: relic.effects.map(() => "") },
+                  ? { ...draft, deep: true }
+                  : { ...draft, deep: false, demerits: draft.effects.map(() => "") },
               )
             }
-            aria-pressed={!!relic.deep === isDeep}
+            aria-pressed={!!draft.deep === isDeep}
             className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
-              !!relic.deep === isDeep
+              !!draft.deep === isDeep
                 ? "bg-night-700 text-gold-bright"
                 : "bg-night-900 text-parchment-muted hover:text-parchment"
             }`}
@@ -385,11 +414,11 @@ function RelicCardEditor({
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <button
           type="button"
-          onClick={() => onUpdate({ ...relic, look: undefined })}
-          aria-pressed={!relic.look}
+          onClick={() => onUpdate({ ...draft, look: undefined })}
+          aria-pressed={!draft.look}
           title="Size by effect count (1 line small, 3 lines large)"
           className={`rounded-md border px-2 py-1 font-body text-xs transition-colors ${
-            !relic.look
+            !draft.look
               ? "border-gold-bright bg-night-700 text-gold-bright"
               : "border-night-600 bg-night-900 text-parchment-muted hover:border-night-400"
           }`}
@@ -397,27 +426,36 @@ function RelicCardEditor({
           Auto
         </button>
         {RELIC_LOOKS.map((look) => {
-          const active = effectiveLook(relic) === look;
+          const active = effectiveLook(draft) === look;
           return (
             <button
               key={look}
               type="button"
-              onClick={() => onUpdate({ ...relic, look })}
+              onClick={() => onUpdate({ ...draft, look })}
               aria-pressed={active}
               title={look.replace("-", " ")}
               className={`rounded-md border p-1 transition-colors ${
                 active ? "border-gold-bright bg-night-700" : "border-night-600 bg-night-900 hover:border-night-400"
               }`}
             >
-              <RelicImg src={relicLookIcon(relic.color, look)} alt={look} size={28} />
+              <RelicImg src={relicLookIcon(draft.color, look)} alt={look} size={28} />
             </button>
           );
         })}
       </div>
-      <RelicLineInputs relic={relic} onUpdate={onUpdate} className="mt-2" showDemerits={!!relic.deep} />
-      <button type="button" onClick={onDone} className="frame mt-2 rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600">
-        Done
-      </button>
-    </div>
+      <RelicLineInputs relic={draft} onUpdate={onUpdate} className="mt-2" showDemerits={!!draft.deep} />
+      <div className="mt-2 flex items-center gap-1.5">
+        <button type="submit" className="frame rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600">
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="frame rounded-md bg-night-900 px-3 py-1 font-body text-xs text-parchment-muted hover:text-parchment"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

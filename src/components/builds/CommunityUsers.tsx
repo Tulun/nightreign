@@ -85,9 +85,9 @@ function ReturnButton({ to }: { to: string }) {
 
 /**
  * Edit and Delete for a build of your own found here. This directory is
- * everyone's read-only view of the account's synced copy — the copy you can
- * actually change is the one in your browser — so both hand the build over to
- * the Builds page, which owns the editor, the confirm and the tombstone.
+ * everyone's read-only view of an account's builds, so both hand the build
+ * over to the Builds page, which owns the editor, the confirm and the
+ * tombstone.
  */
 function OwnerActions({ uid, buildId }: { uid: string; buildId: string }) {
   return (

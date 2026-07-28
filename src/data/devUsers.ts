@@ -4,11 +4,11 @@
 // ─────────────────────────────────────────────────────────────────────────
 //  Chosen to cover the states that are otherwise a chore to produce with a
 //  real backend:
-//    fake-you       the account you "sign in" as. Its cloud store is
-//                   deliberately out of step with the ?seed=demo local one —
-//                   a build only the cloud has, and a NEWER copy of a build
-//                   the device also holds — so the sign-in merge in
-//                   useCloudSync actually has to resolve something.
+//    fake-you       the account you "sign in" as, and the one ?seed= writes
+//                   its fixture over. Its own store holds a build the demo
+//                   seed doesn't, plus a NEWER copy of one it does, so a
+//                   remoteEdit() against it gives useAccountStore's live
+//                   merge something to actually resolve.
 //    fake-vanguard  a well-stocked neighbour to browse and pick from. Its
 //                   Guardian build is the one that runs Deep of Night
 //                   relics, curses and all — the rest of the stub data is

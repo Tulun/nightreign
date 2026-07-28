@@ -7,8 +7,9 @@
 //  The store travels as JSON text rather than expanded Firestore fields:
 //  normalizeStore already handles versioning/migration on the way back in,
 //  undefined-valued optionals drop out cleanly, and a string field can't
-//  trip over Firestore's nested-array limits. localStorage stays the source
-//  of truth for the current device; the cloud doc is a synced mirror.
+//  trip over Firestore's nested-array limits. This copy is the source of
+//  truth; localStorage holds a per-account backup of it (see
+//  useAccountStore).
 // ─────────────────────────────────────────────────────────────────────────
 
 import {
@@ -135,7 +136,7 @@ export async function pullCloudStore(uid: string): Promise<BuildStore | null> {
  * recognized by the caller comparing it to what it last pushed.
  *
  * Returns the unsubscribe function. A listener failure (rules, offline) is
- * logged and ends the subscription — the sign-in merge remains the fallback.
+ * logged and ends the subscription — the load at sign-in remains the fallback.
  */
 export function watchCloudStore(uid: string, onChange: (store: BuildStore) => void): () => void {
   return onSnapshot(
@@ -176,8 +177,8 @@ export async function listProfiles(): Promise<UserProfile[]> {
 }
 
 /**
- * Merge of the device's store with the account's cloud copy — at sign-in, and
- * again for every live update from another device. Builds clash by id and the
+ * Merge of the device's copy with the account's — the cached one at sign-in,
+ * the live one for every update from another device. Builds clash by id and the
  * newer updatedAt wins (edits from another device beat a stale local copy, and
  * vice versa). Custom relics carry no timestamp, so on an id clash the cloud
  * copy wins — matching mergeStores' imported-wins rule.

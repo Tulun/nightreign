@@ -1,8 +1,9 @@
 "use client";
 
 // ─────────────────────────────────────────────────────────────────────────
-//  Auth state + actions. Signing in is entirely optional: signed-out users
-//  keep the localStorage-only experience, an account just adds sync.
+//  Auth state + actions. The reference pages are open to everyone; builds
+//  and relics belong to an account, so the Builds page needs one (see
+//  useAccountStore).
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";

@@ -26,11 +26,9 @@ import {
   buildPath,
   buildShareText,
   buildShareUrl,
-  loadStore,
   mergeStores,
   newId,
   normalizeStore,
-  saveStore,
   relicTagTombstone,
   sortedTags,
   tagTombstone,
@@ -45,7 +43,13 @@ import {
   type SlotTriple,
 } from "@/lib/builds";
 import { useAuth } from "@/lib/cloud";
-import { useCloudSync } from "@/lib/useCloudSync";
+import { useAccountStore } from "@/lib/useAccountStore";
+import {
+  LegacyImportCard,
+  LoadFailed,
+  OfflineBanner,
+  SignInWall,
+} from "@/components/builds/AccountGate";
 import { MyNickname } from "@/components/builds/NicknameCard";
 
 /** Shared look for the toolbar above a single build. */
@@ -53,21 +57,32 @@ const TOOLBAR_BTN =
   "frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment";
 
 /**
- * User builds, stored locally in the browser and — when signed in — mirrored
- * to the account (see useCloudSync). The list view shows saved builds per
+ * A signed-in account's builds (see useAccountStore — the store lives in the
+ * account, backed by a local cache). The list view shows saved builds per
  * Nightfarer; opening one gives it its own page, with the editor — searchable
  * relic pickers, Deep of Night slots, and a whole-screenshot importer — in
- * that same view.
+ * that same view. Signed out there is nothing to show, and the page is a
+ * sign-in prompt instead.
  *
  * Which build is open lives in the URL rather than in state, so a build and
  * its editor can be linked and survive a refresh: ?b=<id> is one build,
  * ?b=<id>&edit=1 its editor, and ?b=new a build that doesn't exist yet.
- * These links are personal — the builds are in this browser, not on the
- * server. What travels is the build's Community Builds page, which Copy
- * share link on the open build hands over (see buildShareUrl).
+ * These links are personal — they open *your* copy, and only for you. What
+ * travels is the build's Community Builds page, which Copy share link on the
+ * open build hands over (see buildShareUrl).
  */
 export function BuildsManager() {
-  const [store, setStore] = useState<BuildStore | null>(null);
+  const {
+    store,
+    setStore,
+    status,
+    error,
+    retry,
+    cacheBroken,
+    legacy,
+    importLegacy,
+    dismissLegacy,
+  } = useAccountStore();
   const [view, setView] = useState<"builds" | "relics">("builds");
   const router = useRouter();
   const params = useSearchParams();
@@ -79,8 +94,8 @@ export function BuildsManager() {
   // store and its tombstones are, and only after the same confirm as the
   // button below.
   const wantsDelete = !isNew && params.get("delete") !== null;
-  // Whose build the URL claims to be (see withOwner). Absent on links made
-  // while signed out, and on anything older than that change.
+  // Whose build the URL claims to be (see withOwner). Absent on anything
+  // older than that change.
   const ownerUid = params.get("u");
   // Which loadout of a build with variants is on show — in the URL so the
   // share link copied here points at that same one (see buildPath).
@@ -94,23 +109,16 @@ export function BuildsManager() {
   const [managingTags, setManagingTags] = useState(false);
   // The unsaved build behind ?b=new — it has no store entry to read back.
   const [draft, setDraft] = useState<Build | null>(null);
-  // A localStorage write failed (quota, private mode, storage disabled) —
-  // edits now live only in this tab, so warn until a write succeeds again.
-  const [storageBroken, setStorageBroken] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
-  const syncStatus = useCloudSync(store, setStore);
-  // Only for the share link — the account's uid is what a build's community
-  // page is addressed by. Sync itself is entirely useCloudSync's business.
+  // Only for the share link and the owner check below — the account's uid is
+  // what a build's community page is addressed by. Loading and saving the
+  // store is entirely useAccountStore's business.
   const user = useAuth();
 
   // A single selected Nightfarer seeds the next new build; "all" falls back
   // to the first of the roster.
   const newBuildCharacter =
     characterFilter.length === 1 ? characterFilter[0] : characterChalices[0].name;
-
-  useEffect(() => {
-    setStore(loadStore());
-  }, []);
 
   // Make the draft once per visit to ?b=new (so its id — and the editor keyed
   // on it — stay put across renders), and drop it when the editor closes.
@@ -132,12 +140,6 @@ export function BuildsManager() {
     });
   }, [isNew, newBuildCharacter]);
 
-  // Persist every change (the post-load write just re-saves what was loaded,
-  // and doubles as an early probe for broken storage).
-  useEffect(() => {
-    if (store) setStorageBroken(!saveStore(store));
-  }, [store]);
-
   // A tag the registry has lost — deleted here, or on another device between
   // syncs — stops filtering, rather than quietly hiding every build.
   useEffect(() => {
@@ -145,8 +147,8 @@ export function BuildsManager() {
   }, [store]);
 
   // A build's page addressed to an account that isn't yours came from someone
-  // else's address bar, and this page can't show it — ?b= reads out of *this*
-  // browser. Hand it to where that build does live: the owner's community
+  // else's address bar, and this page can't show it — ?b= reads out of *your*
+  // store. Hand it to where that build does live: the owner's community
   // page, view-only. Your own uid is deliberately not redirected — that's
   // your build on a device that may simply not have synced it yet.
   useEffect(() => {
@@ -158,7 +160,7 @@ export function BuildsManager() {
     router.replace(buildPath(ownerUid, openId, Math.max(0, Math.trunc(Number(variantParam)) || 0)));
   }, [store, openId, isNew, ownerUid, variantParam, user, router]);
 
-  // A ?delete=1 link, asked once and only for a build this browser actually
+  // A ?delete=1 link, asked once and only for a build the account actually
   // holds — a missing one falls through to the message below, and re-asking
   // on every render would be worse than saying nothing. Either answer strips
   // the intent from the URL, so a refresh doesn't ask again.
@@ -176,10 +178,17 @@ export function BuildsManager() {
     }
     setStore((s) => withTombstones(s ?? EMPTY_STORE, [openId]));
     router.replace("/builds");
-  }, [store, openId, wantsDelete, ownerUid, router]);
+  }, [store, openId, wantsDelete, ownerUid, router, setStore]);
 
+  // ── Before there's a store: no account, still loading, or a failed load ──
+  // Signing out mid-visit lands here too, whatever the URL said.
+  if (status === "signed-out") return <SignInWall />;
   if (!store) {
-    return <p className="font-body text-sm text-parchment-faint">Loading saved builds…</p>;
+    return status === "error" ? (
+      <LoadFailed error={error} onRetry={retry} />
+    ) : (
+      <p className="font-body text-sm text-parchment-faint">Loading your builds…</p>
+    );
   }
 
   const update = (fn: (s: BuildStore) => BuildStore) =>
@@ -308,19 +317,29 @@ export function BuildsManager() {
     }));
   }
 
-  // Shown above every view — storage problems affect all of them.
-  const storageBanner = storageBroken && (
-    <section className="frame mb-5 rounded-md bg-night-850 p-4" style={{ borderColor: "rgb(248 113 113 / 0.6)" }}>
-      <p className="font-body text-sm text-red-200">
-        Saving to this browser failed — your changes only live in this tab and will be
-        lost when it closes.
-      </p>
-      <p className="mt-1 font-body text-xs text-parchment-faint">
-        This usually means storage is full or disabled (private browsing). Use Export
-        JSON on the Builds tab to back everything up, then free up space or check your
-        browser settings. This notice clears once saving works again.
-      </p>
-    </section>
+  // Shown above every view — none of these are about the view you're in.
+  const banners = (
+    <>
+      {status === "offline" && <OfflineBanner onRetry={retry} />}
+      {legacy && (
+        <LegacyImportCard legacy={legacy} onImport={importLegacy} onDismiss={dismissLegacy} />
+      )}
+      {cacheBroken && (
+        <section
+          className="frame mb-5 rounded-md bg-night-850 p-4"
+          style={{ borderColor: "rgb(248 113 113 / 0.6)" }}
+        >
+          <p className="font-body text-sm text-red-200">
+            Couldn&rsquo;t keep a backup copy in this browser.
+          </p>
+          <p className="mt-1 font-body text-xs text-parchment-faint">
+            Your changes still go to your account — but if it can&rsquo;t be reached, there
+            will be nothing here to fall back on. This usually means storage is full or
+            disabled (private browsing); the notice clears once it works again.
+          </p>
+        </section>
+      )}
+    </>
   );
 
   const ownBuilds = store.builds;
@@ -443,8 +462,7 @@ export function BuildsManager() {
 
   if (openId && !openBuild) {
     // Either the draft hasn't been created yet (a render away) or the id is
-    // stale — a deleted build, or a link from another browser, since these
-    // builds live in this one.
+    // stale — a deleted build, or one belonging to another account.
     //
     // A link naming an account that isn't yours is the redirect above on its
     // way out, so say that rather than flashing "no such build". While auth
@@ -454,7 +472,7 @@ export function BuildsManager() {
     const sharedLink = !!ownerUid && ownerUid !== user?.uid;
     return (
       <div>
-        {storageBanner}
+        {banners}
         {isNew ? (
           <p className="font-body text-sm text-parchment-faint">Starting a new build…</p>
         ) : sharedLink ? (
@@ -465,8 +483,8 @@ export function BuildsManager() {
               ← Back to builds
             </button>
             <p className="mt-4 font-body text-sm text-parchment-faint">
-              No such build in this browser — it may have been deleted, or saved on
-              another device. Sign in to sync your builds, or import a backup.
+              No such build in your account — it may have been deleted, or it may
+              belong to another account. Import a backup if you have one.
             </p>
           </>
         )}
@@ -477,7 +495,7 @@ export function BuildsManager() {
   if (openBuild && isEditing) {
     return (
       <div>
-        {storageBanner}
+        {banners}
         <BuildEditor
           key={openBuild.id}
           initial={openBuild}
@@ -495,12 +513,12 @@ export function BuildsManager() {
   }
 
   if (openBuild) {
-    // This page is personal — ?b= reads out of *this* browser, so the link to
-    // hand someone is the build's page in the community directory. Only two
-    // things mean there's no link to copy: no account to address it to, and a
-    // build kept off the profile. Sync state deliberately isn't one of them —
-    // it's a moment in time (every edit passes through "syncing"), while the
-    // link is permanent, so it's said in the tooltip, not enforced.
+    // This page is personal — ?b= opens *your* copy, so the link to hand
+    // someone is the build's page in the community directory. The one thing
+    // that means there's no link to copy is a build kept off the profile.
+    // Sync state deliberately isn't one — it's a moment in time (every edit
+    // passes through "syncing"), while the link is permanent, so it's said
+    // in the tooltip, not enforced.
     // Which loadout the card shows, and so which one the share link opens on.
     // Switching tabs replaces rather than pushes, so Back still leaves the
     // build rather than walking back through its variants.
@@ -510,20 +528,17 @@ export function BuildsManager() {
         scroll: false,
       });
     const shareUrl = user ? buildShareUrl(user.uid, openBuild.id, variantIdx) : "";
-    const shareBlocked = !user
-      ? "Sign in to sync your builds — a share link points at your account’s copy."
-      : openBuild.public === false
-        ? "This build is hidden from your community profile."
-        : undefined;
+    const shareBlocked =
+      openBuild.public === false ? "This build is hidden from your community profile." : undefined;
     const shareHint =
-      syncStatus === "error"
-        ? "Copies this build’s community page — but the last sync failed, so it may not open for others yet."
-        : syncStatus === "synced"
+      status === "offline"
+        ? "Copies this build’s community page — but your account can’t be reached, so it may not open for others yet."
+        : status === "synced"
           ? "Copies this build’s community page — anyone can open it, view-only."
           : "Copies this build’s community page — it opens for others once this build finishes saving to your account.";
     return (
       <div>
-        {storageBanner}
+        {banners}
         <div className="mb-5 flex flex-wrap items-center gap-2">
           <button type="button" onClick={showList} className={TOOLBAR_BTN}>
             ← Back to builds
@@ -574,11 +589,11 @@ export function BuildsManager() {
 
   return (
     <div>
-      {storageBanner}
+      {banners}
 
-      {/* The name your synced builds appear under, editable here as well as
-          in the community directory. Nothing to show when signed out. */}
-      <MyNickname synced={syncStatus === "synced"} />
+      {/* The name your builds appear under, editable here as well as in the
+          community directory. */}
+      <MyNickname synced={status === "synced"} />
 
       {/* Builds / My Relics view switch */}
       <div className="mb-5 flex flex-wrap gap-1 border-b border-night-700">
@@ -679,13 +694,11 @@ export function BuildsManager() {
           }}
         />
         <span className="font-body text-xs text-parchment-faint">
-          {syncStatus === "local" &&
-            "Saved in this browser only — sign in to sync, or export to back up."}
-          {syncStatus === "syncing" && "Saving to your account…"}
-          {syncStatus === "synced" && "Saved in this browser and synced to your account."}
-          {syncStatus === "error" && (
+          {status === "syncing" && "Saving to your account…"}
+          {status === "synced" && "Saved to your account."}
+          {status === "offline" && (
             <span className="text-red-200">
-              Cloud sync failed — changes are still saved in this browser.
+              Not saved to your account yet — kept in this browser for now.
             </span>
           )}
         </span>

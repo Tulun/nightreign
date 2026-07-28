@@ -1,36 +1,34 @@
 "use client";
 
 // ─────────────────────────────────────────────────────────────────────────
-//  Mounted in the root layout so any page can be reached pre-populated:
+//  Mounted in the root layout so any page can be reached pre-populated. Both
+//  parameters need the stub backend (npm run dev:fake) — builds belong to an
+//  account, and the stub's is the only one a fixture may touch:
 //
-//    /builds?seed=demo    load the sample builds + relics
-//    /builds?seed=empty   wipe back to the first-run state
-//
-//  In fake-cloud mode (NEXT_PUBLIC_FAKE_CLOUD=1) a second parameter drives
-//  the stub backend without opening the console:
+//    /builds?seed=demo    load the sample builds + relics, signed in
+//    /builds?seed=empty   an account with nothing in it
 //
 //    ?cloud=reset         back to the fixture accounts, signed out
 //    ?cloud=signin        sign in as the fixture account
 //    ?cloud=empty         a directory with nobody in it
 //    ?cloud=timeout       every cloud read fails (also: denied, unavailable)
 //
-//  Seeding the local store also resets the stub, so ?seed=demo lands you in
-//  the intended state: a device store and an account store that disagree.
+//  Seeding resets the stub first, so ?seed=demo lands you somewhere known:
+//  the fixture accounts, plus your own account holding the seed.
 //
 //  Nothing happens without the parameter, and nothing happens off localhost
 //  (see lib/devSeed). The fixture is imported dynamically so it stays out of
 //  the bundle everyone else downloads.
 //
-//  On success the page reloads with the parameter stripped — components read
-//  the store once on mount, so re-rendering in place would show the old one,
-//  and leaving the parameter in the URL would re-seed on every navigation.
-//  A refusal is rendered as a corner notice: silent no-ops are the one
-//  outcome a debugging aid can't afford.
+//  On success the page reloads with the parameter stripped — leaving it in
+//  the URL would re-seed on every navigation. A refusal is rendered as a
+//  corner notice: silent no-ops are the one outcome a debugging aid can't
+//  afford.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
 import { FAKE_CLOUD } from "@/lib/cloud";
-import { CLOUD_PARAM, DEV_SEED_PARAM, applyDevSeed, devSeedAllowed } from "@/lib/devSeed";
+import { CLOUD_PARAM, DEV_SEED_PARAM, devSeedAllowed, prepareSeed } from "@/lib/devSeed";
 
 const SCENARIOS = ["full", "empty", "timeout", "denied", "unavailable"];
 
@@ -63,24 +61,14 @@ export function DevSeed() {
 
     let cancelled = false;
     void (async () => {
-      // Seeding under a signed-in stub session is a race we can't win: the
-      // sync this page already started resolves after the fixture write and
-      // saves the pre-seed store back over it. So sign out and come straight
-      // back — the parameters stay in the URL and the fresh, session-less
-      // page does the actual seeding.
-      if (FAKE_CLOUD && name) {
-        const fake = await import("@/lib/fakeCloud");
-        if (cancelled) return;
-        if (fake.signedInUid()) {
-          await fake.signOutUser();
-          window.location.reload();
-          return;
-        }
+      if (!FAKE_CLOUD) {
+        setProblem(
+          `?${name ? DEV_SEED_PARAM : CLOUD_PARAM}= needs the stub backend — start the dev ` +
+            "server with npm run dev:fake.",
+        );
+        return;
       }
 
-      // Store first: with no session there is nothing to race, and a later
-      // ?cloud=signin then merges *the fixture* into the account, which is
-      // the order that makes the merge worth testing.
       if (name) {
         const { devSeeds, devSeedNames } = await import("@/data/devSeeds");
         if (cancelled) return;
@@ -89,24 +77,24 @@ export function DevSeed() {
           setProblem(`No seed named "${name}". Available: ${devSeedNames.join(", ")}.`);
           return;
         }
-        const result = applyDevSeed(name, fixture);
+        const result = prepareSeed(name, fixture);
         if (!result.ok) {
           setProblem(result.reason);
           return;
         }
+        const fake = await import("@/lib/fakeCloud");
+        if (cancelled) return;
+        // Reset first: a reseed without it leaves the stub holding pushes
+        // from the store that was just thrown away.
+        fake.resetFakeCloud();
+        await fake.seedAccount(result.store);
+        if (cancelled) return;
       }
 
-      if (FAKE_CLOUD) {
-        // A local reseed without this leaves the stub holding pushes from the
-        // store that was just thrown away.
-        const issue = await applyCloudCommand(cloud ?? (name ? "reset" : null));
-        if (cancelled) return;
-        if (issue) {
-          setProblem(issue);
-          return;
-        }
-      } else if (cloud) {
-        setProblem("?cloud= needs the stub backend — start the dev server with npm run dev:fake.");
+      const issue = await applyCloudCommand(cloud);
+      if (cancelled) return;
+      if (issue) {
+        setProblem(issue);
         return;
       }
 

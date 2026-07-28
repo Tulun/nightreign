@@ -83,10 +83,10 @@ export function BuildEditor({
   const chalice = chalices.find((c) => c.name === loadout.chalice) ?? chalices[0];
 
   const slotKey = (at: SlotRef) => `${at.deep ? "d" : "n"}${at.index}`;
-  const toggleEditing = (at: SlotRef) =>
-    setEditing((cur) =>
-      cur.includes(slotKey(at)) ? cur.filter((k) => k !== slotKey(at)) : [...cur, slotKey(at)],
-    );
+  const openEditing = (at: SlotRef) =>
+    setEditing((cur) => (cur.includes(slotKey(at)) ? cur : [...cur, slotKey(at)]));
+  const closeEditing = (at: SlotRef) =>
+    setEditing((cur) => cur.filter((k) => k !== slotKey(at)));
 
   // A pending new-relic form points at a slot of the variant it was opened
   // on — close it rather than carry it across to another loadout's slot.
@@ -286,17 +286,24 @@ export function BuildEditor({
               value={value}
               onChange={(slot) => setSlot(at, slot)}
               onNewRelic={() => setNewRelicAt(isNewHere ? null : at)}
-              editingLines={editingLines}
-              onToggleLines={customRelic && !blank ? () => toggleEditing(at) : undefined}
+              // While the lines are open the editor carries its own Save and
+              // Cancel, so the header only offers the way in.
+              onEditLines={
+                customRelic && !blank && !editingLines ? () => openEditing(at) : undefined
+              }
             />
           </div>
           {editingLines && customRelic ? (
             // Custom relics stay editable line by line, right in the slot.
-            <RelicLineInputs
+            <SlotLineEditor
+              key={customRelic.id}
               relic={customRelic}
-              onUpdate={onUpdateCustomRelic}
-              className="mt-2"
-              showDemerits={deep}
+              deep={deep}
+              onSave={(edited) => {
+                onUpdateCustomRelic(edited);
+                closeEditing(at);
+              }}
+              onCancel={() => closeEditing(at)}
             />
           ) : (
             resolved && (
@@ -537,6 +544,66 @@ export function BuildEditor({
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * A slotted custom relic's effect lines, edited in place. The lines live in a
+ * draft until Save (or Enter) commits them to the pool — the relic is shared
+ * with every other build using it, so half-typed lines shouldn't leak out of
+ * the slot the way per-keystroke writes did. Save is the editor's own rather
+ * than the picker's Done toggle because a relic with no effects yet opens
+ * here automatically, with no toggle to commit against.
+ */
+function SlotLineEditor({
+  relic,
+  deep,
+  onSave,
+  onCancel,
+}: {
+  relic: CustomRelic;
+  deep: boolean;
+  onSave: (r: CustomRelic) => void;
+  onCancel: () => void;
+}) {
+  const [draft, setDraft] = useState(relic);
+  // Cancel on a relic that's still blank leaves the inputs open (there's
+  // nothing to read in their place), so the draft resets rather than lingering.
+  const cancel = () => {
+    setDraft(relic);
+    onCancel();
+  };
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSave(draft);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+          cancel();
+        }
+      }}
+    >
+      <RelicLineInputs relic={draft} onUpdate={setDraft} className="mt-2" showDemerits={deep} />
+      <div className="mt-2 flex items-center gap-1.5">
+        <button
+          type="submit"
+          className="rounded border border-gold-faint px-2 py-0.5 font-body text-xs text-gold-bright hover:bg-night-800"
+        >
+          Save lines
+        </button>
+        <button
+          type="button"
+          onClick={cancel}
+          className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-parchment"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
 

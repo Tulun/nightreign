@@ -27,7 +27,7 @@
 import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { CloudReadError, type CloudErrorKind } from "@/lib/cloudRead";
-import { normalizeStore, type BuildStore } from "@/lib/builds";
+import { clearCachedStore, normalizeStore, type BuildStore } from "@/lib/builds";
 import { normalizeParty, type Party, type PartySummary, type CloudParty } from "@/lib/party";
 import type { UserProfile } from "@/lib/cloudSync";
 import { BROKEN_UID, SELF_UID, fakeFixtures } from "@/data/devUsers";
@@ -137,6 +137,9 @@ function update(fn: (s: State) => State): State {
 
 /** Throw back to fixtures — the fake equivalent of wiping the database. */
 export function resetFakeCloud(): void {
+  // Local caches of the accounts being thrown away would merge themselves
+  // straight back in at the next sign-in (see seedAccount).
+  for (const uid of Object.keys(read().profiles)) clearCachedStore(uid);
   write(seeded());
   authListeners.forEach((l) => l(null));
   storeListeners.forEach((set, uid) => set.forEach((l) => notifyStore(uid, l)));
@@ -257,7 +260,7 @@ export async function pushCloudStore(user: User, store: BuildStore): Promise<voi
     },
   }));
   // No self-notification: the real watcher skips its own writes, and
-  // useCloudSync would treat an echo as a remote change.
+  // useAccountStore would treat an echo as a remote change.
 }
 
 export async function upsertProfile(user: User, store: BuildStore): Promise<void> {
@@ -330,9 +333,35 @@ export function watchCloudStore(uid: string, onChange: StoreListener): () => voi
 }
 
 /**
+ * Load a ?seed= fixture as one account's store and sign in as it — the whole
+ * of what seeding does now that builds live in an account (see lib/devSeed).
+ * Signing in is part of it on purpose: the Builds page has nothing to show
+ * signed out, so a seed that left you signed out would land on the wall.
+ */
+export async function seedAccount(store: BuildStore, uid = SELF_UID): Promise<void> {
+  // The seed replaces the account's store rather than editing it, so the
+  // cache behind it has to go: merged back in at sign-in it would hand back
+  // everything the fixture was meant to replace.
+  clearCachedStore(uid);
+  update((s) => ({
+    ...s,
+    profiles: {
+      ...s.profiles,
+      [uid]: {
+        displayName: s.profiles[uid]?.displayName ?? defaultHandle(uid),
+        buildCount: store.builds.length,
+        updatedAt: Date.now(),
+        store: JSON.stringify(store),
+      },
+    },
+  }));
+  await signInWithGoogle(uid);
+}
+
+/**
  * Stand in for another device pushing an edit: mutate the account's stored
  * copy and fire the watchers, which is the only way to reach the live-merge
- * branch of useCloudSync without a second signed-in browser.
+ * branch of useAccountStore without a second signed-in browser.
  */
 export function remoteEdit(uid: string, mutate: (store: BuildStore) => BuildStore): void {
   const raw = read().profiles[uid]?.store;

@@ -13,27 +13,26 @@ Then open http://localhost:3000 — it redirects to the Town Map Seeds view.
 
 ### Sample builds for testing
 
-Add `?seed=<name>` to any URL to replace the browser's build store with a
-fixture, so My Builds / My Relics / the party planner are populated without
-entering relics by hand:
+Builds and relics belong to a signed-in account (see below), so `?seed=<name>`
+loads a fixture into the **stub backend's** account and signs you in as it —
+My Builds / My Relics / the party planner populated without entering relics by
+hand. It needs `npm run dev:fake`:
 
 ```
 http://localhost:3000/builds?seed=demo     sample builds, relics, tags, variants
-http://localhost:3000/builds?seed=empty    wipe back to the first-run state
+http://localhost:3000/builds?seed=empty    an account with nothing in it
 ```
 
-The page reloads with the parameter stripped. Three guards keep fixtures away
+The page reloads with the parameter stripped. Two guards keep fixtures away
 from a real account:
 
 - Seeding only works on localhost — the deployed site ignores the parameter
   entirely, and never even fetches the fixture chunk.
-- It refuses while signed in, since the seeded store would sync straight into
-  the account. Refusals show as a notice in the corner.
-- A seeded store is marked (`nightreign-dev-seeded`), and `useCloudSync`
-  refuses to sync while that marker is set — that covers the other order,
-  seed first and sign in after. `?seed=empty` clears the marker, and the
-  stub backend is exempt. Dev builds only: the check compiles out of the
-  deployed site.
+- It refuses without the stub backend, so the only account a fixture can reach
+  is the stub's. Refusals show as a notice in the corner.
+
+Seeding resets the stub first and clears the local cache of the account it
+writes, so the fixture is exactly what you get.
 
 Fixtures live in `src/data/devSeeds.ts`; every seeded id starts with `seed-`.
 
@@ -49,9 +48,7 @@ npm run dev:fake
 ```
 
 Sign in from the header and you're `Nightfarer-fake`, with four other fixture
-accounts, published parties, and a cloud store that deliberately disagrees with
-`?seed=demo` — so the sign-in merge has something real to resolve. Drive it
-from the URL:
+accounts and published parties. Drive it from the URL:
 
 ```
 ?cloud=signin     sign in as the fixture account (?cloud=signout to leave)
@@ -60,12 +57,14 @@ from the URL:
 ?cloud=timeout    every cloud read fails (also: denied, unavailable)
 ```
 
-`?seed=<name>` resets the stub too, so the two stay in step. The account
-`BrokenSync` always fails its store read, so the per-user error path shows up
-inside an otherwise healthy directory. In the console, `window.__fakeCloud`
-exposes `state()`, `reset()`, `scenario()`, `signIn()`, `signOut()` and
-`remoteEdit(uid, fn)` — that last one stands in for another device pushing an
-edit, which is the only way to reach the live-merge branch of `useCloudSync`.
+The account `BrokenSync` always fails its store read, so the per-user error
+path shows up inside an otherwise healthy directory, and `?cloud=timeout` on
+your own account is how you reach the Builds page's offline state — the local
+cache standing in for an unreachable database. In the console,
+`window.__fakeCloud` exposes `state()`, `reset()`, `scenario()`, `signIn()`,
+`signOut()` and `remoteEdit(uid, fn)` — that last one stands in for another
+device pushing an edit, which is the only way to reach the live-merge branch
+of `useAccountStore`.
 
 Everything routes through `src/lib/cloud.ts`, which picks the real backend or
 `src/lib/fakeCloud.ts` from `NEXT_PUBLIC_FAKE_CLOUD`; `next.config.mjs` swaps

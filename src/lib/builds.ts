@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────
-//  User builds — stored in localStorage, optionally mirrored to a Firestore
-//  account (see cloudSync.ts / useCloudSync.ts). A build is a
+//  User builds — stored in the signed-in account's Firestore copy, with a
+//  per-account localStorage cache behind it (see cloudSync.ts /
+//  useAccountStore.ts). A build is a
 //  character + chalice + three relic slots (plus three Deep of Night slots);
 //  each slot holds either a fixed relic from the app's data or a
 //  user-created custom relic. A build can carry up to MAX_VARIANTS loadout
@@ -178,7 +179,20 @@ export const relicTagTombstone = (tag: string) => `relicTag:${tag.trim()}`;
  */
 const TOMBSTONE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
-const STORAGE_KEY = "nightreign-builds";
+/**
+ * Where the account's store used to live, for everyone, signed in or not.
+ * Builds now belong to an account (the cloud copy is the source of truth), so
+ * this key is only read once more: to offer its contents for import at the
+ * first sign-in after the change. See loadLegacyStore.
+ */
+const LEGACY_STORAGE_KEY = "nightreign-builds";
+
+/** Set once the legacy store above has been imported, or turned down. */
+const LEGACY_DONE_KEY = "nightreign-builds-legacy-done";
+
+/** Cache key for one account's store — per uid, so two accounts on one
+ *  browser can't read each other's copy. */
+const cacheKey = (uid: string) => `nightreign-builds:${uid}`;
 
 export const EMPTY_STORE: BuildStore = {
   version: 3,
@@ -514,29 +528,80 @@ export function sortedTags(tags: string[]): string[] {
   );
 }
 
-/** Load the store from localStorage (call client-side only). */
-export function loadStore(): BuildStore {
+/**
+ * The account's cached copy, or null when this browser has none for that uid
+ * (call client-side only). The cache is a backup, not a second source of
+ * truth: it's what the Builds page falls back to when the database can't be
+ * reached, and what covers edits made in the seconds before a tab closed.
+ */
+export function loadCachedStore(uid: string): BuildStore | null {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return EMPTY_STORE;
-    return normalizeStore(JSON.parse(raw)) ?? EMPTY_STORE;
+    const raw = window.localStorage.getItem(cacheKey(uid));
+    if (!raw) return null;
+    return normalizeStore(JSON.parse(raw));
   } catch {
-    return EMPTY_STORE;
+    return null;
   }
 }
 
 /**
- * Persist the store to localStorage (call client-side only). Returns false
- * when the write failed (quota exceeded or storage unavailable) — the
- * in-memory state is then ahead of what's on disk, and the caller should
- * warn the user rather than let edits silently evaporate on reload.
+ * Cache the store for one account (call client-side only). Returns false when
+ * the write failed (quota exceeded or storage unavailable) — the account copy
+ * is unaffected, but there's no offline fallback until it works again.
  */
-export function saveStore(store: BuildStore): boolean {
+export function cacheStore(uid: string, store: BuildStore): boolean {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    window.localStorage.setItem(cacheKey(uid), JSON.stringify(store));
     return true;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Throw away one account's cached copy. Only for the case the cache can't
+ * survive: the account's store being *replaced* rather than edited, where
+ * merging the cache back in would resurrect what the replacement dropped
+ * (see the dev seed loader).
+ */
+export function clearCachedStore(uid: string): void {
+  try {
+    window.localStorage.removeItem(cacheKey(uid));
+  } catch {
+    // Nothing readable to merge back in either.
+  }
+}
+
+/**
+ * Builds saved in this browser back when the page kept them here rather than
+ * in an account — offered for import at the first sign-in and then done with
+ * (see clearLegacyStore). Null once imported or turned down, and for an empty
+ * store, which is nothing to ask about.
+ */
+export function loadLegacyStore(): BuildStore | null {
+  try {
+    if (window.localStorage.getItem(LEGACY_DONE_KEY) === "1") return null;
+    const raw = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (!raw) return null;
+    const store = normalizeStore(JSON.parse(raw));
+    if (!store || (store.builds.length === 0 && store.customRelics.length === 0)) return null;
+    return store;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Stop offering the legacy store. `discard` also removes it; turning the
+ * import down only marks it answered, so a browser that still holds the only
+ * copy of something keeps holding it.
+ */
+export function clearLegacyStore(discard = false): void {
+  try {
+    window.localStorage.setItem(LEGACY_DONE_KEY, "1");
+    if (discard) window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+  } catch {
+    // Storage unavailable — there was nothing readable to offer either.
   }
 }
 
@@ -581,8 +646,8 @@ export function buildPath(uid: string, buildId: string, variantIdx = 0): string 
 }
 
 /**
- * Path of one of your *own* builds on the Builds page — the editable copy,
- * which lives in this browser rather than in the account. `action` opens it
+ * Path of one of your *own* builds on the Builds page — where it's editable,
+ * as opposed to the directory's read-only view. `action` opens it
  * straight into the editor, or asks to delete it (the Builds page confirms
  * before anything goes). The uid rides along so a link passed on to someone
  * else is still recognisable as yours (see BuildsManager's withOwner).

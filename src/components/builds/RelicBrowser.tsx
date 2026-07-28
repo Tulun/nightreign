@@ -25,8 +25,7 @@ export function RelicPicker({
   value,
   onChange,
   onNewRelic,
-  editingLines,
-  onToggleLines,
+  onEditLines,
 }: {
   character: string;
   slotColor: SlotColor;
@@ -35,10 +34,11 @@ export function RelicPicker({
   value: BuildSlot;
   onChange: (slot: BuildSlot) => void;
   onNewRelic: () => void;
-  /** Whether the slot below is showing its effect inputs (custom relics). */
-  editingLines?: boolean;
-  /** Given for a slot whose relic can have its lines edited in place. */
-  onToggleLines?: () => void;
+  /**
+   * Given for a slot whose relic can have its lines edited in place, and only
+   * while they're closed — the open editor carries its own Save and Cancel.
+   */
+  onEditLines?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const resolved = resolveSlot(value, store);
@@ -48,19 +48,14 @@ export function RelicPicker({
       {resolved ? (
         <div className="flex min-w-0 items-center gap-2">
           <span className="min-w-0 flex-1 truncate font-body text-base text-parchment">{resolved.name}</span>
-          {onToggleLines && (
+          {onEditLines && (
             <button
               type="button"
-              onClick={onToggleLines}
-              aria-pressed={!!editingLines}
+              onClick={onEditLines}
               title="Edit this relic's effect lines"
-              className={`shrink-0 rounded border px-2 py-0.5 font-body text-xs transition-colors ${
-                editingLines
-                  ? "border-gold-faint text-gold-bright"
-                  : "border-night-600 text-parchment-muted hover:text-gold-bright"
-              }`}
+              className="shrink-0 rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted transition-colors hover:text-gold-bright"
             >
-              {editingLines ? "Done" : "Edit lines"}
+              Edit lines
             </button>
           )}
           <button
