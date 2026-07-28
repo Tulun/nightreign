@@ -122,15 +122,21 @@ export function MyRelics({
     );
   }
 
+  // The relic being edited stays on screen whatever the filters say — edits
+  // land live, so filtering it out mid-edit (clearing the effect you searched
+  // for, recoloring it) would yank the editor away under the cursor. Filtering
+  // catches up once Done closes the editor.
   const shown = relics
-    .filter((r) => !colorFilter || r.color === colorFilter)
-    .filter((r) => !kindFilter || (kindFilter === "deep") === !!r.deep)
-    .filter((r) =>
-      matchesQuery(query, {
-        labels: [r.name || `${r.color} relic`],
-        effects: [...r.effects, ...(r.demerits ?? [])],
-        tags: r.tags ?? [],
-      }),
+    .filter(
+      (r) =>
+        r.id === editingId ||
+        ((!colorFilter || r.color === colorFilter) &&
+          (!kindFilter || (kindFilter === "deep") === !!r.deep) &&
+          matchesQuery(query, {
+            labels: [r.name || `${r.color} relic`],
+            effects: [...r.effects, ...(r.demerits ?? [])],
+            tags: r.tags ?? [],
+          })),
     )
     // Color, then normal before Deep of Night, then by name.
     .sort(
