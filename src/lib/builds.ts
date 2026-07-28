@@ -13,7 +13,7 @@ import { asset } from "@/lib/assets";
 import { uniqueRelics, type UniqueRelicGroup } from "@/data/uniqueRelics";
 import { NORMAL_EFFECT_VOCABULARY, isCurseEffect, resolveEffectAlias } from "@/lib/effectMatch";
 import { gameEffectName } from "@/lib/relics";
-import { SCENE_META, relicIcon } from "@/lib/statSwaps";
+import { SCENE_META, relicIcon, swapRelicEffects } from "@/lib/statSwaps";
 import type { SlotColor } from "@/lib/chalices";
 
 /** The in-game relic appearances a custom relic can wear. */
@@ -821,7 +821,7 @@ const signboardRelics: FixedRelicOption[] = characterSwaps.flatMap((c) =>
       icon: relicIcon(swap.relic),
       group: "swap" as const,
       character: c.name,
-      effects: [`[${c.name}] ${swap.label} stat swap`],
+      effects: swapRelicEffects(c, swap),
     }];
   }),
 );

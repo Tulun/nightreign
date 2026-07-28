@@ -6,8 +6,10 @@
 
 import { deepRelics } from "@/data/deepRelics";
 import { relicEffects } from "@/data/relicEffects";
+import { characterSwaps } from "@/data/statSwaps";
 import { uniqueRelics } from "@/data/uniqueRelics";
 import { gameEffectName } from "@/lib/relics";
+import { swapEffectName } from "@/lib/statSwaps";
 
 // Template effect names ("Improved [Weapon] Attack Power") are expanded into
 // concrete variants so OCR of real UI text ("Improved Greatsword Attack
@@ -230,8 +232,19 @@ const MATCH_ENTRIES: { text: string; canonical: string }[] = [
 
 const expandCanonical = (name: string) => expandName(name).map(canonicalEffectName);
 
+/**
+ * The signboard swap relics carry the same stat-swap lines the Deep catalogue
+ * lists, so those lines are normal-legal too — without this a normal loadout
+ * holding one would import as a Deep screen.
+ */
+const SWAP_EFFECT_NAMES = characterSwaps.flatMap((c) => c.swaps.map((s) => swapEffectName(c, s)));
+
 const NORMAL_EFFECT_NAMES = new Set<string>(
-  [...relicEffects.map((e) => e.name), ...uniqueRelics.flatMap((r) => r.effects)].flatMap(expandCanonical),
+  [
+    ...relicEffects.map((e) => e.name),
+    ...uniqueRelics.flatMap((r) => r.effects),
+    ...SWAP_EFFECT_NAMES,
+  ].flatMap(expandCanonical),
 );
 
 /** Effects that only exist on Deep relics — seeing one marks a relic as Deep. */
@@ -480,6 +493,10 @@ function joinWrappedLines(lines: ParseLine[]): ParseLine[] {
   return out;
 }
 
+// An empty effect slot renders as a bare "-" row on the vessel detail pane.
+// OCR reads it as a lone dash-like glyph when it reads it at all.
+const EMPTY_SLOT_MARKER = /^[-–—‑−~=]{1,3}[.,]?$/;
+
 /**
  * Cluster OCR lines into relic groups. A line matching a relic name starts a
  * new group; effect lines attach to the current group (max 3 per relic, as in
@@ -506,7 +523,11 @@ export function parseRelicGroups(lines: (string | ParseLine)[], maxGroups = 6): 
     .filter((l) => {
       const t = l.text.trim();
       if (t.length < 8 || !l.bbox) return false;
-      return bestMatch(t, RELIC_NAME_VOCABULARY, 0.62) !== null || bestEffectMatch(t, 0.5) !== null;
+      if (bestMatch(t, RELIC_NAME_VOCABULARY, 0.62) !== null) return true;
+      const m = bestEffectMatch(t, 0.5);
+      // A demerit sits sub-row-height under its effect — counting it would
+      // drag the learned pitch below the real row spacing.
+      return m !== null && !CURSE_EFFECTS.has(m.effect);
     })
     .map((l) => l.bbox!.y0)
     .sort((a, b) => a - b);
@@ -514,8 +535,32 @@ export function parseRelicGroups(lines: (string | ParseLine)[], maxGroups = 6): 
   const pitch = steps[steps.length >> 1] ?? 0;
   let prevBox: ParseLine["bbox"] = null;
 
+  // Whether OCR read *anything* — junk included — in the same column between
+  // two line boxes. An unread-but-present line (a mangled effect) still
+  // occupies its row, so only a truly blank slot leaves the span empty.
+  // Dash-only lines are the blank slots themselves, so they don't count.
+  const boxes = joined
+    .filter((l) => !EMPTY_SLOT_MARKER.test(l.text.trim()))
+    .map((l) => l.bbox)
+    .filter((b): b is NonNullable<ParseLine["bbox"]> => b != null);
+  const spanIsEmpty = (above: NonNullable<ParseLine["bbox"]>, below: NonNullable<ParseLine["bbox"]>) =>
+    !boxes.some((b) => {
+      if (b === above || b === below) return false;
+      const cy = (b.y0 + b.y1) / 2;
+      return cy > above.y1 && cy < below.y0 && b.x1 > below.x0 && b.x0 < below.x1;
+    });
+
   for (const pl of joined) {
     const line = pl.text.trim();
+    // An empty slot means the relic's effect list has ended: effects fill
+    // top-down, so whatever follows belongs to the next relic. With line
+    // positions the blank-span check below covers this (and stray dash-like
+    // junk can't be told from a real slot marker anyway); without them a
+    // bare dash line is the only signal there is, so close the group on it.
+    if (!pl.bbox && /^[-–—‑−][.,]?$/.test(line)) {
+      if (current && current.effects.length > 0) current = null;
+      continue;
+    }
     if (line.length < 8) continue;
     const asName = bestMatch(line, RELIC_NAME_VOCABULARY, 0.62);
     const asEffect = bestEffectMatch(line, 0.5);
@@ -534,7 +579,20 @@ export function parseRelicGroups(lines: (string | ParseLine)[], maxGroups = 6): 
       // A step of ~2 pitches is a missing line inside the block; a relic
       // boundary is a clearly larger jump.
       const step = pl.bbox && prevBox && pitch > 0 ? pl.bbox.y0 - prevBox.y0 : 0;
-      if (!current || current.effects.length >= 3 || (current.effects.length > 0 && step > 2.4 * pitch)) {
+      // A truly empty vertical span taller than the row pitch is a blank
+      // slot (plus the divider after it), so it ends the relic even when
+      // the y-step alone stays under the boundary threshold above.
+      const blankAbove =
+        pl.bbox != null &&
+        prevBox != null &&
+        pitch > 0 &&
+        pl.bbox.y0 - prevBox.y1 > 1.2 * pitch &&
+        spanIsEmpty(prevBox, pl.bbox);
+      if (
+        !current ||
+        current.effects.length >= 3 ||
+        (current.effects.length > 0 && (step > 2.4 * pitch || blankAbove))
+      ) {
         current = push({ name: null, effects: [], demerits: [], deep: false });
       }
       // Skip duplicates within a group (OCR sometimes doubles lines).

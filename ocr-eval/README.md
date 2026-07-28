@@ -47,6 +47,14 @@ ocr-eval/fixtures/
   relic-rites-01.json    ← what a perfect parse would produce
 ```
 
+A fixture can also be **pre-supplied OCR lines** instead of a screenshot:
+`<name>.lines.json` holding the line array (`[{ "text": …, "bbox": { x0, y0,
+x1, y1 } | null }, …]`) next to the usual `<name>.json` expectations. These
+skip OCR and color sampling and pin down grouping/matching behavior directly —
+useful when the screenshot that exposed a bug isn't available to commit (see
+`vessel-blank-slot.lines.json`, which pins the blank-third-slot grouping fix).
+Prefer a real screenshot when you have one: it exercises the whole pipeline.
+
 ### 1. Capture the screenshot
 
 - Screenshot the **relic rites / relic list screen** where each relic's name

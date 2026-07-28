@@ -1,0 +1,92 @@
+[
+  {
+    "text": "Stamina Recovery upon Landing Attacks",
+    "bbox": {
+      "x0": 190,
+      "y0": 578,
+      "x1": 1100,
+      "y1": 618
+    }
+  },
+  {
+    "text": "Physical Attack Up +3",
+    "bbox": {
+      "x0": 190,
+      "y0": 720,
+      "x1": 560,
+      "y1": 760
+    }
+  },
+  {
+    "text": "Reduced Dexterity and Faith",
+    "bbox": {
+      "x0": 190,
+      "y0": 785,
+      "x1": 650,
+      "y1": 818
+    }
+  },
+  {
+    "text": "[Undertaker] Executing Art readies Character Skill",
+    "bbox": {
+      "x0": 190,
+      "y0": 1030,
+      "x1": 1100,
+      "y1": 1070
+    }
+  },
+  {
+    "text": "Improved Attack Power with 3+ Colossal Weapons Equipped",
+    "bbox": {
+      "x0": 190,
+      "y0": 1178,
+      "x1": 1180,
+      "y1": 1218
+    }
+  },
+  {
+    "text": "Successful guarding fills more of the Art gauge",
+    "bbox": {
+      "x0": 190,
+      "y0": 1288,
+      "x1": 1080,
+      "y1": 1328
+    }
+  },
+  {
+    "text": "[Recluse] Collect Affinity Residues to Negate Affinity",
+    "bbox": {
+      "x0": 190,
+      "y0": 1487,
+      "x1": 1120,
+      "y1": 1527
+    }
+  },
+  {
+    "text": "Partial HP Restoration upon Post-Damage Attacks +1",
+    "bbox": {
+      "x0": 190,
+      "y0": 1625,
+      "x1": 1090,
+      "y1": 1662
+    }
+  },
+  {
+    "text": "Taking Damage Causes Poison Buildup",
+    "bbox": {
+      "x0": 190,
+      "y0": 1690,
+      "x1": 860,
+      "y1": 1722
+    }
+  },
+  {
+    "text": "Dormant Power Helps Discover Colossal Swords",
+    "bbox": {
+      "x0": 190,
+      "y0": 1755,
+      "x1": 1030,
+      "y1": 1792
+    }
+  }
+]

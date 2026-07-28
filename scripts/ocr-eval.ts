@@ -369,8 +369,11 @@ async function main() {
     console.error(`No fixtures directory at ${FIXTURES_DIR} — see ocr-eval/README.md`);
     process.exit(1);
   }
+  // A fixture is a screenshot (<name>.png/.jpeg) OR pre-supplied OCR lines
+  // (<name>.lines.json) — the latter pins down grouping/matching cases whose
+  // screenshot isn't available, skipping OCR and color sampling.
   const images = readdirSync(FIXTURES_DIR)
-    .filter((f) => /\.(png|jpe?g)$/i.test(f))
+    .filter((f) => /(\.(png|jpe?g)|\.lines\.json)$/i.test(f))
     .filter((f) => !filter || f.includes(filter))
     .sort();
   if (images.length === 0) {
@@ -393,7 +396,7 @@ async function main() {
   let fixtureErrors = 0;
 
   for (const image of images) {
-    const base = image.replace(/\.(png|jpe?g)$/i, "");
+    const base = image.replace(/(\.(png|jpe?g)|\.lines\.json)$/i, "");
     const jsonPath = path.join(FIXTURES_DIR, `${base}.json`);
     if (!existsSync(jsonPath)) {
       console.error(`✗ ${image}: no ${base}.json next to it — skipping`);
@@ -415,9 +418,12 @@ async function main() {
       continue;
     }
 
+    const isLinesFixture = /\.lines\.json$/i.test(image);
     const imagePath = path.join(FIXTURES_DIR, image);
     process.stdout.write(`reading ${image}…\n`);
-    const lines = await cachedOcrLines(getWorker, imagePath, useCache);
+    const lines = isLinesFixture
+      ? (JSON.parse(readFileSync(imagePath, "utf8")) as OcrLine[])
+      : await cachedOcrLines(getWorker, imagePath, useCache);
     if (verbose) {
       console.log(`  OCR lines (${lines.length}):`);
       for (const l of lines) console.log(`    | ${l.text.trimEnd()}`);
@@ -426,7 +432,7 @@ async function main() {
     // Same pipeline as ScreenshotImport.tsx.
     const groups = parseRelicGroups(lines);
     const allDeep = screenIsDeep(groups);
-    const img = decodeImage(imagePath);
+    const img = isLinesFixture ? null : decodeImage(imagePath);
     const colors = groups.map((g) => {
       // A joined wrapped line has no single OCR line with identical text, so
       // fall back to the line the joined text starts with.

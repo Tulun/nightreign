@@ -7,7 +7,9 @@ import { asset } from "@/lib/assets";
 import {
   SCENE_META,
   SWAP_STAT_COLUMNS,
+  attributePoints,
   relicIcon,
+  swapEffectName,
   type SwapRelic,
   type SwapStatKey,
   type SwapStats,
@@ -18,13 +20,10 @@ const DOWN_NAME: Record<SwapStatKey, string> = {
   hp: "VIG", fp: "MND", stm: "END", str: "STR", dex: "DEX", int: "INT", fai: "FTH", arc: "ARC",
 };
 
-/** Chart units per attribute point (hp=vigor×20, fp=mind×5, stm=endurance×2). */
-const UNITS_PER_POINT: Partial<Record<SwapStatKey, number>> = { hp: 20, fp: 5, stm: 2 };
-
 /** The relic's flat bonus as in-game attribute text, e.g. "VIG +3 · MND +3". */
 function bonusText(bonus: Partial<SwapStats>): string {
   return SWAP_STAT_COLUMNS.filter((col) => bonus[col.key])
-    .map((col) => `${DOWN_NAME[col.key]} +${(bonus[col.key] ?? 0) / (UNITS_PER_POINT[col.key] ?? 1)}`)
+    .map((col) => `${DOWN_NAME[col.key]} +${attributePoints(col.key, bonus[col.key] ?? 0)}`)
     .join(" · ");
 }
 
@@ -100,6 +99,8 @@ export function StatSwaps() {
             key={swap.label}
             relic={swap.relic}
             label={swap.label}
+            // The [Character] tag is redundant on a per-character page.
+            effect={swapEffectName(character, swap).replace(/^\[[^\]]+\]\s*/, "")}
             bonus={bonusText(swap.bonus)}
             equipped={worn[i]}
             onClick={() => toggleRelic(i)}
@@ -181,12 +182,15 @@ export function StatSwaps() {
 function RelicButton({
   relic,
   label,
+  effect,
   bonus,
   equipped,
   onClick,
 }: {
   relic: SwapRelic;
   label: string;
+  /** The swap worded as the game words it, minus the character tag. */
+  effect: string;
   bonus: string;
   equipped: boolean;
   onClick: () => void;
@@ -202,7 +206,7 @@ function RelicButton({
       type="button"
       onClick={onClick}
       aria-pressed={equipped}
-      title={sceneName}
+      title={`${sceneName} — ${effect}`}
       className={`frame flex items-center gap-3 rounded-md py-2 pl-2 pr-5 font-body text-base transition-colors ${
         equipped
           ? "bg-night-700 text-gold-bright"
@@ -236,8 +240,10 @@ function RelicButton({
       </span>
       <span className="flex flex-col items-start leading-snug">
         <span>{label}</span>
-        <span className="text-sm tabular-nums text-parchment-muted">{bonus}</span>
+        <span className="text-sm text-parchment-muted">{effect}</span>
         <span className="text-sm text-parchment-faint">
+          <span className="tabular-nums">{bonus}</span>
+          {" · "}
           {relic.scene ? `${meta?.color} relic` : "look unknown"}
         </span>
       </span>

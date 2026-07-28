@@ -1,0 +1,38 @@
+{
+  "deep": true,
+  "notes": "Same lines as vessel-blank-slot but with the blank slot's '-' line dropped, as tesseract often fails to read a lone dash. The truly-empty vertical span must still end the first relic.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "Stamina Recovery upon Landing Attacks",
+        "Physical Attack Up +3"
+      ],
+      "demerits": [
+        null,
+        "Reduced Dexterity & Faith"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Undertaker] Executing Art Readies Character Skill",
+        "Improved Attack Power with 3+ Colossal Weapon Equipped",
+        "Successful guarding fills more of the Art gauge +0"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Recluse] Collect Affinity Residues to Negate Affinity",
+        "Partial HP Restoration upon Post-Damage Attacks +1",
+        "Dormant Power Helps Discover Colossal Sword"
+      ],
+      "demerits": [
+        null,
+        "Taking Damage Causes Poison Buildup",
+        null
+      ]
+    }
+  ]
+}

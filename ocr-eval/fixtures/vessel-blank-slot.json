@@ -1,0 +1,28 @@
+{
+  "deep": true,
+  "notes": "Vessel detail pane (Slot 1 selected) where the first relic has only two effects — its third row is the blank '-' marker. The parser used to append the second relic's first effect to that blank slot, shifting every relic after it by one. Lines transcribed from a real PS capture; the -nodash variant drops the dash line, which tesseract often fails to read.",
+  "relics": [
+    {
+      "name": null,
+      "effects": ["Stamina Recovery upon Landing Attacks", "Physical Attack Up +3"],
+      "demerits": [null, "Reduced Dexterity & Faith"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Undertaker] Executing Art Readies Character Skill",
+        "Improved Attack Power with 3+ Colossal Weapon Equipped",
+        "Successful guarding fills more of the Art gauge +0"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Recluse] Collect Affinity Residues to Negate Affinity",
+        "Partial HP Restoration upon Post-Damage Attacks +1",
+        "Dormant Power Helps Discover Colossal Sword"
+      ],
+      "demerits": [null, "Taking Damage Causes Poison Buildup", null]
+    }
+  ]
+}
