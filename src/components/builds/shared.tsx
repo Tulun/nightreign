@@ -474,6 +474,7 @@ export function EffectSuggestInput({
   placeholder,
   className,
   disabled = false,
+  onEnter,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -481,6 +482,8 @@ export function EffectSuggestInput({
   placeholder: string;
   className: string;
   disabled?: boolean;
+  /** Enter commits — for inputs that collect a list rather than fill a line. */
+  onEnter?: () => void;
 }) {
   const listId = useId();
   const q = value.trim().toLowerCase();
@@ -496,6 +499,16 @@ export function EffectSuggestInput({
         list={listId}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={
+          onEnter
+            ? (e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  onEnter();
+                }
+              }
+            : undefined
+        }
         placeholder={placeholder}
         className={className}
       />

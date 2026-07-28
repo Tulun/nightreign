@@ -9,6 +9,7 @@ import Link from "next/link";
 import { variantAt, variantCount, variantLabel, type Build, type BuildStore, type SlotTriple } from "@/lib/builds";
 import { loadoutEffectStates } from "@/lib/effectCompat";
 import { chalicesFor, resolveSlot, EffectLines, RelicImg, SlotIconImg } from "./shared";
+import { TagPicker } from "./TagPicker";
 
 /** Disclosure chevron for expandable build cards. */
 function Chevron({ open, className = "text-parchment-faint" }: { open: boolean; className?: string }) {
@@ -92,6 +93,9 @@ export function BuildCard({
   nightView,
   variantIdx,
   onVariantChange,
+  tagRegistry,
+  onTagsChange,
+  onCreateTag,
 }: {
   build: Build;
   store: BuildStore;
@@ -115,6 +119,15 @@ export function BuildCard({
   variantIdx?: number;
   /** Told which tab was clicked — with or without `variantIdx`. */
   onVariantChange?: (i: number) => void;
+  /**
+   * The tag registry to pick from. With `onTagsChange` as well, the card's
+   * tags become editable in place — the grid tile is where builds are
+   * actually organized, and a tag shouldn't mean opening the editor.
+   */
+  tagRegistry?: string[];
+  onTagsChange?: (tags: string[]) => void;
+  /** Adds a name to the registry — for tags invented on the card. */
+  onCreateTag?: (tag: string) => void;
 }) {
   const [expanded, setExpanded] = useState(!expandable || defaultExpanded);
   // Mobile-only: which slot set the card shows (desktop shows both, unless
@@ -277,6 +290,17 @@ export function BuildCard({
     </span>
   );
 
+  // Tagging in place, where the card was given the means to do it.
+  const editableTags = onTagsChange && tagRegistry && (
+    <TagPicker
+      values={build.tags ?? []}
+      registry={tagRegistry}
+      onChange={onTagsChange}
+      onCreate={onCreateTag ?? (() => {})}
+      subject={build.name || "this build"}
+    />
+  );
+
   const tagChips = (build.tags?.length ?? 0) > 0 && (
     <span className="flex flex-wrap gap-1">
       {build.tags!.map((t) => (
@@ -337,10 +361,18 @@ export function BuildCard({
             </div>
           )}
         </div>
-        {tagChips && <div className="pointer-events-none relative mt-2 flex">{tagChips}</div>}
-        {/* The relics are what the tile is really about — they sit under the
-            title so the card stays narrow enough to grid. */}
-        <div className="pointer-events-none relative mt-3 flex">{iconStrip(38, "gap-1.5")}</div>
+        {/* Tags sit between the title and the relics, and the relic strip is
+            pushed to the card's floor (mt-auto) rather than following them:
+            grid rows stretch every tile to the tallest, so an untagged tile
+            takes the gap instead of riding its strip up out of line with its
+            neighbours'. Two rows of tags on one card can't drag the rest of
+            the row out of alignment either. */}
+        {(editableTags || tagChips) && (
+          <div className={`relative mt-2 flex ${editableTags ? "" : "pointer-events-none"}`}>
+            {editableTags || tagChips}
+          </div>
+        )}
+        <div className="pointer-events-none relative mt-auto flex pt-3">{iconStrip(38, "gap-1.5")}</div>
       </article>
     );
   }
@@ -545,14 +577,18 @@ export function BuildCard({
         }`}
       >
         <div>
-          {(build.tags?.length ?? 0) > 0 && (
-            <div className="flex flex-wrap gap-1 pb-2">
-              {build.tags!.map((t) => (
-                <span key={t} className="rounded border border-night-600 bg-night-900 px-2 py-0.5 font-body text-xs text-parchment">
-                  {t}
-                </span>
-              ))}
-            </div>
+          {editableTags ? (
+            <div className="pb-2">{editableTags}</div>
+          ) : (
+            (build.tags?.length ?? 0) > 0 && (
+              <div className="flex flex-wrap gap-1 pb-2">
+                {build.tags!.map((t) => (
+                  <span key={t} className="rounded border border-night-600 bg-night-900 px-2 py-0.5 font-body text-xs text-parchment">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )
           )}
         </div>
         {/* Without deep relics there's no mobile toggle, so `view` stays

@@ -9,7 +9,17 @@ import { BuildCard } from "@/components/builds/BuildCard";
 import { BuildEditor } from "@/components/builds/BuildEditor";
 import { MyRelics } from "@/components/builds/MyRelics";
 import { TagManager } from "@/components/builds/TagManager";
-import { CharacterImg, chalicesFor, CopyLinkButton } from "@/components/builds/shared";
+import { FilterPanel, FilterToggle } from "@/components/builds/FilterPanel";
+import { CharacterImg, chalicesFor, CopyLinkButton, resolveSlot } from "@/components/builds/shared";
+import {
+  EMPTY_QUERY,
+  describeQuery,
+  isEmptyQuery,
+  matchesQuery,
+  withKnownTags,
+  type FilterQuery,
+  type FilterSubject,
+} from "@/lib/filterQuery";
 import {
   EMPTY_SLOTS,
   EMPTY_STORE,
@@ -21,8 +31,11 @@ import {
   newId,
   normalizeStore,
   saveStore,
+  relicTagTombstone,
   sortedTags,
   tagTombstone,
+  variantAt,
+  variantCount,
   variantIdxFromParam,
   withTombstones,
   withoutTombstones,
@@ -74,10 +87,10 @@ export function BuildsManager() {
   const variantParam = params.get("v");
   // Character filter for the build list — empty shows all Nightfarers.
   const [characterFilter, setCharacterFilter] = useState<string[]>([]);
-  // Tag filter — empty means all builds; otherwise builds matching any of
-  // the selected tags ("any") or carrying every one of them ("all").
-  const [tagFilter, setTagFilter] = useState<string[]>([]);
-  const [tagMode, setTagMode] = useState<"any" | "all">("any");
+  // Advanced filter — tags and effect text, and/any/none (see lib/filterQuery).
+  // An empty query shows everything.
+  const [query, setQuery] = useState<FilterQuery>(EMPTY_QUERY);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [managingTags, setManagingTags] = useState(false);
   // The unsaved build behind ?b=new — it has no store entry to read back.
   const [draft, setDraft] = useState<Build | null>(null);
@@ -123,6 +136,12 @@ export function BuildsManager() {
   // and doubles as an early probe for broken storage).
   useEffect(() => {
     if (store) setStorageBroken(!saveStore(store));
+  }, [store]);
+
+  // A tag the registry has lost — deleted here, or on another device between
+  // syncs — stops filtering, rather than quietly hiding every build.
+  useEffect(() => {
+    if (store) setQuery((q) => withKnownTags(q, store.tags));
   }, [store]);
 
   // A build's page addressed to an account that isn't yours came from someone
@@ -217,15 +236,77 @@ export function BuildsManager() {
         [tagTombstone(from)],
       ),
     );
-    setTagFilter((f) => sortedTags(f.map((t) => (t === from ? tag : t))));
+    renameInQuery(from, tag);
   };
   const deleteTag = (tag: string) => {
     if (!window.confirm(`Delete the tag "${tag}"? It will be removed from all builds.`)) return;
     // The tombstone does the removing — from the registry here, from the
     // builds carrying it, and on every other device at its next sync.
     update((s) => withTombstones(s, [tagTombstone(tag)]));
-    setTagFilter((f) => f.filter((t) => t !== tag));
   };
+  /** Put a build's tags on it, from the list view's own tag picker. */
+  const setBuildTags = (id: string, tags: string[]) =>
+    update((s) => ({
+      ...s,
+      builds: s.builds.map((b) =>
+        b.id === id ? { ...b, tags: sortedTags(tags), updatedAt: Date.now() } : b,
+      ),
+    }));
+
+  // ── Relic keyword registry ─────────────────────────────────────────────
+  // The same three operations over relicTags. Kept apart from build tags on
+  // purpose: the two vocabularies are different (see CustomRelic.tags).
+  const createRelicTag = (name: string) => {
+    const tag = name.trim();
+    if (tag) {
+      update((s) =>
+        withoutTombstones({ ...s, relicTags: sortedTags([...s.relicTags, tag]) }, [
+          relicTagTombstone(tag),
+        ]),
+      );
+    }
+  };
+  const renameRelicTag = (from: string, to: string) => {
+    const tag = to.trim();
+    if (!tag || tag === from) return;
+    update((s) =>
+      withTombstones(
+        withoutTombstones(
+          {
+            ...s,
+            relicTags: sortedTags(s.relicTags.map((t) => (t === from ? tag : t))),
+            customRelics: s.customRelics.map((r) =>
+              r.tags?.includes(from)
+                ? { ...r, tags: sortedTags(r.tags.map((t) => (t === from ? tag : t))) }
+                : r,
+            ),
+          },
+          [relicTagTombstone(tag)],
+        ),
+        [relicTagTombstone(from)],
+      ),
+    );
+    renameInQuery(from, tag);
+  };
+  const deleteRelicTag = (tag: string) => {
+    if (!window.confirm(`Delete the tag "${tag}"? It will be removed from all relics.`)) return;
+    update((s) => withTombstones(s, [relicTagTombstone(tag)]));
+  };
+  const setRelicTags = (id: string, tags: string[]) =>
+    update((s) => ({
+      ...s,
+      customRelics: s.customRelics.map((r) => (r.id === id ? { ...r, tags: sortedTags(tags) } : r)),
+    }));
+
+  /** Follow a rename through the active filter, so it keeps filtering. */
+  function renameInQuery(from: string, to: string) {
+    setQuery((q) => ({
+      ...q,
+      tagsAll: sortedTags(q.tagsAll.map((t) => (t === from ? to : t))),
+      tagsAny: sortedTags(q.tagsAny.map((t) => (t === from ? to : t))),
+      tagsNone: sortedTags(q.tagsNone.map((t) => (t === from ? to : t))),
+    }));
+  }
 
   // Shown above every view — storage problems affect all of them.
   const storageBanner = storageBroken && (
@@ -243,14 +324,25 @@ export function BuildsManager() {
   );
 
   const ownBuilds = store.builds;
-  const matchesTagFilter = (b: Build) =>
-    tagFilter.length === 0 ||
-    (tagMode === "any"
-      ? tagFilter.some((t) => b.tags?.includes(t))
-      : tagFilter.every((t) => b.tags?.includes(t)));
+  // What the filter runs against: the build's own words, plus every effect
+  // line it slots — across all of its variants, since a build "has" an effect
+  // if any of its loadouts does.
+  const buildSubject = (b: Build): FilterSubject => {
+    const effects: string[] = [];
+    for (let i = 0; i < variantCount(b); i++) {
+      const v = variantAt(b, i);
+      for (const slot of [...v.slots, ...v.deepSlots]) {
+        for (const line of resolveSlot(slot, store)?.lines ?? []) {
+          effects.push(line.text);
+          if (line.demerit) effects.push(line.demerit);
+        }
+      }
+    }
+    return { labels: [b.name, b.character, b.chalice], effects, tags: b.tags ?? [] };
+  };
   const builds = ownBuilds
     .filter((b) => characterFilter.length === 0 || characterFilter.includes(b.character))
-    .filter(matchesTagFilter);
+    .filter((b) => matchesQuery(query, buildSubject(b)));
   // One section per Nightfarer, in the roster's own order, newest build first
   // within each — easier to scan than one long mixed list.
   const groups = characterChalices
@@ -463,57 +555,20 @@ export function BuildsManager() {
           store={store}
           variantIdx={variantIdx}
           onVariantChange={showVariant}
+          tagRegistry={store.tags}
+          onTagsChange={(tags) => setBuildTags(openBuild.id, tags)}
+          onCreateTag={createTag}
         />
       </div>
     );
   }
 
-  const tagFilterControls = store.tags.length > 0 && (
-    <>
-      <MultiSelect
-        values={tagFilter}
-        options={store.tags.map((t) => ({ value: t, label: t }))}
-        onChange={setTagFilter}
-        placeholder="All tags"
-        className="w-44"
-        showValues
-      />
-      {/* Match any (OR) vs all (AND) of the selected tags. */}
-      {tagFilter.length > 1 && (
-        <div className="flex overflow-hidden rounded-md border border-night-600" role="group" aria-label="Tag match mode">
-          {(["any", "all"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setTagMode(m)}
-              aria-pressed={tagMode === m}
-              title={m === "any" ? "Builds with at least one selected tag (OR)" : "Builds with every selected tag (AND)"}
-              className={`px-2.5 py-1.5 font-body text-xs transition-colors ${
-                tagMode === m
-                  ? "bg-night-700 text-gold-bright"
-                  : "bg-night-900 text-parchment-muted hover:text-parchment"
-              }`}
-            >
-              {m === "any" ? "Match any" : "Match all"}
-            </button>
-          ))}
-        </div>
-      )}
-    </>
-  );
-
-  // Spell the tag filter out in words so the Match any/all choice is
-  // self-explanatory: "tagged Boss or Farm" vs "tagged Boss and Farm".
-  const tagFilterSummary = tagFilter.length > 0 && (
+  // Spell the query out in words — an and/or/not filter built from six rows
+  // is much easier to trust when the list says what it's showing.
+  const filterSummary = !isEmptyQuery(query) && (
     <p className="-mt-3 mb-5 font-body text-xs text-parchment-faint">
-      Showing builds tagged{" "}
-      {tagFilter.map((t, i) => (
-        <span key={t}>
-          {i > 0 && (tagMode === "any" ? " or " : " and ")}
-          <span className="text-parchment-muted">{t}</span>
-        </span>
-      ))}
-      .
+      Showing builds{" "}
+      <span className="text-parchment-muted">{describeQuery(query).join(", ")}</span>.
     </p>
   );
 
@@ -582,7 +637,15 @@ export function BuildsManager() {
           className="w-52"
           showValues
         />
-        {tagFilterControls}
+        <input
+          type="text"
+          value={query.text}
+          onChange={(e) => setQuery((q) => ({ ...q, text: e.target.value }))}
+          placeholder="Search builds or effects…"
+          aria-label="Search builds or effects"
+          className="frame w-56 max-w-full rounded-md bg-night-900 px-2.5 py-1.5 font-body text-sm text-parchment placeholder:text-parchment-faint"
+        />
+        <FilterToggle query={query} open={filtersOpen} onToggle={() => setFiltersOpen((o) => !o)} />
         <button type="button" onClick={startNew} className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600">
           + New build
         </button>
@@ -628,7 +691,17 @@ export function BuildsManager() {
         </span>
       </div>
 
-      {tagFilterSummary}
+      {filtersOpen && (
+        <FilterPanel
+          query={query}
+          onChange={setQuery}
+          tags={store.tags}
+          noun="build"
+          onManageTags={() => setManagingTags(true)}
+        />
+      )}
+
+      {filterSummary}
 
       {managingTags && (
         <TagManager
@@ -642,8 +715,8 @@ export function BuildsManager() {
 
       {groups.length === 0 ? (
         <p className="font-body text-sm text-parchment-faint">
-          {tagFilter.length > 0
-            ? "No builds match the selected tags."
+          {!isEmptyQuery(query)
+            ? "No builds match the filter."
             : `No builds ${
                 characterFilter.length > 0 ? `for ${characterFilter.join(" or ")} ` : ""
               }yet — create one, or import a backup.`}
@@ -674,6 +747,9 @@ export function BuildsManager() {
                     onOpen={() => showBuild(b.id)}
                     onEdit={() => editBuild(b.id)}
                     onDelete={() => deleteBuild(b.id)}
+                    tagRegistry={store.tags}
+                    onTagsChange={(tags) => setBuildTags(b.id, tags)}
+                    onCreateTag={createTag}
                   />
                 ))}
               </div>
@@ -690,6 +766,11 @@ export function BuildsManager() {
           onAdd={addCustomRelic}
           onUpdate={updateCustomRelic}
           onDelete={deleteCustomRelic}
+          tagRegistry={store.relicTags}
+          onTagsChange={setRelicTags}
+          onCreateTag={createRelicTag}
+          onRenameTag={renameRelicTag}
+          onDeleteTag={deleteRelicTag}
         />
       )}
     </div>

@@ -208,6 +208,7 @@ export function mergeWithCloud(
     builds: Array.from(builds.values()),
     customRelics: Array.from(relics.values()),
     tags: sortedTags([...local.tags, ...cloud.tags]),
+    relicTags: sortedTags([...(local.relicTags ?? []), ...(cloud.relicTags ?? [])]),
     deleted: mergeTombstones(local.deleted, cloud.deleted),
   });
 }

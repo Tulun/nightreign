@@ -43,6 +43,7 @@ function demo(now: number): BuildStore {
         effects: ["Physical Attack Up +2", "Vigor +2", "Improved Poison Resistance"],
         demerits: ["", "", ""],
         deep: false,
+        tags: ["keeper", "poison"],
       },
       // 2 effects → "polished".
       {
@@ -102,6 +103,9 @@ function demo(now: number): BuildStore {
         effects: ["Physical Attack Up +2", "Poise +3"],
         demerits: ["Reduced Rune Acquisition", ""],
         deep: true,
+        // Also carries a keyword whose registry entry was deleted (see the
+        // relicTag tombstone below) — the strip-on-load path.
+        tags: ["keeper", "junk"],
       },
       // …and demerits on lines 1 and 3, with line 2 clean.
       {
@@ -180,16 +184,18 @@ function demo(now: number): BuildStore {
       },
     ],
     tags: ["dlc", "favourite", "solo"],
+    relicTags: ["keeper", "poison", "trade bait"],
     deleted: {
       "seed-relic-gone": now - 3 * DAY,
       "tag:retired": now - 5 * DAY,
+      "relicTag:junk": now - 5 * DAY,
     },
   };
 }
 
 /** Everything wiped — the first-run state, without clearing storage by hand. */
 function empty(): BuildStore {
-  return { version: 3, builds: [], customRelics: [], tags: [], deleted: {} };
+  return { version: 3, builds: [], customRelics: [], tags: [], relicTags: [], deleted: {} };
 }
 
 export const devSeeds: Record<string, (now: number) => BuildStore> = {

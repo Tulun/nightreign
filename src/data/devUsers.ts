@@ -87,6 +87,7 @@ const store = (builds: Build[], customRelics: CustomRelic[], tags: string[] = []
   builds,
   customRelics,
   tags,
+  relicTags: [],
   deleted: {},
 });
 

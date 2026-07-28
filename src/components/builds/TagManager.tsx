@@ -12,12 +12,15 @@ export function TagManager({
   onCreate,
   onRename,
   onDelete,
+  noun = "build",
 }: {
   tags: string[];
   usage: (tag: string) => number;
   onCreate: (name: string) => void;
   onRename: (from: string, to: string) => void;
   onDelete: (tag: string) => void;
+  /** What these tags go on — builds and relics keep separate registries. */
+  noun?: "build" | "relic";
 }) {
   const [newTag, setNewTag] = useState("");
   const create = () => {
@@ -28,10 +31,13 @@ export function TagManager({
   };
   return (
     <section className="frame mb-5 rounded-md bg-night-850 p-4">
-      <h3 className="font-display text-sm font-semibold text-parchment">Tags</h3>
+      <h3 className="font-display text-sm font-semibold text-parchment">
+        {noun === "build" ? "Build tags" : "Relic tags"}
+      </h3>
       <p className="mt-0.5 font-body text-xs text-parchment-faint">
-        Tag builds from the build editor, then filter the list by tag here. Renaming or
-        deleting a tag updates every build that uses it.
+        Tag {noun === "build" ? "builds" : "relics"} from any {noun} card, then filter by tag
+        with the advanced filter. Renaming or deleting a tag updates every {noun} that uses
+        it. {noun === "build" ? "Relics" : "Builds"} keep their own separate tag list.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <input
@@ -59,7 +65,14 @@ export function TagManager({
       {tags.length > 0 && (
         <ul className="mt-3 space-y-1.5">
           {tags.map((t) => (
-            <TagRow key={t} tag={t} count={usage(t)} onRename={onRename} onDelete={onDelete} />
+            <TagRow
+              key={t}
+              tag={t}
+              count={usage(t)}
+              noun={noun}
+              onRename={onRename}
+              onDelete={onDelete}
+            />
           ))}
         </ul>
       )}
@@ -70,11 +83,13 @@ export function TagManager({
 function TagRow({
   tag,
   count,
+  noun,
   onRename,
   onDelete,
 }: {
   tag: string;
   count: number;
+  noun: "build" | "relic";
   onRename: (from: string, to: string) => void;
   onDelete: (tag: string) => void;
 }) {
@@ -98,7 +113,7 @@ function TagRow({
         className="frame w-40 rounded bg-night-900 px-2 py-1 font-body text-sm text-parchment"
       />
       <span className="font-body text-xs text-parchment-faint">
-        {count === 1 ? "1 build" : `${count} builds`}
+        {count === 1 ? `1 ${noun}` : `${count} ${noun}s`}
       </span>
       <button
         type="button"

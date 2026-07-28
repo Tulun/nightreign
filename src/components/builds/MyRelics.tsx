@@ -5,7 +5,7 @@
 //  edit in place, and import from a screenshot.
 // ─────────────────────────────────────────────────────────────────────────
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   RELIC_LOOKS,
   customRelicIcon,
@@ -14,8 +14,19 @@ import {
   sameCustomRelic,
   type CustomRelic,
 } from "@/lib/builds";
+import {
+  EMPTY_QUERY,
+  describeQuery,
+  isEmptyQuery,
+  matchesQuery,
+  withKnownTags,
+  type FilterQuery,
+} from "@/lib/filterQuery";
 import { CustomRelicEditor } from "./CustomRelicEditor";
+import { FilterPanel, FilterToggle } from "./FilterPanel";
 import { ScreenshotPoolImport } from "./ScreenshotImport";
+import { TagManager } from "./TagManager";
+import { TagPicker } from "./TagPicker";
 import {
   RELIC_COLORS,
   EffectLines,
@@ -34,17 +45,36 @@ export function MyRelics({
   onAdd,
   onUpdate,
   onDelete,
+  tagRegistry,
+  onTagsChange,
+  onCreateTag,
+  onRenameTag,
+  onDeleteTag,
 }: {
   relics: CustomRelic[];
   onAdd: (r: CustomRelic) => void;
   onUpdate: (r: CustomRelic) => void;
   onDelete: (id: string) => void;
+  /** The relic keyword registry — its own list, separate from build tags. */
+  tagRegistry: string[];
+  onTagsChange: (id: string, tags: string[]) => void;
+  onCreateTag: (tag: string) => void;
+  onRenameTag: (from: string, to: string) => void;
+  onDeleteTag: (tag: string) => void;
 }) {
   const [colorFilter, setColorFilter] = useState<CustomRelic["color"] | null>(null);
   const [kindFilter, setKindFilter] = useState<"normal" | "deep" | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState<FilterQuery>(EMPTY_QUERY);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [managingTags, setManagingTags] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+
+  // A tag the registry has lost stops filtering, rather than quietly hiding
+  // every relic (same rule the build list follows).
+  useEffect(() => {
+    setQuery((q) => withKnownTags(q, tagRegistry));
+  }, [tagRegistry]);
 
   // The creation modal — the same editor slots use, with free color and a
   // Normal/Deep choice since no slot dictates them here.
@@ -92,16 +122,15 @@ export function MyRelics({
     );
   }
 
-  const q = query.trim().toLowerCase();
   const shown = relics
     .filter((r) => !colorFilter || r.color === colorFilter)
     .filter((r) => !kindFilter || (kindFilter === "deep") === !!r.deep)
-    .filter(
-      (r) =>
-        !q ||
-        (r.name || `${r.color} relic`).toLowerCase().includes(q) ||
-        r.effects.some((e) => e.toLowerCase().includes(q)) ||
-        (r.demerits ?? []).some((e) => e.toLowerCase().includes(q)),
+    .filter((r) =>
+      matchesQuery(query, {
+        labels: [r.name || `${r.color} relic`],
+        effects: [...r.effects, ...(r.demerits ?? [])],
+        tags: r.tags ?? [],
+      }),
     )
     // Color, then normal before Deep of Night, then by name.
     .sort(
@@ -151,6 +180,17 @@ export function MyRelics({
               .map((text, i) => ({ text, demerit: r.demerits?.[i]?.trim() || undefined }))
               .filter((l) => l.text.trim())}
           />
+          {/* Keywords, editable here — a relic is filed while you're looking
+              at it, not through an editor. */}
+          <div className="mt-2">
+            <TagPicker
+              values={r.tags ?? []}
+              registry={tagRegistry}
+              onChange={(tags) => onTagsChange(r.id, tags)}
+              onCreate={onCreateTag}
+              subject={r.name || `${r.color} relic`}
+            />
+          </div>
         </div>
       </div>
     );
@@ -207,12 +247,55 @@ export function MyRelics({
         ))}
         <input
           type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search relics or effects…"
+          value={query.text}
+          onChange={(e) => setQuery((q) => ({ ...q, text: e.target.value }))}
+          placeholder="Search relics, effects or tags…"
+          aria-label="Search relics, effects or tags"
           className="frame w-64 max-w-full rounded-md bg-night-900 px-2.5 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint"
         />
+        <FilterToggle query={query} open={filtersOpen} onToggle={() => setFiltersOpen((o) => !o)} />
+        <button
+          type="button"
+          onClick={() => setManagingTags((m) => !m)}
+          aria-pressed={managingTags}
+          className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+            managingTags
+              ? "bg-night-700 text-gold-bright"
+              : "bg-night-800 text-parchment-muted hover:text-parchment"
+          }`}
+        >
+          Manage tags
+        </button>
       </div>
+      {filtersOpen && (
+        <div className="mt-3">
+          <FilterPanel
+            query={query}
+            onChange={setQuery}
+            tags={tagRegistry}
+            noun="relic"
+            onManageTags={() => setManagingTags(true)}
+          />
+        </div>
+      )}
+      {!isEmptyQuery(query) && (
+        <p className="mt-2 font-body text-xs text-parchment-faint">
+          Showing relics{" "}
+          <span className="text-parchment-muted">{describeQuery(query).join(", ")}</span>.
+        </p>
+      )}
+      {managingTags && (
+        <div className="mt-3">
+          <TagManager
+            tags={tagRegistry}
+            noun="relic"
+            usage={(tag) => relics.filter((r) => r.tags?.includes(tag)).length}
+            onCreate={onCreateTag}
+            onRename={onRenameTag}
+            onDelete={onDeleteTag}
+          />
+        </div>
+      )}
       {shown.length === 0 && (
         <p className="mt-3 font-body text-xs text-parchment-faint">No relics match.</p>
       )}

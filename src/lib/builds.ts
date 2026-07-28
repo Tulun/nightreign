@@ -44,6 +44,12 @@ export interface CustomRelic {
    * flag get a one-time guess (see inferDeep), adjustable in My Relics.
    */
   deep?: boolean;
+  /**
+   * User keywords for filtering the pool, drawn from BuildStore.relicTags.
+   * A separate registry from build tags — "Boss" as a build's purpose and
+   * "Boss" as a relic's keyword are different vocabularies.
+   */
+  tags?: string[];
 }
 
 /**
@@ -144,16 +150,25 @@ export interface BuildStore {
   /** User-managed tag registry for organizing builds (kept sorted). */
   tags: string[];
   /**
+   * The same, for relic keywords — a registry of its own so the two
+   * vocabularies can't drag each other around (see CustomRelic.tags).
+   */
+  relicTags: string[];
+  /**
    * Deletions, as key → time deleted (ms epoch). Every merge is a union, so
    * without these a build or relic deleted on one device is simply handed
    * back by the next device that still has it. Keys are build and relic ids,
-   * and tagTombstone(name) for tags. See applyTombstones for the rules.
+   * and tagTombstone(name) / relicTagTombstone(name) for the two tag
+   * registries. See applyTombstones for the rules.
    */
   deleted: Record<string, number>;
 }
 
-/** Tombstone key for a tag — builds and relics are keyed by their own id. */
+/** Tombstone key for a build tag — builds and relics are keyed by their own id. */
 export const tagTombstone = (tag: string) => `tag:${tag.trim()}`;
+
+/** Tombstone key for a relic keyword — its own namespace, its own registry. */
+export const relicTagTombstone = (tag: string) => `relicTag:${tag.trim()}`;
 
 /**
  * How long a deletion is remembered. Tombstones exist to outlive the other
@@ -170,6 +185,7 @@ export const EMPTY_STORE: BuildStore = {
   builds: [],
   customRelics: [],
   tags: [],
+  relicTags: [],
   deleted: {},
 };
 
@@ -377,9 +393,12 @@ export function mergeTombstones(
  *   • a relic carries no timestamp, so its tombstone always wins. An edit
  *     made on one device to a relic another device deleted is lost, the same
  *     trade the id-clash rule already makes.
- *   • a tag is removed from the registry and from the builds that predate the
- *     delete; a build edited afterwards keeps it, and its tag goes back in
- *     the registry (the same "edit beats stale delete" rule).
+ *   • a build tag is removed from the registry and from the builds that
+ *     predate the delete; a build edited afterwards keeps it, and its tag
+ *     goes back in the registry (the same "edit beats stale delete" rule).
+ *   • a relic keyword is removed from the registry and from every relic
+ *     carrying it — relics have no timestamp to weigh a delete against, so
+ *     the tombstone always wins, as it does for a deleted relic.
  *   • tombstones past TOMBSTONE_TTL_MS expire.
  *
  * Every store passes through here — load, import, and both merges — so the
@@ -406,15 +425,25 @@ export function applyTombstones(store: BuildStore, now = Date.now()): BuildStore
     });
     return kept.length === (b.tags?.length ?? 0) ? b : { ...b, tags: kept };
   });
+  const customRelics = store.customRelics
+    .filter((r) => deleted[r.id] === undefined)
+    .map((r) => {
+      const kept = (r.tags ?? []).filter((t) => deleted[relicTagTombstone(t)] === undefined);
+      return kept.length === (r.tags?.length ?? 0) ? r : { ...r, tags: kept };
+    });
   return {
     ...store,
     builds,
-    customRelics: store.customRelics.filter((r) => deleted[r.id] === undefined),
+    customRelics,
     // A tag a surviving build still carries stays in the registry — same rule
     // normalizeStore uses to keep every tag in use declared.
     tags: sortedTags([
       ...store.tags.filter((t) => deleted[tagTombstone(t)] === undefined),
       ...builds.flatMap((b) => b.tags ?? []),
+    ]),
+    relicTags: sortedTags([
+      ...(store.relicTags ?? []).filter((t) => deleted[relicTagTombstone(t)] === undefined),
+      ...customRelics.flatMap((r) => r.tags ?? []),
     ]),
     deleted,
   };
@@ -427,6 +456,7 @@ export function normalizeStore(data: unknown): BuildStore | null {
     builds?: Build[];
     customRelics?: CustomRelic[];
     tags?: unknown[];
+    relicTags?: unknown[];
     deleted?: Record<string, number>;
   };
   if (!d || !Array.isArray(d.builds) || !Array.isArray(d.customRelics)) return null;
@@ -443,19 +473,24 @@ export function normalizeStore(data: unknown): BuildStore | null {
       // Party-member snapshots carry their own relics — migrate those too.
       relics: b.relics?.map(gameRelicLines),
     }));
-  const declared = Array.isArray(d.tags) ? d.tags.filter((t): t is string => typeof t === "string") : [];
-  return applyTombstones({
-    version: 3,
+  const strings = (v: unknown[] | undefined) =>
+    Array.isArray(v) ? v.filter((t): t is string => typeof t === "string") : [];
+  const declared = strings(d.tags);
+  const declaredRelicTags = strings(d.relicTags);
+  const customRelics = d.customRelics
+    .map(migrateRelicLines)
+    .map(gameRelicLines)
     // Relics from before the deep flag get a one-time guess, stored
     // explicitly so a user's later correction sticks.
-    customRelics: d.customRelics
-      .map(migrateRelicLines)
-      .map(gameRelicLines)
-      .map((r) => ({ ...r, deep: r.deep ?? inferDeep(r) })),
+    .map((r) => ({ ...r, deep: r.deep ?? inferDeep(r) }));
+  return applyTombstones({
+    version: 3,
+    customRelics,
     builds,
     // Registry = declared tags plus any a build references (pre-tags stores
     // declare none), so every tag in use survives a merge or hand edit.
     tags: sortedTags([...declared, ...builds.flatMap((b) => b.tags ?? [])]),
+    relicTags: sortedTags([...declaredRelicTags, ...customRelics.flatMap((r) => r.tags ?? [])]),
     // Stores written before tombstones existed simply have no deletions on
     // record — nothing to migrate.
     deleted: isTombstoneMap(d.deleted) ? d.deleted : {},
@@ -521,6 +556,7 @@ export function mergeStores(current: BuildStore, imported: BuildStore): BuildSto
     builds: mergeById(current.builds, imported.builds),
     customRelics: mergeById(current.customRelics, imported.customRelics),
     tags: sortedTags([...current.tags, ...imported.tags]),
+    relicTags: sortedTags([...(current.relicTags ?? []), ...(imported.relicTags ?? [])]),
     deleted: mergeTombstones(current.deleted, imported.deleted),
   });
 }
