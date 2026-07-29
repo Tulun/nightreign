@@ -155,7 +155,22 @@ const EFFECT_ALIASES: Record<string, string> = {
   // in-game wording is the displayed name now, so this runs the other way.
   "[Undertaker] Attack Power Increased by Landing Chain Attack":
     "[Undertaker] Attack power increased by landing the final blow of a chain attack",
+  // Same effect, near-opposite sentence: the catalogue leads with the dagger,
+  // the game leads with the reprise. Nothing lexical survives the reordering,
+  // so without this it lost to the Undertaker line above, which happens to
+  // share "by landing the final blow of a chain attack" word for word.
+  "[Duchess] Reprise events upon nearby enemies by landing the final blow of a chain attack with dagger":
+    "[Duchess] Dagger chain attack reprises event upon nearby enemies",
 };
+
+// "Ultimate Art Gauge +N" was the community sheet's name for a line the game
+// calls Ultimate Art Auto Charge — wording that appears nowhere in game. The
+// catalogue now carries the real name, so the sheet's is an alias: relics
+// saved under it convert on their next load, and wiki-styled input still
+// matches.
+for (const n of [1, 2, 3]) {
+  EFFECT_ALIASES[`Ultimate Art Gauge +${n}`] = `Ultimate Art Auto Charge +${n}`;
+}
 
 // The catalogue's full status names still resolve to the curse's in-game short
 // ones ("… Scarlet Rot Buildup" → "… Rot Buildup"), so wiki-styled input and
@@ -400,10 +415,52 @@ function rescueTierSuffix(line: string, top: EffectMatch): EffectMatch {
   return atTier("1") ?? atTier("2") ?? top;
 }
 
-/** Like bestMatch, but over canonical names + aliases, resolving aliases. */
+/** Every Nightfarer the catalogue tags an effect with, lowercased. */
+const CHARACTER_TAGS = new Set<string>(
+  EFFECT_VOCABULARY.flatMap((v) => {
+    const m = v.match(/^\[([A-Za-z]+)\]/);
+    return m ? [m[1].toLowerCase()] : [];
+  }),
+);
+
+/**
+ * The Nightfarer a line is tagged for, in either spelling the app accepts —
+ * the game's "[Duchess] …" and the catalogue's "Duchess: …".
+ *
+ * Not anchored to the start: the effect's category glyph sits left of the tag
+ * and OCR routinely reads the two as one token ("[BH [Raider] Damage taken
+ * …"), so a tag that must come first is a tag usually missed. What keeps that
+ * safe is the roster — only a real Nightfarer's name counts, so the "RUE: "
+ * that OCR makes of a scuffed row stays what it is, noise.
+ */
+function characterTag(text: string): string | null {
+  for (const m of Array.from(text.matchAll(/\[([A-Za-z]+)\]|\b([A-Za-z]+):\s/g))) {
+    const tag = (m[1] ?? m[2]).toLowerCase();
+    if (CHARACTER_TAGS.has(tag)) return tag;
+  }
+  return null;
+}
+
+/**
+ * Like bestMatch, but over canonical names + aliases, resolving aliases.
+ *
+ * A line naming a Nightfarer can only be that Nightfarer's effect. The tag is
+ * the most legible thing on the row — a bracketed word at the very start — and
+ * the effects behind it are long sentences that overlap heavily between
+ * characters, so without this the sentence outvotes the name: the game's
+ * "[Duchess] Reprise events … by landing the final blow of a chain attack"
+ * matched "[Undertaker] Attack power increased by landing the final blow of a
+ * chain attack", which shares that clause word for word.
+ */
 function bestEffectMatch(line: string, minScore: number): EffectMatch | null {
+  const tag = characterTag(line);
   let top: EffectMatch | null = null;
   for (const entry of MATCH_ENTRIES) {
+    const entryTag = characterTag(entry.text);
+    // An untagged entry stays eligible for a tagged line: OCR reads the tag
+    // off some rows and not others, and a tagged line that matches nothing
+    // is worse than one matched to a general effect.
+    if (tag && entryTag && entryTag !== tag) continue;
     const score = similarity(line, entry.text);
     if (score >= minScore && (!top || score > top.score)) {
       top = { effect: entry.canonical, score, line };
@@ -516,9 +573,38 @@ function joinWrappedLines(lines: ParseLine[]): ParseLine[] {
   return out;
 }
 
-// An empty effect slot renders as a bare "-" row on the vessel detail pane.
-// OCR reads it as a lone dash-like glyph when it reads it at all.
-const EMPTY_SLOT_MARKER = /^[-–—‑−~=]{1,3}[.,]?$/;
+/**
+ * An empty effect slot renders on the vessel detail pane as a small hollow
+ * icon followed by a bare "-". OCR reads the icon *with* the dash as often as
+ * it reads the dash alone — especially off a photo of a screen — and the icon
+ * comes back as whatever box-like glyphs it resembles: "[]-", "L] -", "O -".
+ * Matching only the lone dash left those rows looking like ordinary unread
+ * text, which is enough to hide the blank span that separates two relics and
+ * so to run them together into one.
+ *
+ * Short, dash-bearing and wordless is the whole test. A real effect line is
+ * none of the three, and the shortest ones that come close ("Poise +3",
+ * "Faith +2") carry no dash at all.
+ */
+function isEmptySlotRow(text: string): boolean {
+  const t = text.trim();
+  if (t.length === 0 || t.length > 8) return false;
+  if (!/[-–—‑−~=]/.test(t)) return false;
+  // Two letters or digits running together is a word, not icon noise.
+  return !/[a-z0-9]{2}/i.test(t);
+}
+
+/**
+ * The same row, judged strictly enough to end a relic on. Screens carry
+ * plenty of short junk that reads as a rule or a stray mark — a lone "=" or
+ * "~" turns up mid-relic on noisy captures — and ending a relic on one of
+ * those splits it in two. The blank slot itself is always a *dash*, so only
+ * a dash is allowed to close the list; the looser test above still keeps the
+ * rest of that junk from filling the gap it leaves behind.
+ */
+function isBlankSlotDash(text: string): boolean {
+  return isEmptySlotRow(text) && /[-–—‑−]/.test(text);
+}
 
 /**
  * Cluster OCR lines into relic groups. A line matching a relic name starts a
@@ -556,14 +642,36 @@ export function parseRelicGroups(lines: (string | ParseLine)[], maxGroups = 6): 
     .sort((a, b) => a - b);
   const steps = acceptedYs.slice(1).map((y, i) => y - acceptedYs[i]).filter((s) => s > 0).sort((a, b) => a - b);
   const pitch = steps[steps.length >> 1] ?? 0;
+  // Where the effect column starts, so an empty-slot row can be told from a
+  // dash somewhere else on screen — the button hints along the bottom, the
+  // "R1" chrome at the top. Rows in this column belong to the relic list.
+  const acceptedX0s = joined
+    .filter((l) => {
+      const t = l.text.trim();
+      if (t.length < 8 || !l.bbox) return false;
+      return (
+        bestMatch(t, RELIC_NAME_VOCABULARY, 0.62) !== null || bestEffectMatch(t, 0.5) !== null
+      );
+    })
+    .map((l) => l.bbox!.x0)
+    .sort((a, b) => a - b);
+  const columnX = acceptedX0s[acceptedX0s.length >> 1] ?? 0;
   let prevBox: ParseLine["bbox"] = null;
 
   // Whether OCR read *anything* — junk included — in the same column between
   // two line boxes. An unread-but-present line (a mangled effect) still
   // occupies its row, so only a truly blank slot leaves the span empty.
   // Dash-only lines are the blank slots themselves, so they don't count.
+  //
+  // Only a line the parser would *consider* as content can occupy a row. It
+  // skips anything under 8 characters outright, so a two-character smudge
+  // can't be treated as an effect — and it must not be what stands between
+  // two relics either. That asymmetry is what ran relics together on photos
+  // of a TV: the blank row between them came back as "Er", too short to be an
+  // effect but long enough to fill the gap that was the only boundary left
+  // once the dash itself went unread.
   const boxes = joined
-    .filter((l) => !EMPTY_SLOT_MARKER.test(l.text.trim()))
+    .filter((l) => l.text.trim().length >= 8 && !isEmptySlotRow(l.text))
     .map((l) => l.bbox)
     .filter((b): b is NonNullable<ParseLine["bbox"]> => b != null);
   const spanIsEmpty = (above: NonNullable<ParseLine["bbox"]>, below: NonNullable<ParseLine["bbox"]>) =>
@@ -576,12 +684,18 @@ export function parseRelicGroups(lines: (string | ParseLine)[], maxGroups = 6): 
   for (const pl of joined) {
     const line = pl.text.trim();
     // An empty slot means the relic's effect list has ended: effects fill
-    // top-down, so whatever follows belongs to the next relic. With line
-    // positions the blank-span check below covers this (and stray dash-like
-    // junk can't be told from a real slot marker anyway); without them a
-    // bare dash line is the only signal there is, so close the group on it.
-    if (!pl.bbox && /^[-–—‑−][.,]?$/.test(line)) {
-      if (current && current.effects.length > 0) current = null;
+    // top-down, so whatever follows belongs to the next relic. This is the
+    // one boundary the screen states outright, so it's taken over the
+    // geometry below — the blank-span check needs a clean read of the gap,
+    // and a noisy capture is exactly where it stops getting one.
+    //
+    // A dash elsewhere on screen must not close anything, so with positions
+    // to hand the row has to sit in the effect column to count; without them
+    // (line lists carry no boxes) the marker is all there is to go on.
+    if (isBlankSlotDash(line)) {
+      const inColumn =
+        !pl.bbox || pitch === 0 || Math.abs(pl.bbox.x0 - columnX) <= Math.max(pitch, 40);
+      if (inColumn && current && current.effects.length > 0) current = null;
       continue;
     }
     if (line.length < 8) continue;

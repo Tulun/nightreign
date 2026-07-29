@@ -7,7 +7,10 @@ import type { RelicEffect } from "@/lib/relics";
  *  Possible relic effects grouped by category. Two effects from the SAME
  *  category can never appear on one relic — except effects flagged stackable
  *  (the former "Unique" pool). "unrollable" = effects only on fixed relics.
- *  Generated from the community relics sheet.
+ *  Generated from the community relics sheet, with the sheet's "Ultimate Art
+ *  Gauge" corrected to the game's own Ultimate Art Auto Charge and given its
+ *  full tier ladder — keep that on a re-import (effectMatch.ts aliases the
+ *  old name so relics saved under it convert).
  */
 export const relicEffects: RelicEffect[] = [
   { name: "Physical Attack Up", category: "attack" },
@@ -203,9 +206,14 @@ export const relicEffects: RelicEffect[] = [
   { name: "Character Skill Cooldown Reduction +1", category: "cooldown" },
   { name: "Character Skill Cooldown Reduction +2", category: "cooldown" },
   { name: "Character Skill Cooldown Reduction +3", category: "cooldown" },
-  { name: "Ultimate Art Gauge +1", category: "ult-gauge" },
-  { name: "Ultimate Art Gauge +2", category: "ult-gauge" },
-  { name: "Ultimate Art Gauge +3", category: "ult-gauge" },
+  // The game calls this Ultimate Art Auto Charge; the sheet's "Ultimate Art
+  // Gauge" is wording that appears nowhere in game, and it only listed the
+  // tiers Glass Necklace happens to carry. Under the old name a scanned "+2"
+  // had no entry to land on and snapped to the "+3" only Glass Necklace
+  // carries, which then read as proof the relic *was* Glass Necklace.
+  { name: "Ultimate Art Auto Charge +1", category: "ult-charge" },
+  { name: "Ultimate Art Auto Charge +2", category: "ult-charge" },
+  { name: "Ultimate Art Auto Charge +3", category: "ult-charge" },
   { name: "Poise +1", category: "poise" },
   { name: "Poise +2", category: "poise" },
   { name: "Poise +3", category: "poise" },

@@ -57,7 +57,7 @@ export const deepWeaponPassives: WeaponPassive[] = [
   { name: "Near Death Reduces Max HP", effect: "−0.85x maximum HP for 30s after being downed", category: "curse", stack: "yes" },
   { name: "Attacks Impaired on Occasion", effect: "3% / 5% chance for an attack to deal no damage", category: "curse", stack: "yes" },
   { name: "Lower Attack When Below Max HP", effect: "−0.95x / 0.93x damage when HP is below 85%", category: "curse", stack: "yes" },
-  { name: "Slower Art Gauge When Below Max HP", effect: "−0.9x / 0.85x ultimate-gauge gain when HP is below 85%", category: "curse", stack: "yes", note: "Unlike the Ultimate Art Gauge effect, this affects gauge gained from attacking." },
+  { name: "Slower Art Gauge When Below Max HP", effect: "−0.9x / 0.85x ultimate-gauge gain when HP is below 85%", category: "curse", stack: "yes", note: "Unlike the Ultimate Art Auto Charge effect, this affects gauge gained from attacking." },
   { name: "Near Death Reduces Art Gauge", effect: "−25 / 33 ultimate gauge when the wearer is downed", category: "curse", stack: "yes" },
   { name: "Impaired Physical Damage Negation", effect: "+5.5% / 8% physical damage taken", category: "curse", stack: "yes" },
   { name: "Impaired Affinity Damage Negation", effect: "+5.5% / 8% magic/fire/lightning/holy damage taken", category: "curse", stack: "yes" },

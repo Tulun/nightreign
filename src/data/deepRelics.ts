@@ -92,7 +92,7 @@ export const deepRelics: DeepRelic[] = [
   { name: "Reduced Vigor & Arcane", effect: "−3 vigor and arcane", category: "curse", stack: "yes", note: "−60 HP." },
   { name: "Reduced Rune Acquisition", effect: "−0.9x rune gain", category: "curse", stack: "yes" },
   { name: "Reduced Flask HP Restoration", effect: "−0.85x HP gained from flasks", category: "curse", stack: "yes" },
-  { name: "Ultimate Art Charging Impaired", effect: "−0.85x ultimate-gauge gain", category: "curse", stack: "yes", note: "Unlike Ultimate Art Gauge, affects both passive gain and gain from attacking." },
+  { name: "Ultimate Art Charging Impaired", effect: "−0.85x ultimate-gauge gain", category: "curse", stack: "yes", note: "Unlike Ultimate Art Auto Charge, affects both passive gain and gain from attacking." },
   { name: "All Resistances Down", effect: "−80 to all status resistance", category: "curse", stack: "yes" },
   { name: "Continuous HP Loss", effect: "Lose 2 HP per second", category: "curse", stack: "yes" },
   { name: "More Damage Taken After Evasion", effect: "−45% damage negation right after rolling", category: "curse", stack: "yes" },

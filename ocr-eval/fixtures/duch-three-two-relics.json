@@ -1,0 +1,23 @@
+{
+  "deep": true,
+  "notes": "Phone photo of a TV: Duchess Deep of Night vessel pane (Dagger DoN). Three relics, each with two effects and a blank third row; relics 1 and 2 each end on a demerit. The importer ran relics 2 and 3 together — 'Poise +3' landed as relic 2's third effect, leaving relic 3 with only 'Physical Attack Up +2'.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Duchess] Use Character Skill for Brief Invulnerability",
+        "Defeating enemies fills more of the Art gauge +1"
+      ],
+      "demerits": [null, "Lower Attack When Below Max HP"]
+    },
+    {
+      "name": null,
+      "effects": ["Stamina Recovery upon Landing Attacks", "Physical Attack Up +3"],
+      "demerits": [null, "Reduced Dexterity and Faith"]
+    },
+    {
+      "name": null,
+      "effects": ["Poise +3", "Physical Attack Up +2"]
+    }
+  ]
+}

@@ -367,8 +367,17 @@ export function BuildCard({
             takes the gap instead of riding its strip up out of line with its
             neighbours'. Two rows of tags on one card can't drag the rest of
             the row out of alignment either. */}
+        {/* w-fit is load-bearing: this row sits above the open-overlay and,
+            when the tags are editable, takes pointer events. Full-width it
+            would swallow every click in its band — including the empty space
+            past the last chip, which looks like ordinary card background and
+            so reads as the card simply not opening. */}
         {(editableTags || tagChips) && (
-          <div className={`relative mt-2 flex ${editableTags ? "" : "pointer-events-none"}`}>
+          <div
+            className={`relative mt-2 flex w-fit max-w-full ${
+              editableTags ? "" : "pointer-events-none"
+            }`}
+          >
             {editableTags || tagChips}
           </div>
         )}

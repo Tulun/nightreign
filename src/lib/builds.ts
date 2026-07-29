@@ -943,20 +943,32 @@ const normEffect = (s: string) => s.trim().toLowerCase();
  * Identify a scanned relic as a fixed one from its effect lines alone (for
  * when OCR missed the relic-name header).
  * - `certain: true` — one of the effects can't roll on a random relic and
- *   exactly one fixed relic carries it, so it has to be that relic.
+ *   exactly one fixed relic carries it, *and* nothing else that was scanned
+ *   contradicts that relic.
  * - `certain: false` — every effect is rollable, but the set is an exact
  *   copy of the returned fixed relic's; could be the relic, could be a
  *   lucky roll, so ask before assuming.
+ *
+ * The contradiction check is what keeps a single line from carrying the whole
+ * verdict, and it earns its keep: the lines handed in here have already been
+ * snapped to the nearest catalogue entry, so one scanned effect the catalogue
+ * is missing lands on whatever it reads closest to — an "Ultimate Art Auto
+ * Charge +2" the catalogue doesn't list becomes the "+3" only Glass Necklace
+ * carries. On its own that "proves" a relic the other two lines flatly rule
+ * out. A rolled relic can carry fewer effects than the fixed one (OCR misses
+ * lines), but never *other* ones.
  */
 export function matchFixedByEffects(
   effects: string[],
 ): { relic: FixedRelicOption; certain: boolean } | null {
   const lines = effects.map((e) => e.trim()).filter(Boolean);
   if (lines.length === 0) return null;
+  const carries = (r: FixedRelicOption, line: string) =>
+    r.effects.some((e) => normEffect(e) === normEffect(line));
   const fixedOnly = lines.filter((l) => !ROLLABLE_NORMAL.has(l));
   if (fixedOnly.length > 0) {
-    const carriers = fixedRelics.filter((r) =>
-      fixedOnly.every((l) => r.effects.some((e) => normEffect(e) === normEffect(l))),
+    const carriers = fixedRelics.filter(
+      (r) => fixedOnly.every((l) => carries(r, l)) && lines.every((l) => carries(r, l)),
     );
     if (carriers.length === 1) return { relic: carriers[0], certain: true };
   }

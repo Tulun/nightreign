@@ -2,7 +2,9 @@
 
 // ─────────────────────────────────────────────────────────────────────────
 //  Editor view: full-width build editor with searchable relic pickers,
-//  Deep of Night slots, tags, and the whole-screenshot importer.
+//  Deep of Night slots, and tags. Screenshots are read on the Import tab,
+//  which assembles a whole build in one pass — this view is for working on a
+//  build that already exists.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useRef, useState } from "react";
@@ -10,8 +12,6 @@ import { characterChalices } from "@/data/chalices";
 import { MultiSelect } from "@/components/MultiSelect";
 import {
   EMPTY_SLOTS,
-  fixedRelics,
-  matchFixedByEffects,
   MAX_VARIANTS,
   newId,
   sameCustomRelic,
@@ -34,11 +34,10 @@ import type { Chalice, SlotColor } from "@/lib/chalices";
 import { loadoutEffectStates } from "@/lib/effectCompat";
 import { CustomRelicEditor } from "./CustomRelicEditor";
 import { RelicPicker } from "./RelicBrowser";
-import { ScreenshotBuildImport } from "./ScreenshotImport";
 import {
   chalicesFor,
-  colorFromRelicName,
   resolveSlot,
+  CharacterImg,
   EffectLines,
   RelicLineInputs,
   SlotIconImg,
@@ -72,16 +71,7 @@ export function BuildEditor({
   onCreateTag: (name: string) => void;
 }) {
   const [build, setBuild] = useState<Build>(initial);
-  // The build as it stands right now, readable without waiting for a render:
-  // "Apply all" runs a whole batch of slot fills in one tick, and each one has
-  // to see the slots the ones before it filled (a fixed relic already down
-  // can't go down twice). Every update goes through patchBuild to keep both in
-  // step — setBuild alone would leave the ref behind.
-  const buildRef = useRef(build);
-  const patchBuild = (fn: (b: Build) => Build) => {
-    buildRef.current = fn(buildRef.current);
-    setBuild(buildRef.current);
-  };
+  const patchBuild = (fn: (b: Build) => Build) => setBuild(fn);
   // Which loadout variant the editor is working on (0 = the build's own).
   const [variant, setVariant] = useState(0);
   const [newRelicAt, setNewRelicAt] = useState<SlotRef | null>(null);
@@ -92,9 +82,6 @@ export function BuildEditor({
   const [newTag, setNewTag] = useState("");
   // Relics a chalice swap emptied out, reported until the next swap.
   const [cleared, setCleared] = useState<{ chalice: string; count: number } | null>(null);
-  // A scanned relic the importer read as a fixed relic the loadout already
-  // has — kept as a custom relic instead, and said so rather than silently.
-  const [duped, setDuped] = useState<string | null>(null);
   const loadout = variantAt(build, variant);
   const chalices = chalicesFor(build.character);
   const chalice = chalices.find((c) => c.name === loadout.chalice) ?? chalices[0];
@@ -113,7 +100,6 @@ export function BuildEditor({
     setNewRelicAt(null);
     setEditing([]);
     setCleared(null);
-    setDuped(null);
   };
 
   /** This loadout's slots re-checked against a chalice's socket colors. */
@@ -191,9 +177,9 @@ export function BuildEditor({
   };
 
   // Reuse an identical pool relic instead of adding a duplicate — the same
-  // relic imported twice (or owned twice) is one pool entry slotted twice.
-  // The ref also covers relics added earlier in the same batch (Apply all),
-  // before the parent's state update lands.
+  // relic created twice (or owned twice) is one pool entry slotted twice. The
+  // ref also covers relics made moments ago, before the parent's state update
+  // has come back around.
   const pendingRelics = useRef<CustomRelic[]>([]);
   const addOrReuseRelic = (relic: CustomRelic): string => {
     const existing =
@@ -203,68 +189,6 @@ export function BuildEditor({
     pendingRelics.current.push(relic);
     onAddCustomRelic(relic);
     return relic.id;
-  };
-
-  const applyGroup = (
-    group: {
-      name: string | null;
-      effects: string[];
-      demerits: string[];
-      color?: CustomRelic["color"] | null;
-    },
-    at: SlotRef,
-  ) => {
-    const slotColor = (at.deep ? chalice.deep : chalice.slots)[at.index];
-    // Deep slots never take fixed relics — every Depth relic is a custom
-    // roll, even when it shares a name with a fixed one.
-    // Fixed relics the loadout already holds, read live — a batch of Apply all
-    // lands before any of it renders.
-    const taken = slottedFixedNames(variantAt(buildRef.current, variant).slots, at.index);
-    if (!at.deep) {
-      const byName = group.name ? fixedRelics.find((r) => r.name === group.name) : null;
-      // No name from OCR? The effects can still give the relic away: an
-      // effect that can't roll pins it to its fixed relic outright; an exact
-      // copy of a fixed relic's effect set might just be a lucky roll — ask.
-      const byEffects = byName ? null : matchFixedByEffects(group.effects);
-      const candidate = byName ?? byEffects?.relic ?? null;
-      const fixed = (() => {
-        // A fixed relic is a single in-game item, so one already sitting in
-        // another socket of this loadout can't be here too — a second read of
-        // it is a misread, and falls through to a custom relic below with what
-        // was scanned kept for the user to correct.
-        if (!candidate || taken.has(candidate.name)) return null;
-        if (byName) return byName;
-        if (!byEffects) return null;
-        if (byEffects.certain) return byEffects.relic;
-        return window.confirm(
-          `These effects exactly match ${byEffects.relic.name}. Slot that relic?\n\n(Cancel keeps it as a custom relic that happens to have the same effects.)`,
-        )
-          ? byEffects.relic
-          : null;
-      })();
-      if (fixed) {
-        setSlot(at, { kind: "fixed", name: fixed.name });
-        return;
-      }
-      if (candidate && taken.has(candidate.name)) setDuped(candidate.name);
-    }
-    // A colored slot dictates the relic's color; the sampled icon color only
-    // decides for White slots (the screenshot's blue cast makes it easy to
-    // misread, so the slot is the better authority).
-    const color =
-      (slotColor !== "White" ? (slotColor as CustomRelic["color"]) : null) ??
-      group.color ??
-      colorFromRelicName(group.name) ??
-      "Red";
-    const id = addOrReuseRelic({
-      id: newId(),
-      name: group.name ?? "",
-      color,
-      effects: group.effects.slice(0, 3),
-      demerits: group.demerits.slice(0, 3),
-      deep: at.deep,
-    });
-    setSlot(at, { kind: "custom", id });
   };
 
   // Emptying a set of slots one Remove at a time is the tedious part of
@@ -384,7 +308,7 @@ export function BuildEditor({
           </span>
         </div>
       ) : (
-        <div className="mb-4 flex flex-wrap gap-2">
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {characterChalices.map((c) => {
             const active = c.name === build.character;
             return (
@@ -411,14 +335,15 @@ export function BuildEditor({
                   })
                 }
                 aria-pressed={active}
-                className={`frame rounded-md px-3 py-1.5 font-body text-sm transition-colors ${
+                className={`frame flex items-center gap-2.5 rounded-md px-3 py-3 text-left font-body text-base transition-colors ${
                   active
                     ? "bg-night-700 text-gold-bright"
-                    : "bg-night-800 text-parchment-muted hover:bg-night-700 hover:text-parchment"
+                    : "bg-night-900 text-parchment hover:bg-night-800 hover:text-gold-bright"
                 }`}
                 style={active ? { borderColor: "#c9a227" } : undefined}
               >
-                {c.name}
+                <CharacterImg name={c.name} size={34} />
+                <span className="min-w-0 truncate">{c.name}</span>
               </button>
             );
           })}
@@ -490,23 +415,11 @@ export function BuildEditor({
         />
         {/* Swapping chalices keeps every relic the new sockets accept. */}
         <ChalicePicker chalices={chalices} value={chalice} onChange={setChalice} />
-        <ScreenshotBuildImport
-          chalice={chalice}
-          chalices={chalices}
-          onApply={applyGroup}
-          onSwapChalice={setChalice}
-        />
       </div>
       {cleared && (
         <p className="mt-2 font-body text-xs text-red-300/80">
           {cleared.count === 1 ? "1 relic" : `${cleared.count} relics`} didn’t fit {cleared.chalice}
           ’s sockets and {cleared.count === 1 ? "was" : "were"} cleared.
-        </p>
-      )}
-      {duped && (
-        <p className="mt-2 font-body text-xs text-red-300/80">
-          {duped} is already in another slot — there’s only one in-game, so the second
-          scan was kept as a custom relic. Check which slot got misread.
         </p>
       )}
 

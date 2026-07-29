@@ -667,13 +667,16 @@ export function ReviewLineInputs({
     <div className="mt-2 space-y-1.5">
       {[0, 1, 2].map((i) => (
         <div key={i} className="space-y-1">
+          {/* These are the flow's main editing surface — a misread line is
+              corrected here, often on a phone — so they read at body size
+              rather than the dense size a read-only list can get away with. */}
           <EffectSuggestInput
             value={lines[i] ?? ""}
             vocab={effectVocabulary(deep)}
             disabled={disabled}
             onChange={(v) => onLine(i, v)}
             placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
-            className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint disabled:opacity-60"
+            className="frame w-full rounded bg-night-800 px-2 py-1.5 font-body text-base text-parchment placeholder:text-parchment-faint disabled:opacity-60"
           />
           {deep && (lines[i] ?? "").trim() !== "" && (
             <EffectSuggestInput
@@ -682,7 +685,7 @@ export function ReviewLineInputs({
               disabled={disabled}
               onChange={(v) => onDemerit(i, v)}
               placeholder="Demerit (optional)"
-              className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40 disabled:opacity-60"
+              className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-1 font-body text-sm text-red-200/90 placeholder:text-red-300/40 disabled:opacity-60"
             />
           )}
         </div>

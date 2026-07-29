@@ -26,7 +26,7 @@ export type RelicCategory =
   | "faith"
   | "arcane"
   | "cooldown"
-  | "ult-gauge"
+  | "ult-charge"
   | "poise"
   | "loadout"
   | "hp-weapon"
@@ -136,7 +136,7 @@ export const RELIC_CATEGORIES: RelicCategoryMeta[] = [
   { key: "faith", label: "Faith", group: "attributes" },
   { key: "arcane", label: "Arcane", group: "attributes" },
   { key: "cooldown", label: "Character Skill Cooldown", group: "attributes" },
-  { key: "ult-gauge", label: "Ultimate Art Gauge", group: "attributes" },
+  { key: "ult-charge", label: "Ultimate Art Auto Charge", group: "attributes" },
   { key: "poise", label: "Poise", group: "attributes" },
   { key: "loadout", label: "Loadout Bonuses", group: "attributes", note: "Conditional Max HP/FP from equipping 3+ of a catalyst or shield type." },
   { key: "hp-weapon", label: "HP Restoration by Weapon Type", group: "restoration", note: "Restores ~15 HP per hit with continuous attacks — same amount for every weapon type." },
@@ -192,7 +192,7 @@ export const RELIC_VALUES: Record<string, string> = {
   Endurance: "+2 / +4 / +6 Max Stamina",
   Poise: "−5% / −10% / −15% poise damage taken",
   "Character Skill Cooldown Reduction": "−5% / −7.5% / −10% skill cooldown",
-  "Ultimate Art Gauge": "+5% / +7.5% / +10% passive gauge gain",
+  "Ultimate Art Auto Charge": "+5% / +7.5% / +10% passive gauge gain",
   // Unique — negations & resistances
   "Magic Damage Negation Up": "+10% magic negation",
   "Fire Damage Negation Up": "+10% fire negation",

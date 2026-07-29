@@ -109,7 +109,7 @@ export const uniqueRelics: UniqueRelic[] = [
     effects: ["[Wylder] Follow-up attacks possible when using Character Skill (greatsword only)", "Physical Attack Up"],
     source: "Wylder Remembrance quest I" },
   { name: "Silver Tear", color: "Red", icon: "silver-tear.png", group: "character", character: "Wylder",
-    effects: ["[Wylder] Art gauge greatly filled when ability is activated", "Ultimate Art Gauge +3", "Arcane +3"],
+    effects: ["[Wylder] Art gauge greatly filled when ability is activated", "Ultimate Art Auto Charge +3", "Arcane +3"],
     source: "Wylder Remembrance quest III" },
   { name: "The Wylder's Earring", color: "Red", icon: "the-wylders-earring.png", group: "character", character: "Wylder",
     effects: ["[Wylder] Art activation spreads fire in area", "[Wylder] +1 additional Character Skill use", "Stamina recovers with each successful attack"],

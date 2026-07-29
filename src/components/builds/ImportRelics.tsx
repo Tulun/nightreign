@@ -303,7 +303,7 @@ export function ImportRelics({
 
   return (
     <div>
-      <p className="max-w-prose font-body text-sm text-parchment-muted">
+      <p className="max-w-prose font-body text-base text-parchment-muted">
         Screenshot the relic rites screen with relic names and effects visible, and drop up to{" "}
         {MAX_BATCH} shots in at once. Each is read on its own, and everything it finds stays
         editable until you add it — the parser is good, not right. Relics you already have, and
@@ -368,10 +368,10 @@ export function ImportRelics({
         }}
       />
 
-      {notice && <p className="mt-2 font-body text-xs text-gold-dim">{notice}</p>}
-      {status && <p className="mt-2 font-body text-xs text-parchment-faint">{status}</p>}
+      {notice && <p className="mt-2 font-body text-sm text-gold-dim">{notice}</p>}
+      {status && <p className="mt-2 font-body text-sm text-parchment-faint">{status}</p>}
       {busy && (
-        <p className="mt-2 font-body text-xs text-parchment-faint">
+        <p className="mt-2 max-w-prose font-body text-sm text-parchment-faint">
           Reading happens here in the browser, one screenshot at a time — a phone takes a good deal
           longer than a laptop. You can switch tabs in the app and come back; leaving the page
           gives up on the ones still queued.

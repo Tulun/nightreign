@@ -7,6 +7,7 @@ import { characterChalices } from "@/data/chalices";
 import { MultiSelect } from "@/components/MultiSelect";
 import { BuildCard } from "@/components/builds/BuildCard";
 import { BuildEditor } from "@/components/builds/BuildEditor";
+import { ImportBuild } from "@/components/builds/ImportBuild";
 import { ImportRelics } from "@/components/builds/ImportRelics";
 import { MyRelics } from "@/components/builds/MyRelics";
 import { TagManager } from "@/components/builds/TagManager";
@@ -83,6 +84,9 @@ export function BuildsManager() {
     dismissLegacy,
   } = useAccountStore();
   const [view, setView] = useState<"builds" | "relics" | "import">("builds");
+  // Which importer the Import view is showing: relics into the pool, or a
+  // whole build assembled from screenshots in one sitting.
+  const [importTab, setImportTab] = useState<"relics" | "build">("build");
   const router = useRouter();
   const params = useSearchParams();
   const openId = params.get("b");
@@ -369,7 +373,13 @@ export function BuildsManager() {
     }))
     .filter((g) => g.builds.length > 0);
 
-  const saveBuild = (build: Build) => {
+  /**
+   * Write a build into the store and make sure the list behind it would show
+   * it. Where the user lands afterwards is the caller's business — the editor
+   * goes to the build's page, the screenshot importer stays put so it can
+   * report on the relics the save created.
+   */
+  const commitBuild = (build: Build) => {
     update((s) => ({
       ...s,
       builds: [...s.builds.filter((b) => b.id !== build.id), { ...build, updatedAt: Date.now() }],
@@ -379,6 +389,38 @@ export function BuildsManager() {
     setCharacterFilter((c) =>
       c.length === 0 || c.includes(build.character) ? c : [...c, build.character],
     );
+  };
+
+  /**
+   * Point one build's slots at a different relic and drop the one they held —
+   * the screenshot importer's answer to "that's the relic I already have",
+   * where the newly scanned copy was only ever a misread of it.
+   */
+  const replaceRelicInBuild = (buildId: string, from: string, to: string) => {
+    const repoint = (slots: SlotTriple): SlotTriple =>
+      slots.map((s) => (s?.kind === "custom" && s.id === from ? { kind: "custom", id: to } : s)) as SlotTriple;
+    update((s) =>
+      withTombstones(
+        {
+          ...s,
+          builds: s.builds.map((b) =>
+            b.id === buildId
+              ? {
+                  ...b,
+                  slots: repoint(b.slots),
+                  deepSlots: repoint(b.deepSlots),
+                  updatedAt: Date.now(),
+                }
+              : b,
+          ),
+        },
+        [from],
+      ),
+    );
+  };
+
+  const saveBuild = (build: Build) => {
+    commitBuild(build);
     setView("builds");
     // Saving lands on the build's own page — for a new build, that's the
     // first URL it has.
@@ -751,7 +793,10 @@ export function BuildsManager() {
           onAdd={addCustomRelic}
           onUpdate={updateCustomRelic}
           onDelete={deleteCustomRelic}
-          onImport={() => setView("import")}
+          onImport={() => {
+            setImportTab("relics");
+            setView("import");
+          }}
           tagRegistry={store.relicTags}
           onTagsChange={setRelicTags}
           onCreateTag={createRelicTag}
@@ -762,13 +807,54 @@ export function BuildsManager() {
 
       {/* Hidden rather than unmounted: reading four screenshots on a phone
           takes minutes, and switching tabs to check a build mid-run shouldn't
-          throw the run — or the cards waiting to be reviewed — away. */}
+          throw the run — or the cards waiting to be reviewed — away. The two
+          importers below are kept apart for the same reason. */}
       <div hidden={view !== "import"}>
-        <ImportRelics
-          relics={store.customRelics}
-          onAdd={addCustomRelic}
-          onDone={() => setView("relics")}
-        />
+        {/* Two ways in: relics into the pool, or a whole build in one go. */}
+        <div className="mb-5 flex flex-wrap gap-1.5">
+          {(
+            [
+              { key: "build", label: "Build", hint: "Snap a build and save it" },
+              { key: "relics", label: "Relics", hint: "Add relics to your pool" },
+            ] as const
+          ).map((t) => {
+            const active = importTab === t.key;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => setImportTab(t.key)}
+                aria-pressed={active}
+                title={t.hint}
+                className={`frame rounded-md px-4 py-2 font-display text-sm font-semibold transition-colors ${
+                  active
+                    ? "bg-night-700 text-gold-bright"
+                    : "bg-night-900 text-parchment-muted hover:bg-night-800 hover:text-parchment"
+                }`}
+                style={active ? { borderColor: "#c9a227" } : undefined}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div hidden={importTab !== "build"}>
+          <ImportBuild
+            store={store}
+            onAddRelic={addCustomRelic}
+            onSaveBuild={commitBuild}
+            onOpenBuild={showBuild}
+            onMergeRelic={replaceRelicInBuild}
+          />
+        </div>
+        <div hidden={importTab !== "relics"}>
+          <ImportRelics
+            relics={store.customRelics}
+            onAdd={addCustomRelic}
+            onDone={() => setView("relics")}
+          />
+        </div>
       </div>
     </div>
   );
