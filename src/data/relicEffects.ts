@@ -62,7 +62,7 @@ export const relicEffects: RelicEffect[] = [
   { name: "Partial HP Restoration upon Post-Damage Attacks", category: "regen", stackable: true },
   { name: "Slowly restore HP for self and nearby allies when HP is low", category: "regen", stackable: true },
   { name: "HP restored when using cured meats, medicinal boluses, etc.", category: "regen", stackable: true },
-  { name: "Art gauge charged from successful guarding", category: "regen", stackable: true },
+  { name: "Successful guarding fills more of the Art gauge", category: "regen", stackable: true },
   { name: "Art gauge fills moderately upon critical hit", category: "regen", stackable: true },
   { name: "Critical Hit Boosts Stamina Recovery Speed", category: "regen", stackable: true },
   { name: "HP Recovery From Successful Guarding", category: "regen", stackable: true },

@@ -33,9 +33,9 @@ export const deepRelics: DeepRelic[] = [
   { name: "Sleep/Madness in Vicinity Improves Attack Power +0/1", effect: "Increases damage by 1.12x / 1.22x after a nearby sleep/madness proc", category: "offensive", stack: "tiers" },
   { name: "Improved Guard Counters +1/2", effect: "Increases guard counter damage by 1.25x / 1.29x", category: "offensive", stack: "yes" },
   { name: "Improved [Consumable] Damage +1/2", effect: "Increases pot/knife/stone/perfume damage by 1.3x / 1.35x", category: "offensive", stack: "yes" },
-  { name: "Art Gauge Charged from Successful Guarding +1", effect: "+1.5 character-skill gauge on blocking an attack", category: "offensive", stack: "tiers" },
+  { name: "Successful guarding fills more of the Art gauge +1", effect: "+1.5 character-skill gauge on blocking an attack", category: "offensive", stack: "tiers", note: "Both tiers seen in-game on Deep relics; the sheet's shorthand for this was \"Art Gauge Charged from Successful Guarding\"." },
   { name: "Art Gauge Fills Moderately upon Critical Hit +1", effect: "+6.5 character-skill gauge on a riposte", category: "offensive", stack: "tiers" },
-  { name: "Defeating Enemies Fills More Art Gauge +1", effect: "+6.5 character-skill gauge on killing enemies", category: "offensive", stack: "tiers" },
+  { name: "Defeating enemies fills more of the Art gauge +1", effect: "+6.5 character-skill gauge on killing enemies", category: "offensive", stack: "tiers", note: "Seen in-game on a Deep relic; the sheet's shorthand for this was \"Defeating Enemies Fills More Art Gauge\"." },
   { name: "Improved Sorceries/Incantations +0/1/2", effect: "Increases sorcery/incantation damage by 1.05x / 1.085x / 1.1x", category: "offensive", stack: "yes" },
   { name: "Reduced FP Consumption +0/1/2", effect: "Reduces FP consumption by 0.92x / 0.87x / 0.84x", category: "offensive", stack: "yes", note: "Higher tiers (+1/+2) don't seem to roll on random relics." },
 
@@ -50,8 +50,6 @@ export const deepRelics: DeepRelic[] = [
   { name: "HP Restoration upon Thrusting Counterattack +1", effect: "Restores 3.3% of max HP on counterhits", category: "regen", stack: "tiers" },
   { name: "HP Restored When Using Medicinal Boluses, etc. +1", effect: "Replenishes 80 HP from certain consumables", category: "regen", stack: "tiers" },
   { name: "Improved Flask HP Restoration", effect: "Increases HP gained from flasks by 1.1x", category: "regen", stack: "yes" },
-  { name: "Defeating enemies fills more of the Art gauge +1", effect: "As the base effect, with a larger gauge fill", category: "regen", stack: "yes", note: "Seen in-game on a Deep relic; exact numbers untested." },
-  { name: "Successful guarding fills more of the Art gauge +0/1", effect: "Guarding hits fills the Art gauge", category: "regen", stack: "yes", note: "Both tiers seen in-game on Deep relics (+0 shows no suffix); exact numbers untested." },
 
   // ── Character (skills & stat-swaps) ─────────────────────────────────────────
   { name: "[Wylder] Character Skill Inflicts Blood Loss", effect: "Skill inflicts 60 (impact) / 55 (pull) bleed on hit", category: "character", stack: "no" },
@@ -120,9 +118,9 @@ export const deepRelics: DeepRelic[] = [
   { name: "Improved Critical Hits", effect: "+18% critical hit damage", category: "offensive", stack: "yes", crossover: true },
   { name: "Improved Initial Standard Attack", effect: "+15% on the first light attack of a chain", category: "offensive", stack: "yes", crossover: true },
   { name: "Guard Counter Boosted by Current HP", effect: "Adds a flat hit (≈ current HP ÷ 20) to each guard counter", category: "offensive", stack: "no", crossover: true },
-  { name: "Art Gauge Charged from Successful Guarding +0", effect: "+1 Ultimate gauge on blocking an attack", category: "offensive", stack: "tiers", crossover: true },
+  { name: "Successful guarding fills more of the Art gauge +0", effect: "+1 Ultimate gauge on blocking an attack", category: "offensive", stack: "tiers", crossover: true },
   { name: "Art Gauge Fills Moderately upon Critical Hit +0", effect: "+5 Ultimate gauge on a critical hit", category: "offensive", stack: "tiers", crossover: true },
-  { name: "Defeating Enemies Fills More Art Gauge +0", effect: "+5 Ultimate gauge per enemy kill", category: "offensive", stack: "tiers", crossover: true },
+  { name: "Defeating enemies fills more of the Art gauge +0", effect: "+5 Ultimate gauge per enemy kill", category: "offensive", stack: "tiers", crossover: true },
   // Defensive
   { name: "Improved Physical Damage Negation +0", effect: "+10% physical damage negation", category: "defensive", stack: "tiers", crossover: true },
   { name: "Improved [Element] Damage Negation +0", effect: "+10% of the respective element's damage negation", category: "defensive", stack: "tiers", crossover: true },

@@ -240,7 +240,7 @@ export const RELIC_VALUES: Record<string, string> = {
   "Partial HP Restoration upon Post-Damage Attacks": "Strong heal-on-hit briefly after taking damage",
   "Slowly restore HP for self and nearby allies when HP is low": "+0.5% max HP + 1 HP/s for 50s below 20% HP",
   "HP restored when using cured meats, medicinal boluses, etc.": "+50 HP on consumption",
-  "Art gauge charged from successful guarding": "+1 Ultimate gauge on block",
+  "Successful guarding fills more of the Art gauge": "+1 Ultimate gauge on block",
   "Art gauge fills moderately upon critical hit": "+5 Ultimate gauge on crit",
   "Defeating enemies fills more of the Art gauge": "+5 Ultimate gauge per kill",
   "Critical Hit Boosts Stamina Recovery Speed": "+10 stamina/s for 15s",

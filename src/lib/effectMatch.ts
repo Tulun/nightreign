@@ -210,6 +210,18 @@ for (const name of EFFECT_VOCABULARY) {
   if (dormant && pluralizeWeapon(dormant[1]) !== dormant[1]) {
     EFFECT_ALIASES[`Dormant Power Helps Discover ${pluralizeWeapon(dormant[1])}${dormant[2] ?? ""}`] = name;
   }
+  // The two Art-gauge fill effects are named for the line the game shows
+  // ("Successful guarding fills more of the Art gauge"); the community
+  // sheet's shorthand for them, which the catalogue used to display, is the
+  // alias — so relics saved under it convert on their next load.
+  const gauge = name.match(/^(Successful guarding|Defeating enemies) fills more of the Art gauge( \+\d)?$/);
+  if (gauge) {
+    const sheet =
+      gauge[1] === "Successful guarding"
+        ? "Art Gauge Charged from Successful Guarding"
+        : "Defeating Enemies Fills More Art Gauge";
+    EFFECT_ALIASES[`${sheet}${gauge[2] ?? ""}`] = name;
+  }
   // Deep relics display the base tier with no suffix where the catalogue
   // writes "+0" ("Improved Affinity Attack Power" — verified in-game).
   const base = name.match(/^(.+) \+0$/);
@@ -368,15 +380,24 @@ function bestMatch(line: string, vocab: string[], minScore: number): EffectMatch
  * is the ground truth whenever the corresponding vocabulary entry exists.
  */
 function rescueTierSuffix(line: string, top: EffectMatch): EffectMatch {
+  const base = top.effect.replace(/ \+\d$/, "");
+  const atTier = (n: string): EffectMatch | null => {
+    const want = `${base} +${n}`;
+    return want !== top.effect && CANONICAL_BY_KEY.has(nameKey(want))
+      ? { ...top, effect: canonicalEffectName(want) }
+      : null;
+  };
   // Only rescue toward a digit the line actually shows — a missing "+N" is
   // usually OCR failing to read the suffix, not proof the effect is tierless.
   const digits = Array.from(line.matchAll(/\+\s?(\d)\b/g));
-  if (digits.length === 0) return top;
-  const want = `${top.effect.replace(/ \+\d$/, "")} +${digits[digits.length - 1][1]}`;
-  if (want !== top.effect && CANONICAL_BY_KEY.has(nameKey(want))) {
-    return { ...top, effect: canonicalEffectName(want) };
-  }
-  return top;
+  if (digits.length > 0) return atTier(digits[digits.length - 1][1]) ?? top;
+  // A trailing "+" whose digit OCR dropped still proves the line carries a
+  // tier, and the base tier shows no suffix in game — so a line ending that
+  // way is neither the tierless entry nor "+0". Where both spellings of an
+  // effect exist, those two sit as close to the line as the real tier does,
+  // and the tie goes whichever way the vocabulary happens to be ordered.
+  if (!/\+\s*$/.test(line.trim()) || / \+[1-9]$/.test(top.effect)) return top;
+  return atTier("1") ?? atTier("2") ?? top;
 }
 
 /** Like bestMatch, but over canonical names + aliases, resolving aliases. */

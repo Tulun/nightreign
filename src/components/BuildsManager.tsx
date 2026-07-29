@@ -27,9 +27,7 @@ import {
   buildPath,
   buildShareText,
   buildShareUrl,
-  mergeStores,
   newId,
-  normalizeStore,
   relicTagTombstone,
   sortedTags,
   tagTombstone,
@@ -110,7 +108,6 @@ export function BuildsManager() {
   const [managingTags, setManagingTags] = useState(false);
   // The unsaved build behind ?b=new — it has no store entry to read back.
   const [draft, setDraft] = useState<Build | null>(null);
-  const importRef = useRef<HTMLInputElement>(null);
   // Only for the share link and the owner check below — the account's uid is
   // what a build's community page is addressed by. Loading and saving the
   // store is entirely useAccountStore's business.
@@ -436,26 +433,6 @@ export function BuildsManager() {
   };
 
 
-  const exportJson = () => {
-    const blob = new Blob([JSON.stringify(store, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "nightreign-builds.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importJson = async (file: File) => {
-    try {
-      const data = normalizeStore(JSON.parse(await file.text()));
-      if (!data) throw new Error("bad file");
-      update((s) => mergeStores(s, data));
-    } catch {
-      window.alert("That file doesn't look like a Nightreign builds export.");
-    }
-  };
-
   // ── One build's own page: ?b=<id>, and ?b=<id>&edit=1 to change it ─────
   // The build behind the URL — the unsaved draft for ?b=new, otherwise the
   // stored build, so edits to it show up here.
@@ -485,7 +462,7 @@ export function BuildsManager() {
             </button>
             <p className="mt-4 font-body text-sm text-parchment-faint">
               No such build in your account — it may have been deleted, or it may
-              belong to another account. Import a backup if you have one.
+              belong to another account.
             </p>
           </>
         )}
@@ -602,7 +579,7 @@ export function BuildsManager() {
           [
             { key: "builds", label: "Builds", count: ownBuilds.length },
             { key: "relics", label: "My Relics", count: store.customRelics.length },
-            { key: "import", label: "Import", count: 0 },
+            { key: "import", label: "Import Relics", count: 0 },
           ] as const
         ).map((t) => {
           const active = view === t.key;
@@ -641,6 +618,17 @@ export function BuildsManager() {
 
       {view === "builds" && (
         <>
+      {/* Primary CTA — on its own line, ahead of the filtering toolbar. */}
+      <div className="mb-4">
+        <button
+          type="button"
+          onClick={startNew}
+          className="rounded-md border border-gold-bright bg-gold px-6 py-3 font-display text-base font-semibold text-night-950 shadow-seal transition hover:bg-gold-bright"
+        >
+          + New build
+        </button>
+      </div>
+
       {/* Toolbar */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <MultiSelect
@@ -663,9 +651,6 @@ export function BuildsManager() {
           className="frame w-56 max-w-full rounded-md bg-night-900 px-2.5 py-1.5 font-body text-sm text-parchment placeholder:text-parchment-faint"
         />
         <FilterToggle query={query} open={filtersOpen} onToggle={() => setFiltersOpen((o) => !o)} />
-        <button type="button" onClick={startNew} className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600">
-          + New build
-        </button>
         <button
           type="button"
           onClick={() => setManagingTags((m) => !m)}
@@ -678,23 +663,6 @@ export function BuildsManager() {
         >
           Manage tags
         </button>
-        <button type="button" onClick={exportJson} className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment">
-          Export JSON
-        </button>
-        <button type="button" onClick={() => importRef.current?.click()} className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment">
-          Import JSON
-        </button>
-        <input
-          ref={importRef}
-          type="file"
-          accept="application/json"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) importJson(f);
-            e.target.value = "";
-          }}
-        />
         <span className="font-body text-xs text-parchment-faint">
           {status === "syncing" && "Saving to your account…"}
           {status === "synced" && "Saved to your account."}
@@ -734,7 +702,7 @@ export function BuildsManager() {
             ? "No builds match the filter."
             : `No builds ${
                 characterFilter.length > 0 ? `for ${characterFilter.join(" or ")} ` : ""
-              }yet — create one, or import a backup.`}
+              }yet — create one to get started.`}
         </p>
       ) : (
         <div className="space-y-6">

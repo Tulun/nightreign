@@ -115,7 +115,7 @@ export function MyRelics({
       title="Read relics off screenshots of the relic rites screen — up to four at a time."
       className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
     >
-      Import
+      Import Relics
     </button>
   );
 
