@@ -108,6 +108,9 @@ const member = (uid: string, ownerName: string, src: BuildStore, buildId: string
   build: snapshot(src, buildId),
 });
 
+/** A slot handed to a player with no build in it — theirs to fill. */
+const reserved = (uid: string, ownerName: string): PartyMember => ({ uid, ownerName });
+
 export interface FakeProfile {
   uid: string;
   displayName: string | null;
@@ -254,7 +257,13 @@ export function fakeFixtures(now: number): FakeFixtures {
           name: "My Published Party",
           blurb: "Owned by the fake sign-in, so Delete and re-publish are live.",
           slotEdits: true,
-          slots: [member(SELF_UID, "Nightfarer-fake", you, "cloud-build-ironeye"), null, null],
+          // Slot 2 is the owner's side of a reservation: somebody's in it,
+          // waiting on their own build. Slot 3 is plain empty, for contrast.
+          slots: [
+            member(SELF_UID, "Nightfarer-fake", you, "cloud-build-ironeye"),
+            reserved("fake-vanguard", "Vanguard"),
+            null,
+          ],
         },
       },
     ],

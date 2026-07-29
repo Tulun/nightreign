@@ -116,15 +116,19 @@ function resync(
   // handles everything below it).
   const rawLabel = variantCount(build) > 1 ? variantLabel(build, idx) : undefined;
   const label = rawLabel ? clampText(rawLabel, LIMITS.buildName) : undefined;
+  const snapshot = toSharedBuild(build, store, idx);
   const fresh: PartyMember = {
     ...member,
     ...(label ? { variantLabel: label } : {}),
-    build: toSharedBuild(build, store, idx),
+    build: snapshot,
   };
   if (!label) delete fresh.variantLabel;
 
   const changed =
-    snapshotKey(fresh.build) !== snapshotKey(member.build) ||
+    // No build before means this slot was reserved and has just been filled —
+    // nothing to compare, everything to report.
+    !member.build ||
+    snapshotKey(snapshot) !== snapshotKey(member.build) ||
     fresh.variantLabel !== member.variantLabel;
   return { member: changed ? fresh : member, changed };
 }
@@ -165,7 +169,7 @@ export async function refreshParty(party: Party): Promise<PartySyncResult> {
     // Undefined = the read failed (keep the snapshot). Null = the account has
     // no store at all, which is as gone as a deleted build.
     if (store === undefined) return member;
-    const buildName = member.build.build.name.trim() || "Unnamed build";
+    const buildName = member.build?.build.name.trim() || "Unnamed build";
     const result = resync(member, store ?? EMPTY_STORE);
     if (!result.member) {
       notes[i] = { kind: result.kind, ownerName: member.ownerName, buildName };

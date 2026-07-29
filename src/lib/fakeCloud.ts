@@ -107,7 +107,7 @@ function seeded(): State {
           slotEdits: p.party.slotEdits,
           name: p.party.name,
           blurb: p.party.blurb,
-          roster: p.party.slots.map((s) => (s ? s.build.build.character : null)),
+          roster: p.party.slots.map((s) => (s?.build ? s.build.build.character : null)),
           ownerUid: p.ownerUid,
           updatedAt: p.updatedAt,
         },
@@ -455,7 +455,7 @@ export async function publishParty(party: Party, ownerUid: string): Promise<stri
         slotEdits: party.slotEdits,
         name: party.name.trim(),
         blurb: party.blurb.trim(),
-        roster: party.slots.map((sl) => (sl ? sl.build.build.character : null)),
+        roster: party.slots.map((sl) => (sl?.build ? sl.build.build.character : null)),
         ownerUid,
         updatedAt: Date.now(),
       },
@@ -482,7 +482,7 @@ export async function updateSlot(id: string, index: number, member: PartyMember)
     const slots = [...p.slots];
     slots[index] = JSON.stringify(member);
     const roster = [...p.roster];
-    roster[index] = member.build.build.character;
+    roster[index] = member.build ? member.build.build.character : null;
     return {
       ...s,
       parties: { ...s.parties, [id]: { ...p, slots, roster, updatedAt: Date.now() } },

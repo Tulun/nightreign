@@ -56,8 +56,21 @@ export interface PartyMember {
    * loadout has nothing to disambiguate.
    */
   variantLabel?: string;
-  /** Self-contained snapshot: the build plus the custom relics it uses. */
-  build: SharedBuild;
+  /**
+   * Self-contained snapshot: the build plus the custom relics it uses.
+   *
+   * Absent on a *reserved* slot — the owner has said who's in it without
+   * saying what they're running, leaving that to them. The slot counts as
+   * claimed (it's in slotUids, so its player may write it) but has nothing
+   * to render yet. Every read has to allow for this: a member is who holds
+   * the slot, and the build is what they've picked, which may be nothing.
+   */
+  build?: SharedBuild;
+}
+
+/** A slot with somebody in it but no build chosen yet. */
+export function isReserved(m: PartyMember | null): boolean {
+  return !!m && !m.build;
 }
 
 export type PartySlots = [PartyMember | null, PartyMember | null, PartyMember | null];
@@ -99,17 +112,23 @@ const STORAGE_KEY = "nightreign-party";
 /** Validate one slot's member of unknown provenance; null if unusable. */
 export function normalizeMember(data: unknown): PartyMember | null {
   const m = data as PartyMember | null;
-  if (!m || typeof m !== "object") return null;
+  if (!m || typeof m !== "object" || typeof m.ownerName !== "string") return null;
+  // A reserved slot names its player and stops there. Without a uid there
+  // would be nobody to reserve it for and nothing to render, so that's not a
+  // slot — it's an empty one.
+  const reserved = m.build === undefined || m.build === null;
+  if (reserved && !m.uid) return null;
+
   const b = m.build?.build;
   if (
-    typeof m.ownerName !== "string" ||
-    !b ||
-    typeof b.character !== "string" ||
-    !Array.isArray(b.slots) ||
-    b.slots.length !== 3 ||
-    !Array.isArray(b.deepSlots) ||
-    b.deepSlots.length !== 3 ||
-    !Array.isArray(m.build.relics)
+    !reserved &&
+    (!b ||
+      typeof b.character !== "string" ||
+      !Array.isArray(b.slots) ||
+      b.slots.length !== 3 ||
+      !Array.isArray(b.deepSlots) ||
+      b.deepSlots.length !== 3 ||
+      !Array.isArray(m.build?.relics))
   ) {
     return null;
   }
@@ -125,7 +144,7 @@ export function normalizeMember(data: unknown): PartyMember | null {
     ...(typeof m.variantLabel === "string" && m.variantLabel
       ? { variantLabel: m.variantLabel.slice(0, LIMITS.buildName) }
       : {}),
-    build: clampSharedBuild(m.build),
+    ...(reserved ? {} : { build: clampSharedBuild(m.build as SharedBuild) }),
   };
 }
 
@@ -174,8 +193,12 @@ export function saveParty(party: Party): boolean {
  * [ownerName, uid ("" = none), packed build, variant label, build id] — 0
  * marks an empty slot. The last two were added later, so links minted before
  * them stop at the packed build and decode with those undefined.
+ *
+ * A 0 in the packed-build position is a reserved slot: a player named, no
+ * build chosen. Older readers reject that member and show the slot as open,
+ * which is the right thing to degrade to.
  */
-type PackedMember = 0 | [string, string, PackedBuild, string?, string?];
+type PackedMember = 0 | [string, string, PackedBuild | 0, string?, string?];
 
 interface PartyPayload {
   v: 1;
@@ -196,7 +219,13 @@ export async function encodeParty(party: Party): Promise<string> {
     ...(party.slotEdits ? {} : { e: 0 as const }),
     m: party.slots.map((s): PackedMember =>
       s
-        ? [s.ownerName, s.uid ?? "", packSharedBuild(s.build), s.variantLabel ?? "", s.buildId ?? ""]
+        ? [
+            s.ownerName,
+            s.uid ?? "",
+            s.build ? packSharedBuild(s.build) : 0,
+            s.variantLabel ?? "",
+            s.buildId ?? "",
+          ]
         : 0,
     ),
   };
@@ -232,8 +261,13 @@ const slotField = (i: number) => `slot${i}`;
 /** One slot's snapshot as stored: JSON, or "" for an open slot. */
 const memberJson = (m: PartyMember | null) => (m ? JSON.stringify(m) : "");
 
-/** Characters per slot, for browse cards that don't parse the snapshots. */
-const rosterOf = (slots: PartySlots) => slots.map((s) => (s ? s.build.build.character : null));
+/**
+ * Characters per slot, for browse cards that don't parse the snapshots. A
+ * reserved slot has no character to name yet, so it reads as open — the card
+ * shows a gap either way.
+ */
+const rosterOf = (slots: PartySlots) =>
+  slots.map((s) => (s?.build ? s.build.build.character : null));
 
 /** Who may edit each slot: the account whose build fills it ("" = nobody). */
 const slotUidsOf = (slots: PartySlots) => slots.map((s) => s?.uid ?? "");
@@ -331,7 +365,7 @@ export async function updateSlot(id: string, index: number, member: PartyMember)
     const roster = Array.from({ length: SLOT_COUNT }, (_, i) =>
       Array.isArray(current) && typeof current[i] === "string" ? (current[i] as string) : null,
     );
-    roster[index] = member.build.build.character;
+    roster[index] = member.build ? member.build.build.character : null;
     tx.update(ref, {
       [slotField(index)]: memberJson(member),
       roster,
@@ -428,14 +462,19 @@ export async function decodeParty(encoded: string): Promise<Party | null> {
     if (!Array.isArray(m)) return null;
     const [ownerName, uid, packed, variantLabel, buildId] = m;
     if (typeof ownerName !== "string") return null;
-    const build = unpackSharedBuild(packed as PackedBuild);
-    if (!build) return null;
+    const holder = typeof uid === "string" && uid ? uid : null;
+    // 0 in the build's place = reserved for that player. Meaningless without
+    // a uid to reserve it for.
+    const reserved = packed === 0;
+    if (reserved && !holder) return null;
+    const build = reserved ? undefined : unpackSharedBuild(packed as PackedBuild);
+    if (!reserved && !build) return null;
     return {
-      uid: typeof uid === "string" && uid ? uid : null,
+      uid: holder,
       ownerName,
       ...(typeof buildId === "string" && buildId ? { buildId } : {}),
       ...(typeof variantLabel === "string" && variantLabel ? { variantLabel } : {}),
-      build,
+      ...(build ? { build } : {}),
     };
   }) as PartySlots;
   return {

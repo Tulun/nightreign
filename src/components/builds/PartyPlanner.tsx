@@ -41,6 +41,7 @@ import {
   EMPTY_PARTY,
   MAX_BLURB,
   encodeParty,
+  isReserved,
   loadParty,
   saveParty,
   type Party,
@@ -145,9 +146,12 @@ function SlotSection({
   const search = useSearchParams().toString();
   const returnTo = `${pathname}${search ? `?${search}` : ""}`;
   // The snapshot carries its own relics; BuildCard resolves against those.
-  const build: Build | null = member
+  // A reserved slot has a member but no snapshot — somebody's in it, they
+  // just haven't said what they're running.
+  const build: Build | null = member?.build
     ? { ...member.build.build, id: `party-${index}`, updatedAt: 0, relics: member.build.relics }
     : null;
+  const reserved = isReserved(member);
   return (
     <section className="frame flex flex-col rounded-md bg-night-850 p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -198,7 +202,7 @@ function SlotSection({
               }
               className="rounded border border-night-600 px-2 py-0.5 font-body text-xs text-parchment-muted hover:text-gold-bright"
             >
-              Swap…
+              {reserved ? "Change…" : "Swap…"}
             </button>
             {access === "full" && (
               <button
@@ -241,10 +245,22 @@ function SlotSection({
         <button
           type="button"
           onClick={onChoose}
-          disabled={readOnly}
-          className="w-full flex-1 rounded-md border-2 border-dashed border-night-600 px-4 py-8 font-body text-sm text-parchment-muted transition-colors hover:border-gold-dim hover:text-gold-bright disabled:cursor-default disabled:hover:border-night-600 disabled:hover:text-parchment-muted"
+          // A reserved slot is only the holder's to fill. The owner can still
+          // reassign it — that's the Change… button above, not this panel.
+          disabled={readOnly || (reserved && access !== "mine")}
+          className={`w-full flex-1 rounded-md border-2 border-dashed px-4 py-8 font-body text-sm transition-colors disabled:cursor-default ${
+            reserved
+              ? "border-gold-faint text-parchment-muted disabled:hover:border-gold-faint"
+              : "border-night-600 text-parchment-muted hover:border-gold-dim hover:text-gold-bright disabled:hover:border-night-600 disabled:hover:text-parchment-muted"
+          }`}
         >
-          {readOnly ? "Empty slot" : "+ Choose a build for this slot"}
+          {reserved
+            ? access === "mine"
+              ? "+ Choose your build for this slot"
+              : `Saved for ${member?.ownerName} — waiting on their build`
+            : readOnly
+              ? "Empty slot"
+              : "+ Choose a build for this slot"}
         </button>
       )}
     </section>
@@ -489,7 +505,7 @@ export function PartyPlanner() {
 
   const copy = async (url: string, kind: "cloud" | "hash") => {
     const roster = party.slots
-      .map((s) => (s ? s.build.build.character : "open slot"))
+      .map((s) => (s?.build ? s.build.build.character : s ? `${s.ownerName} (TBD)` : "open slot"))
       .join(" / ");
     const text = `${party.name.trim() || "Nightreign party"} — ${roster}\n\n${url}`;
     try {
@@ -585,8 +601,10 @@ export function PartyPlanner() {
           )}
           <p className="mt-2 max-w-prose font-body text-base text-parchment-muted">
             {lockedOut
-              ? "This party isn't yours, and no slot in it is either — nothing here can be edited. Its owner can hand you a slot by putting one of your builds in it."
-              : `This party belongs to someone else. ${slotList(mySlots)} is yours: swap in a different build or loadout of your own, and saving writes just that slot. Everything else is the owner's.`}
+              ? "This party isn't yours, and no slot in it is either — nothing here can be edited. Its owner can hand you a slot by saving one for you, or by putting one of your builds in it."
+              : mySlots.every((i) => isReserved(party.slots[i]))
+                ? `${slotList(mySlots)} has been saved for you — pick one of your builds for it. Saving writes just that slot; the party, and everything else in it, is the owner's.`
+                : `This party belongs to someone else. ${slotList(mySlots)} is yours: swap in a different build or loadout of your own, and saving writes just that slot. Everything else is the owner's.`}
           </p>
           {!lockedOut && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -701,6 +719,15 @@ export function PartyPlanner() {
             yours.
           </span>
         </label>
+        {/* A slot saved for someone is inert while this is off — they'd open
+            the party and find nothing they can do. Worth saying plainly
+            rather than letting them discover it. */}
+        {!party.slotEdits && party.slots.some(isReserved) && (
+          <p className="basis-full font-body text-sm text-red-200">
+            {slotList(party.slots.flatMap((s, i) => (isReserved(s) ? [i] : [])))} is saved for a
+            player, but slot edits are off — turn them on or they can&rsquo;t fill it.
+          </p>
+        )}
         <span className="basis-full font-body text-xs text-parchment-faint">
           {syncing
             ? "Checking each slot against its build… "
@@ -729,6 +756,16 @@ export function PartyPlanner() {
           // Editing your own slot of someone else's party fills it from your
           // builds only — the picker's player step would be a dead end.
           onlyUid={owns ? undefined : (user?.uid ?? undefined)}
+          // Handing a slot out is the owner's to do. Filling your own slot
+          // means picking a build, not reserving it from yourself.
+          onReserve={
+            owns
+              ? (member) => {
+                  setSlot(pickerSlot, member);
+                  setPickerSlot(null);
+                }
+              : undefined
+          }
           onPick={(member) => {
             setSlot(pickerSlot, member);
             setPickerSlot(null);

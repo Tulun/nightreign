@@ -102,6 +102,7 @@ export function PartyBuildPicker({
   current,
   onlyUid,
   onPick,
+  onReserve,
   onClose,
 }: {
   slotIndex: number;
@@ -115,6 +116,13 @@ export function PartyBuildPicker({
    */
   onlyUid?: string;
   onPick: (member: PartyMember) => void;
+  /**
+   * Put a player in the slot without a build, leaving that to them. Offered
+   * to whoever can hand a slot out (the party's owner); absent when the
+   * picker is being used to fill your own slot, where reserving it from
+   * yourself would mean nothing.
+   */
+  onReserve?: (member: PartyMember) => void;
   onClose: () => void;
 }) {
   const user = useAuth();
@@ -192,6 +200,12 @@ export function PartyBuildPicker({
   const chooseBuild = (b: Build) => {
     if (variantCount(b) > 1) setPending(b);
     else pick(b, 0);
+  };
+
+  /** Hand the slot to this player with nothing in it yet. */
+  const reserve = () => {
+    if (!owner || !onReserve) return;
+    onReserve({ uid: owner.uid, ownerName: ownerName || "Player" });
   };
 
   const filteredProfiles = (profiles ?? []).filter(
@@ -401,6 +415,26 @@ export function PartyBuildPicker({
                   />
                 )}
               </div>
+              {/* Save the slot for them and let them bring the build. The
+                  point of the whole thing when they haven't decided yet — or
+                  haven't synced a build at all. */}
+              {onReserve && (
+                <button
+                  type="button"
+                  onClick={reserve}
+                  className="frame mb-3 flex w-full items-center gap-3 rounded-md border border-dashed border-gold-faint bg-night-800 p-3 text-left transition-colors hover:bg-night-700"
+                >
+                  <Avatar name={ownerName || "?"} size={36} />
+                  <span className="min-w-0">
+                    <span className="block truncate font-display font-semibold text-gold-bright">
+                      Save this slot for {ownerName || "them"}
+                    </span>
+                    <span className="block font-body text-xs text-parchment-faint">
+                      They pick their own build — you don&rsquo;t have to choose one for them.
+                    </span>
+                  </span>
+                </button>
+              )}
               {visibleBuilds.length === 0 ? (
                 <p className="font-body text-sm text-parchment-faint">
                   {character ? "No builds for this Nightfarer." : "No builds to pick from yet."}
