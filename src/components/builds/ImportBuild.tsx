@@ -34,10 +34,12 @@ import type { Chalice, SlotColor } from "@/lib/chalices";
 import {
   RELIC_COLORS,
   CharacterImg,
+  CharacterTile,
   EffectLines,
   IconButton,
   ReviewLineInputs,
   SlotIconImg,
+  StepTrail,
   XIcon,
   chalicesFor,
   colorFromRelicName,
@@ -623,7 +625,7 @@ export function ImportBuild({
           ← Back to {STEP_LABELS[backTo]}
         </button>
       )}
-      <Steps step={step} />
+      <StepTrail steps={STEPS.map((k) => STEP_LABELS[k])} at={STEPS.indexOf(step)} />
 
       {step === "character" && (
         <section>
@@ -633,28 +635,16 @@ export function ImportBuild({
             screenshots fill in after it is checked against this character&rsquo;s vessels.
           </p>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-            {characterChalices.map((c) => {
-              // Highlighted when you come back through "change" — the one the
-              // flow is already on, rather than a selection you have to make.
-              const active = character === c.name && filled > 0;
-              return (
-                <button
-                  key={c.name}
-                  type="button"
-                  onClick={() => pickCharacter(c.name)}
-                  aria-pressed={active}
-                  className={`frame flex items-center gap-2.5 rounded-md px-3 py-3 text-left font-body text-base transition-colors ${
-                    active
-                      ? "bg-night-700 text-gold-bright"
-                      : "bg-night-900 text-parchment hover:bg-night-800 hover:text-gold-bright"
-                  }`}
-                  style={active ? { borderColor: "#c9a227" } : undefined}
-                >
-                  <CharacterImg name={c.name} size={34} />
-                  <span className="min-w-0 truncate">{c.name}</span>
-                </button>
-              );
-            })}
+            {characterChalices.map((c) => (
+              <CharacterTile
+                key={c.name}
+                name={c.name}
+                // Highlighted when you come back through "change" — the one the
+                // flow is already on, rather than a selection you have to make.
+                active={character === c.name && filled > 0}
+                onPick={() => pickCharacter(c.name)}
+              />
+            ))}
           </div>
           {filled > 0 && (
             <p className="mt-3 max-w-prose font-body text-base text-gold-dim">
@@ -1120,23 +1110,6 @@ function FillSummary({
         </>
       )}
     </section>
-  );
-}
-
-/** Where you are in the flow — named steps, not a progress bar. */
-function Steps({ step }: { step: Step }) {
-  const at = STEPS.indexOf(step);
-  return (
-    <ol className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-base">
-      {STEPS.map((k, i) => (
-        <li key={k} className="flex items-center gap-2">
-          {i > 0 && <span className="text-parchment-faint">›</span>}
-          <span className={i === at ? "text-gold-bright" : i < at ? "text-parchment-muted" : "text-parchment-faint"}>
-            {i + 1}. {STEP_LABELS[k]}
-          </span>
-        </li>
-      ))}
-    </ol>
   );
 }
 

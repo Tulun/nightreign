@@ -570,6 +570,58 @@ export function CharacterImg({ name, size = 28 }: { name: string; size?: number 
   );
 }
 
+/**
+ * Where you are in a flow — named steps, not a progress bar. Shared by the
+ * screenshot importer and the new-build editor so the two read as the same
+ * kind of thing, since both end with a build saved.
+ */
+export function StepTrail({ steps, at }: { steps: readonly string[]; at: number }) {
+  return (
+    <ol className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 font-body text-base">
+      {steps.map((label, i) => (
+        <li key={label} className="flex items-center gap-2">
+          {i > 0 && <span className="text-parchment-faint">›</span>}
+          <span
+            className={
+              i === at ? "text-gold-bright" : i < at ? "text-parchment-muted" : "text-parchment-faint"
+            }
+          >
+            {i + 1}. {label}
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** A Nightfarer to pick from, as a tile. */
+export function CharacterTile({
+  name,
+  active,
+  onPick,
+}: {
+  name: string;
+  active: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      aria-pressed={active}
+      className={`frame flex items-center gap-2.5 rounded-md px-3 py-3 text-left font-body text-base transition-colors ${
+        active
+          ? "bg-night-700 text-gold-bright"
+          : "bg-night-900 text-parchment hover:bg-night-800 hover:text-gold-bright"
+      }`}
+      style={active ? { borderColor: "#c9a227" } : undefined}
+    >
+      <CharacterImg name={name} size={34} />
+      <span className="min-w-0 truncate">{name}</span>
+    </button>
+  );
+}
+
 /** Characters typed before an effect input starts suggesting. */
 const SUGGEST_AFTER = 2;
 /** Suggestions offered at once — a long list is a wall, not a shortlist. */

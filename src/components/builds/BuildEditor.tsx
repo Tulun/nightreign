@@ -38,14 +38,25 @@ import {
   chalicesFor,
   resolveSlot,
   CharacterImg,
+  CharacterTile,
   EffectLines,
   RelicLineInputs,
   SlotIconImg,
+  StepTrail,
   type SlotRef,
 } from "./shared";
 
 /** Stable empty set for slots that can't hold a fixed relic in the first place. */
 const NO_FIXED: Set<string> = new Set();
+
+/**
+ * A new build's flow, in order. The Nightfarer decides which vessels exist and
+ * what colors their sockets are, so everything on the second step is read
+ * against it — asking for it first is one tap, where a picker sitting above
+ * six sockets is a decision you can miss until the relics are already wrong.
+ * A saved build skips the flow: its Nightfarer is settled (see lockCharacter).
+ */
+const STEP_LABELS = ["Nightfarer", "Build"] as const;
 
 export function BuildEditor({
   initial,
@@ -72,6 +83,13 @@ export function BuildEditor({
 }) {
   const [build, setBuild] = useState<Build>(initial);
   const patchBuild = (fn: (b: Build) => Build) => setBuild(fn);
+  // A new build asks for its Nightfarer on a step of its own; a saved build
+  // keeps the one it has, so it opens straight into the slots.
+  const [step, setStep] = useState<"character" | "build">(lockCharacter ? "build" : "character");
+  // Whether the Nightfarer on the draft was chosen here. A new build arrives
+  // seeded with one so the slots have sockets to draw — that seed isn't an
+  // answer to step 1, and shouldn't read as one.
+  const [pickedCharacter, setPickedCharacter] = useState(false);
   // Which loadout variant the editor is working on (0 = the build's own).
   const [variant, setVariant] = useState(0);
   const [newRelicAt, setNewRelicAt] = useState<SlotRef | null>(null);
@@ -105,6 +123,32 @@ export function BuildEditor({
   /** This loadout's slots re-checked against a chalice's socket colors. */
   const refit = (slots: SlotTriple, colors: readonly SlotColor[]) =>
     slotsForColors(slots, colors, store);
+
+  // Step 1's answer. Every loadout lands on the new Nightfarer's first vessel
+  // — vessels belong to a character, so the old pick can't carry across — and
+  // so every loadout gets refitted to that vessel's sockets. Coming back to
+  // change it after some slots are filled keeps whatever the new sockets still
+  // accept, the same as swapping vessels does.
+  const pickCharacter = (name: string) => {
+    patchBuild((b) => {
+      if (b.character === name) return b;
+      const first = chalicesFor(name)[0];
+      const onto = (v: VariantView) => ({
+        chalice: first.name,
+        slots: refit(v.slots, first.slots).slots,
+        deepSlots: refit(v.deepSlots, first.deep).slots,
+      });
+      return {
+        ...b,
+        character: name,
+        ...onto(b),
+        variants: b.variants?.map((v) => ({ ...v, ...onto(v) })),
+      };
+    });
+    setPickedCharacter(true);
+    setCleared(null);
+    setStep("build");
+  };
 
   // Swapping chalices keeps every relic the new sockets still accept and
   // empties the ones they don't — the game won't equip a Red relic in a Blue
@@ -286,15 +330,71 @@ export function BuildEditor({
     });
   };
 
+  const filledSlots = [...loadout.slots, ...loadout.deepSlots].filter(Boolean).length;
+
+  // ── Step 1: who the build is for ───────────────────────────────────────
+  if (step === "character") {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="frame mb-4 rounded-md bg-night-800 px-4 py-2.5 font-body text-base text-parchment-muted hover:bg-night-700 hover:text-parchment"
+        >
+          {backLabel}
+        </button>
+        <StepTrail steps={STEP_LABELS} at={0} />
+
+        <section>
+          <h4 className="font-display text-lg text-parchment">Who are you building for?</h4>
+          <p className="mt-1 max-w-prose font-body text-base text-parchment-muted">
+            Vessels and their sockets are per-Nightfarer, so this comes first — the relics you can
+            slot next are the ones this character&rsquo;s vessel has room for.
+          </p>
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {characterChalices.map((c) => (
+              <CharacterTile
+                key={c.name}
+                name={c.name}
+                // Highlighted only once it's an answer — coming back through
+                // "Change", rather than the Nightfarer the draft was seeded
+                // with before anyone chose anything.
+                active={pickedCharacter && c.name === build.character}
+                onPick={() => pickCharacter(c.name)}
+              />
+            ))}
+          </div>
+          {filledSlots > 0 && (
+            <p className="mt-3 max-w-prose font-body text-base text-gold-dim">
+              Changing the Nightfarer moves the build to that character&rsquo;s first vessel — relics
+              its sockets don&rsquo;t take are cleared, the same as swapping vessels.
+            </p>
+          )}
+        </section>
+      </div>
+    );
+  }
+
+  // ── Step 2: the build itself ───────────────────────────────────────────
   return (
     <div>
-      <button type="button" onClick={onCancel} className="mb-4 font-body text-sm text-parchment-muted hover:text-gold-bright">
-        {backLabel}
-      </button>
+      {lockCharacter ? (
+        <button type="button" onClick={onCancel} className="mb-4 font-body text-sm text-parchment-muted hover:text-gold-bright">
+          {backLabel}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setStep("character")}
+          className="frame mb-4 rounded-md bg-night-800 px-4 py-2.5 font-body text-base text-parchment-muted hover:bg-night-700 hover:text-parchment"
+        >
+          ← Back to Nightfarer
+        </button>
+      )}
+      {!lockCharacter && <StepTrail steps={STEP_LABELS} at={1} />}
 
-      {/* Character first, then chalice and slots follow from it. A saved
-          build stays with its Nightfarer — the picker only shows for a new
-          one, and switching resets every loadout's chalice to match. */}
+      {/* Who it's for. A saved build stays with its Nightfarer; a new one
+          shows what step 1 answered, changeable by going back to it. */}
       {lockCharacter ? (
         <div className="mb-4 flex flex-wrap items-center gap-2.5">
           <span
@@ -308,45 +408,16 @@ export function BuildEditor({
           </span>
         </div>
       ) : (
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-          {characterChalices.map((c) => {
-            const active = c.name === build.character;
-            return (
-              <button
-                key={c.name}
-                type="button"
-                onClick={() =>
-                  patchBuild((b) => {
-                    if (b.character === c.name) return b;
-                    // Every loadout lands on the new Nightfarer's first
-                    // vessel, so every loadout gets refitted to its sockets.
-                    const first = chalicesFor(c.name)[0];
-                    const onto = (v: VariantView) => ({
-                      chalice: first.name,
-                      slots: refit(v.slots, first.slots).slots,
-                      deepSlots: refit(v.deepSlots, first.deep).slots,
-                    });
-                    return {
-                      ...b,
-                      character: c.name,
-                      ...onto(b),
-                      variants: b.variants?.map((v) => ({ ...v, ...onto(v) })),
-                    };
-                  })
-                }
-                aria-pressed={active}
-                className={`frame flex items-center gap-2.5 rounded-md px-3 py-3 text-left font-body text-base transition-colors ${
-                  active
-                    ? "bg-night-700 text-gold-bright"
-                    : "bg-night-900 text-parchment hover:bg-night-800 hover:text-gold-bright"
-                }`}
-                style={active ? { borderColor: "#c9a227" } : undefined}
-              >
-                <CharacterImg name={c.name} size={34} />
-                <span className="min-w-0 truncate">{c.name}</span>
-              </button>
-            );
-          })}
+        <div className="mb-4 flex flex-wrap items-center gap-2.5">
+          <CharacterImg name={build.character} size={28} />
+          <span className="font-display text-lg text-parchment">{build.character}</span>
+          <button
+            type="button"
+            onClick={() => setStep("character")}
+            className="rounded border border-night-600 px-2 py-0.5 font-body text-sm text-parchment-muted hover:border-gold-faint hover:text-gold-bright"
+          >
+            Change
+          </button>
         </div>
       )}
 
