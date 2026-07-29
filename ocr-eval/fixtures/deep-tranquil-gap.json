@@ -1,0 +1,20 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": "Deep Grand Tranquil Scene",
+      "color": "Green",
+      "effects": [
+        "Attack power up when facing poison-afflicted enemy +2",
+        "Crimsonspill Crystal Tear in possession at start of expedition",
+        "Physical Attack Up +4"
+      ],
+      "demerits": [
+        "Ultimate Art Charging Impaired",
+        null,
+        "Near Death Reduces Max HP"
+      ],
+      "notes": "Relic-select screen: detail pane under the icon grid. The second effect has no curse, so a blank row sits between it and the third effect."
+    }
+  ]
+}
