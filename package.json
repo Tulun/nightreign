@@ -11,6 +11,8 @@
     "preview:pages": "npx --yes serve out",
     "start": "next start",
     "lint": "next lint",
+    "rules": "npx --yes firebase-tools deploy --only firestore:rules",
+    "rules:check": "npx --yes firebase-tools deploy --only firestore:rules --dry-run",
     "ocr:eval": "tsx scripts/ocr-eval.ts",
     "icons:effects": "tsx scripts/effect-icons.ts"
   },

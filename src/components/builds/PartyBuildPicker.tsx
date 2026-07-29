@@ -20,6 +20,7 @@ import { characterChalices } from "@/data/chalices";
 import { listProfiles, pullCloudStore, useAuth, type UserProfile } from "@/lib/cloud";
 import {
   EMPTY_STORE,
+  clampStore,
   toSharedBuild,
   variantAt,
   variantCount,
@@ -99,12 +100,20 @@ function IconStrip({
 export function PartyBuildPicker({
   slotIndex,
   current,
+  onlyUid,
   onPick,
   onClose,
 }: {
   slotIndex: number;
   /** What the slot holds now (swap), or null when filling an empty slot. */
   current?: PartyMember | null;
+  /**
+   * Pin the picker to one player, skipping the player step: someone editing
+   * their own slot of another's party fills it from their builds or not at
+   * all. (The rules can't enforce that — a slot's contents are opaque JSON to
+   * them — so this is the UI keeping the promise the mode makes.)
+   */
+  onlyUid?: string;
   onPick: (member: PartyMember) => void;
   onClose: () => void;
 }) {
@@ -114,7 +123,11 @@ export function PartyBuildPicker({
   // Step 1 result — null while still on the player list. A swap starts on
   // the member's own player, so the common case is one click, not three.
   const [owner, setOwner] = useState<{ uid: string; name: string } | null>(
-    current?.uid ? { uid: current.uid, name: current.ownerName } : null,
+    current?.uid
+      ? { uid: current.uid, name: current.ownerName }
+      : onlyUid
+        ? { uid: onlyUid, name: "" }
+        : null,
   );
   const [ownerStore, setOwnerStore] = useState<BuildStore | null>(null);
   // Step 2 result — the build whose loadouts step 3 is choosing between.
@@ -142,7 +155,10 @@ export function PartyBuildPicker({
     let cancelled = false;
     setOwnerStore(null);
     pullCloudStore(owner.uid)
-      .then((s) => !cancelled && setOwnerStore(s ?? EMPTY_STORE))
+      // Someone else's builds, about to be listed here — clamped for display
+      // only. Nothing writes this copy back, so trimming it costs them
+      // nothing; toSharedBuild clamps again for whatever lands in the slot.
+      .then((s) => !cancelled && setOwnerStore(s ? clampStore(s) : EMPTY_STORE))
       .catch((err) => {
         console.error("Loading user's builds failed:", err);
         if (!cancelled) setError("Couldn't load this user's builds — try again in a moment.");
@@ -164,7 +180,7 @@ export function PartyBuildPicker({
     if (!owner || !ownerStore) return;
     onPick({
       uid: owner.uid,
-      ownerName: owner.name,
+      ownerName: ownerName || "Player",
       buildId: b.id,
       // Only a build with variants has a loadout worth naming.
       ...(variantCount(b) > 1 ? { variantLabel: variantLabel(b, variantIdx) } : {}),
@@ -204,10 +220,18 @@ export function PartyBuildPicker({
   const isCurrentVariant = (b: Build, i: number) =>
     isCurrentBuild(b) && (current?.variantLabel ?? variantLabel(b, 0)) === variantLabel(b, i);
 
+  // A pinned player is seeded from a uid alone, so their name comes from the
+  // directory once it lands.
+  const ownerName = owner
+    ? owner.name || profiles?.find((p) => p.uid === owner.uid)?.displayName || ""
+    : "";
+
   const title = pending
     ? `${pending.name || "Unnamed build"} — choose a loadout`
     : owner
-      ? `${owner.name}’s builds`
+      ? ownerName
+        ? `${ownerName}’s builds`
+        : "Your builds"
       : `Slot ${slotIndex + 1} — choose a player`;
 
   return (
@@ -225,7 +249,7 @@ export function PartyBuildPicker({
         className="relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-md border border-night-500 bg-night-850 shadow-lift"
       >
         <div className="flex items-center gap-2 border-b border-night-600 px-4 py-3">
-          {(owner || pending) && (
+          {(pending || (owner && !onlyUid)) && (
             <button
               type="button"
               onClick={() => {

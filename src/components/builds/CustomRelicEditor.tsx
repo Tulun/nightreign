@@ -3,7 +3,7 @@
 // ── Custom relic editor (modal, with searchable effects + screenshot parse) ──
 
 import { useEffect, useRef, useState } from "react";
-import { newId, type CustomRelic } from "@/lib/builds";
+import { LIMITS, newId, type CustomRelic } from "@/lib/builds";
 import type { SlotColor } from "@/lib/chalices";
 import {
   NORMAL_EFFECT_VOCABULARY,
@@ -142,6 +142,7 @@ export function CustomRelicEditor({
               value={draft.name}
               onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
               placeholder="Relic name (optional)"
+              maxLength={LIMITS.relicName}
               className="frame w-64 rounded bg-night-900 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
             />
             {askColor && (

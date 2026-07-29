@@ -27,6 +27,8 @@ export {
   off as listParties,
   off as fetchParty,
   off as publishParty,
+  off as updateSlot,
+  off as watchParty,
   off as deleteParty,
   off as signedInUid,
   off as resetFakeCloud,

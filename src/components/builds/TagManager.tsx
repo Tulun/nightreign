@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LIMITS } from "@/lib/builds";
 
 /**
  * Tag registry editor: create, rename (type in place, Enter/blur commits),
@@ -51,6 +52,7 @@ export function TagManager({
             }
           }}
           placeholder="New tag"
+          maxLength={LIMITS.tag}
           className="frame w-40 rounded bg-night-900 px-2 py-1.5 font-body text-sm text-parchment placeholder:text-parchment-faint"
         />
         <button

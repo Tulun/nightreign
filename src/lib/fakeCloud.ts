@@ -28,7 +28,14 @@ import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { CloudReadError, type CloudErrorKind } from "@/lib/cloudRead";
 import { clearCachedStore, normalizeStore, type BuildStore } from "@/lib/builds";
-import { normalizeParty, type Party, type PartySummary, type CloudParty } from "@/lib/party";
+import {
+  normalizeMember,
+  type CloudParty,
+  type Party,
+  type PartyMember,
+  type PartySlots,
+  type PartySummary,
+} from "@/lib/party";
 import type { UserProfile } from "@/lib/cloudSync";
 import { BROKEN_UID, SELF_UID, fakeFixtures } from "@/data/devUsers";
 
@@ -53,7 +60,10 @@ interface StoredProfile {
 }
 
 interface StoredParty {
-  party: string;
+  /** One entry per slot: the member as JSON, or "" for an open slot. */
+  slots: string[];
+  slotUids: string[];
+  slotEdits: boolean;
   name: string;
   blurb: string;
   roster: (string | null)[];
@@ -92,7 +102,9 @@ function seeded(): State {
       parties.map((p) => [
         p.id,
         {
-          party: JSON.stringify(p.party),
+          slots: p.party.slots.map((s) => (s ? JSON.stringify(s) : "")),
+          slotUids: p.party.slots.map((s) => s?.uid ?? ""),
+          slotEdits: p.party.slotEdits,
           name: p.party.name,
           blurb: p.party.blurb,
           roster: p.party.slots.map((s) => (s ? s.build.build.character : null)),
@@ -398,22 +410,35 @@ export async function listParties(): Promise<PartySummary[]> {
       blurb: p.blurb,
       roster: p.roster,
       ownerUid: p.ownerUid,
+      slotUids: p.slotUids,
+      slotEdits: p.slotEdits,
       updatedAt: p.updatedAt,
     }))
     .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 }
 
+/** Assemble a stored party the way partyFromDoc does for the real one. */
+function toCloudParty(id: string, row: StoredParty): CloudParty | null {
+  const slots = Array.from({ length: 3 }, (_, i) => {
+    const raw = row.slots[i];
+    if (!raw) return null;
+    try {
+      return normalizeMember(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }) as PartySlots;
+  return {
+    party: { id, name: row.name, blurb: row.blurb, slotEdits: row.slotEdits, slots },
+    ownerUid: row.ownerUid,
+    slotUids: Array.from({ length: 3 }, (_, i) => row.slotUids[i] ?? ""),
+  };
+}
+
 export async function fetchParty(id: string): Promise<CloudParty | null> {
   const s = await gate();
   const row = s.parties[id];
-  if (!row) return null;
-  try {
-    const party = normalizeParty(JSON.parse(row.party));
-    if (!party) return null;
-    return { party: { ...party, id }, ownerUid: row.ownerUid };
-  } catch {
-    return null;
-  }
+  return row ? toCloudParty(id, row) : null;
 }
 
 export async function publishParty(party: Party, ownerUid: string): Promise<string> {
@@ -425,7 +450,9 @@ export async function publishParty(party: Party, ownerUid: string): Promise<stri
     parties: {
       ...s.parties,
       [id]: {
-        party: JSON.stringify({ ...party, id }),
+        slots: party.slots.map((sl) => (sl ? JSON.stringify(sl) : "")),
+        slotUids: party.slots.map((sl) => sl?.uid ?? ""),
+        slotEdits: party.slotEdits,
         name: party.name.trim(),
         blurb: party.blurb.trim(),
         roster: party.slots.map((sl) => (sl ? sl.build.build.character : null)),
@@ -434,7 +461,34 @@ export async function publishParty(party: Party, ownerUid: string): Promise<stri
       },
     },
   }));
+  notifyParty(id);
   return id;
+}
+
+/**
+ * The stub's stand-in for the rules that gate the real thing: a slot write
+ * that isn't the owner's is only allowed on a claimed slot, with the setting
+ * on. Getting it wrong here should fail the same way it fails in production.
+ */
+export async function updateSlot(id: string, index: number, member: PartyMember): Promise<void> {
+  const uid = read().signedInUid;
+  const row = read().parties[id];
+  if (!row) throw new Error("that party no longer exists");
+  if (row.ownerUid !== uid && !(row.slotEdits && row.slotUids[index] === uid)) {
+    throw new Error("permission denied: that slot isn't yours to edit");
+  }
+  update((s) => {
+    const p = s.parties[id];
+    const slots = [...p.slots];
+    slots[index] = JSON.stringify(member);
+    const roster = [...p.roster];
+    roster[index] = member.build.build.character;
+    return {
+      ...s,
+      parties: { ...s.parties, [id]: { ...p, slots, roster, updatedAt: Date.now() } },
+    };
+  });
+  notifyParty(id);
 }
 
 export async function deleteParty(id: string): Promise<void> {
@@ -443,6 +497,25 @@ export async function deleteParty(id: string): Promise<void> {
     delete parties[id];
     return { ...s, parties };
   });
+}
+
+// ── Live party watch ─────────────────────────────────────────────────────
+
+type PartyListener = (cp: CloudParty) => void;
+const partyListeners = new Map<string, Set<PartyListener>>();
+
+function notifyParty(id: string): void {
+  const row = read().parties[id];
+  if (!row) return;
+  const cp = toCloudParty(id, row);
+  if (cp) partyListeners.get(id)?.forEach((l) => l(cp));
+}
+
+export function watchParty(id: string, onChange: PartyListener): () => void {
+  const set = partyListeners.get(id) ?? new Set<PartyListener>();
+  set.add(onChange);
+  partyListeners.set(id, set);
+  return () => set.delete(onChange);
 }
 
 // ── Console handle ───────────────────────────────────────────────────────

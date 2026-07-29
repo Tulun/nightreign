@@ -233,11 +233,15 @@ export function fakeFixtures(now: number): FakeFixtures {
         party: {
           id: "fake-party-1",
           name: "Tricephalos Farm",
-          blurb: "Two-tank opener, third slot open for whoever shows up.",
+          blurb: "Two-tank opener; slot 3 is the fake sign-in's to edit.",
+          // Somebody else's party with the signed-in account fielded in it,
+          // which is the whole case slot edits exist for: Vanguard owns this,
+          // and slot 3 is editable by fake-you and nobody else.
+          slotEdits: true,
           slots: [
             member("fake-vanguard", "Vanguard", vanguard, "van-build-guardian"),
             member("fake-solo", "SoloRunner", solo, "solo-build-wylder"),
-            null,
+            member(SELF_UID, "Nightfarer-fake", you, "seed-build-duchess"),
           ],
         },
       },
@@ -249,6 +253,7 @@ export function fakeFixtures(now: number): FakeFixtures {
           id: "fake-party-2",
           name: "My Published Party",
           blurb: "Owned by the fake sign-in, so Delete and re-publish are live.",
+          slotEdits: true,
           slots: [member(SELF_UID, "Nightfarer-fake", you, "cloud-build-ironeye"), null, null],
         },
       },

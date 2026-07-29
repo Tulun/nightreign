@@ -12,6 +12,7 @@ import { characterChalices } from "@/data/chalices";
 import { MultiSelect } from "@/components/MultiSelect";
 import {
   EMPTY_SLOTS,
+  LIMITS,
   MAX_VARIANTS,
   newId,
   sameCustomRelic,
@@ -460,6 +461,7 @@ export function BuildEditor({
               value={variant === 0 ? build.variantName ?? "" : build.variants?.[variant - 1]?.name ?? ""}
               onChange={(e) => patchBuild((b) => withVariantLabel(b, variant, e.target.value))}
               placeholder={variantLabel(build, variant)}
+              maxLength={LIMITS.buildName}
               aria-label="Variant name"
               className="frame w-32 rounded bg-night-900 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint"
             />
@@ -482,6 +484,7 @@ export function BuildEditor({
           value={build.name}
           onChange={(e) => patchBuild((b) => ({ ...b, name: e.target.value }))}
           placeholder="Build name"
+          maxLength={LIMITS.buildName}
           className="frame w-64 rounded bg-night-900 px-3 py-2 font-display text-lg text-parchment placeholder:text-parchment-faint"
         />
         {/* Swapping chalices keeps every relic the new sockets accept. */}
@@ -516,6 +519,7 @@ export function BuildEditor({
             }
           }}
           placeholder="New tag"
+          maxLength={LIMITS.tag}
           className="frame w-36 rounded bg-night-900 px-2 py-2 font-body text-sm text-parchment placeholder:text-parchment-faint"
         />
         <button

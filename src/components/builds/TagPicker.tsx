@@ -8,6 +8,7 @@
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState } from "react";
+import { LIMITS } from "@/lib/builds";
 
 /**
  * Editable tag chips. `registry` is the tag list to pick from and `onCreate`
@@ -131,6 +132,7 @@ export function TagPicker({
                 }
               }}
               placeholder="New tag"
+              maxLength={LIMITS.tag}
               aria-label="New tag"
               className="frame min-w-0 flex-1 rounded bg-night-900 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint"
             />

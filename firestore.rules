@@ -1,0 +1,132 @@
+rules_version = '2';
+
+// ───────────────────────────────────────────────────────────────────────────
+//  Nightreign — Firestore security rules
+//
+//  This file IS the rules — deploy it, don't retype it:
+//
+//      npm run rules            (firebase deploy --only firestore:rules)
+//
+//  It needs a one-time `npx firebase-tools login`. Anything typed straight
+//  into the console instead will be overwritten by the next deploy, so make
+//  changes here. Editing this file alone changes nothing until it's deployed.
+//
+//  Everything here is world-readable: the community directory, everyone's
+//  builds and every published party are public by design (see cloudSync.ts
+//  and party.ts). The rules are about writes.
+//
+//  The one non-obvious rule is the last: a published party keeps one field
+//  per slot (slot0/slot1/slot2) precisely so a rule can allow the player
+//  fielded in a slot to write that slot and nothing else. A party stored as
+//  one JSON string couldn't be governed this way — rules can't see inside a
+//  string — which is why slotUids sits at the top level, duplicated out of
+//  the snapshots, as the list of who holds what.
+// ───────────────────────────────────────────────────────────────────────────
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // ── Accounts ─────────────────────────────────────────────────────────
+    //  users/{uid}             — profile (name, build count) for the directory
+    //  users/{uid}/data/builds — that account's whole BuildStore, as JSON
+    //  Both are public to read — a party re-reads its members' builds from
+    //  here — and writable only by the account itself.
+
+    match /users/{uid} {
+      allow read: if true;
+      allow write: if signedIn() && request.auth.uid == uid;
+
+      match /data/{docId} {
+        allow read: if true;
+        allow write: if signedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // ── Published parties ────────────────────────────────────────────────
+
+    match /parties/{partyId} {
+
+      function isOwner() {
+        return signedIn() && resource.data.ownerUid == request.auth.uid;
+      }
+
+      // Defaults keep a party published before these fields existed from
+      // erroring the rule out: no claim list means no claims.
+      function slotUids() {
+        return resource.data.get('slotUids', ['', '', '']);
+      }
+
+      function slotEditsOn() {
+        return resource.data.get('slotEdits', false) == true;
+      }
+
+      function changed() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      // The roster is one array, so writing your own entry means sending the
+      // other two back too — they have to come back unchanged.
+      function rosterKeptExcept(i) {
+        return request.resource.data.roster.size() == 3
+            && resource.data.get('roster', []).size() == 3
+            && (i == 0 || request.resource.data.roster[0] == resource.data.roster[0])
+            && (i == 1 || request.resource.data.roster[1] == resource.data.roster[1])
+            && (i == 2 || request.resource.data.roster[2] == resource.data.roster[2]);
+      }
+
+      // A slot holds one build snapshot as JSON — a few KB in practice. The
+      // cap is generous enough never to bite a real build and small enough
+      // that three of them can't crowd the 1MB document limit.
+      function sizeOk(value) {
+        return value is string && value.size() < 60000;
+      }
+
+      /**
+       * A write by the player fielded in slot `i`, where `field` is that
+       * slot's field name and `value` its incoming contents. (The value is
+       * passed in rather than looked up as request.resource.data[field] —
+       * same result, without relying on dynamic map indexing.)
+       *
+       * Allowed only when:
+       *   · the owner has slot edits switched on,
+       *   · slotUids says slot `i` is this account's,
+       *   · the write touches nothing but that slot, its roster entry and
+       *     the timestamp — so name, blurb, ownerUid, slotEdits, the other
+       *     two slots, and slotUids itself are all out of reach (which also
+       *     means a slot can't be handed to somebody else, or to nobody),
+       *   · updatedAt is the server's clock, not a number of their choosing,
+       *   · and what lands in the slot is a string of sane length.
+       */
+      function slotWrite(i, field, value) {
+        return signedIn()
+            && slotEditsOn()
+            && slotUids().size() == 3
+            && slotUids()[i] == request.auth.uid
+            && changed().hasOnly([field, 'roster', 'updatedAt'])
+            && request.resource.data.updatedAt == request.time
+            && sizeOk(value)
+            && rosterKeptExcept(i);
+      }
+
+      allow read: if true;
+
+      allow create: if signedIn()
+                    && request.resource.data.ownerUid == request.auth.uid;
+
+      allow delete: if isOwner();
+
+      // The owner: anything, except handing the party to someone else.
+      allow update: if isOwner()
+                    && request.resource.data.ownerUid == resource.data.ownerUid;
+
+      // A player: their own slot, and only their own slot.
+      allow update: if slotWrite(0, 'slot0', request.resource.data.get('slot0', ''))
+                    || slotWrite(1, 'slot1', request.resource.data.get('slot1', ''))
+                    || slotWrite(2, 'slot2', request.resource.data.get('slot2', ''));
+    }
+  }
+}

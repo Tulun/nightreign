@@ -46,6 +46,8 @@ export const watchCloudStore = FAKE_CLOUD ? fake.watchCloudStore : realSync.watc
 export const listParties = FAKE_CLOUD ? fake.listParties : realParty.listParties;
 export const fetchParty = FAKE_CLOUD ? fake.fetchParty : realParty.fetchParty;
 export const publishParty = FAKE_CLOUD ? fake.publishParty : realParty.publishParty;
+export const updateSlot = FAKE_CLOUD ? fake.updateSlot : realParty.updateSlot;
+export const watchParty = FAKE_CLOUD ? fake.watchParty : realParty.watchParty;
 export const deleteParty = FAKE_CLOUD ? fake.deleteParty : realParty.deleteParty;
 
 // Pure, shared by both backends.

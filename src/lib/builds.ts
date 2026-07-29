@@ -732,6 +732,118 @@ export interface SharedBuild {
   relics: CustomRelic[];
 }
 
+// ── Limits on foreign data ───────────────────────────────────────────────
+//  Builds are public: yours render in my browser, through the community
+//  directory and through any party fielding them. A store is a JSON blob its
+//  owner writes with their own credentials, so nothing stops someone editing
+//  one by hand into a build named with fifty thousand characters — the input
+//  caps in the editor bind the honest, not the determined.
+//
+//  So the caps that matter are applied on the way *in*, wherever another
+//  account's data reaches this browser (see clampBuild / clampRelic and
+//  their callers). Deliberately not applied to your own stored builds:
+//  truncating those on load would edit your data and then persist it on the
+//  next sync, which is a worse bug than a long name.
+//
+//  Generous on purpose. The longest real effect line is ~60 characters, the
+//  longest chalice name ~30; these are an order of magnitude above anything
+//  the game produces, and only ever catch abuse.
+export const LIMITS = {
+  buildName: 120,
+  /** Not editable in the UI today, but carried in the model. */
+  notes: 4000,
+  relicName: 80,
+  /** One effect or demerit line. */
+  line: 200,
+  tag: 40,
+  tagsPer: 40,
+  displayName: 60,
+  /** Relics carried by one snapshot — six slots plus room for oddities. */
+  relicsPerBuild: 24,
+} as const;
+
+/** Trim a foreign string to a sane length; anything but a string reads as "". */
+export function clampText(v: unknown, max: number): string {
+  return typeof v === "string" ? v.slice(0, max) : "";
+}
+
+/**
+ * JSON.parse for documents written by another account, with `__proto__` and
+ * friends dropped on the way in.
+ *
+ * Object spread (which is how every parsed store and snapshot is rebuilt
+ * here) defines own properties and so can't pollute a prototype on its own —
+ * this is the belt to that pair of braces. It costs one reviver and takes the
+ * whole question off the table, including for any future code that reaches
+ * for Object.assign or a deep merge without thinking about where the object
+ * came from. Returns null on malformed JSON rather than throwing.
+ */
+export function parseForeignJson(text: string): unknown {
+  try {
+    return JSON.parse(text, (key, value) =>
+      key === "__proto__" || key === "constructor" || key === "prototype" ? undefined : value,
+    );
+  } catch {
+    return null;
+  }
+}
+
+const clampTags = (tags: string[] | undefined) =>
+  Array.isArray(tags)
+    ? tags.slice(0, LIMITS.tagsPer).map((t) => clampText(t, LIMITS.tag))
+    : undefined;
+
+/** One foreign relic, cut to size. Shape is left alone — only lengths move. */
+export function clampRelic(r: CustomRelic): CustomRelic {
+  const tags = clampTags(r.tags);
+  return {
+    ...r,
+    name: clampText(r.name, LIMITS.relicName),
+    effects: (Array.isArray(r.effects) ? r.effects : [])
+      .slice(0, 3)
+      .map((e) => clampText(e, LIMITS.line)),
+    demerits: (Array.isArray(r.demerits) ? r.demerits : [])
+      .slice(0, 3)
+      .map((d) => clampText(d, LIMITS.line)),
+    ...(tags ? { tags } : {}),
+  };
+}
+
+/** One foreign build, cut to size, its own relics included. */
+export function clampBuild<T extends Omit<Build, "id" | "updatedAt">>(build: T): T {
+  const tags = clampTags(build.tags);
+  return {
+    ...build,
+    name: clampText(build.name, LIMITS.buildName),
+    notes: clampText(build.notes, LIMITS.notes),
+    ...(tags ? { tags } : {}),
+    ...(build.relics
+      ? { relics: build.relics.slice(0, LIMITS.relicsPerBuild).map(clampRelic) }
+      : {}),
+  };
+}
+
+/** A foreign snapshot — the form a party slot travels and is stored in. */
+export function clampSharedBuild(sb: SharedBuild): SharedBuild {
+  return {
+    build: clampBuild(sb.build),
+    relics: (Array.isArray(sb.relics) ? sb.relics : [])
+      .slice(0, LIMITS.relicsPerBuild)
+      .map(clampRelic),
+  };
+}
+
+/** A whole foreign store, for display only — never write the result back. */
+export function clampStore(store: BuildStore): BuildStore {
+  return {
+    ...store,
+    builds: store.builds.map(clampBuild),
+    customRelics: store.customRelics.map(clampRelic),
+    tags: (store.tags ?? []).slice(0, LIMITS.tagsPer).map((t) => clampText(t, LIMITS.tag)),
+    relicTags: (store.relicTags ?? []).slice(0, LIMITS.tagsPer).map((t) => clampText(t, LIMITS.tag)),
+  };
+}
+
 function toBase64Url(bytes: Uint8Array): string {
   let bin = "";
   for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
@@ -793,7 +905,10 @@ export function toSharedBuild(build: Build, store: BuildStore, variantIdx = 0): 
   // slots from those; the pool covers everything else.
   const byId = new Map<string, CustomRelic>();
   for (const r of [...store.customRelics, ...(build.relics ?? [])]) byId.set(r.id, r);
-  return {
+  // Clamped here because this is where a build stops being its owner's own
+  // copy and becomes something other people's browsers render. A snapshot is
+  // a copy, so trimming it never touches the build behind it.
+  return clampSharedBuild({
     build: {
       name: build.name,
       character: build.character,
@@ -803,7 +918,7 @@ export function toSharedBuild(build: Build, store: BuildStore, variantIdx = 0): 
       notes: "",
     },
     relics: Array.from(byId.values()).filter((r) => used.has(r.id)),
-  };
+  });
 }
 
 /** Pack a snapshot into the positional wire form. */
@@ -836,7 +951,8 @@ export async function decompressJson(encoded: string): Promise<unknown> {
     const bytes = encoded.startsWith("z")
       ? await pipeThrough(fromBase64Url(encoded.slice(1)), new DecompressionStream("deflate-raw"))
       : fromBase64Url(encoded);
-    return JSON.parse(new TextDecoder().decode(bytes));
+    // A payload out of a link someone pasted — foreign by definition.
+    return parseForeignJson(new TextDecoder().decode(bytes));
   } catch {
     return null;
   }

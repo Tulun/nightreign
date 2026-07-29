@@ -6,6 +6,10 @@
 //  for assembling your own. Share links land here too — ?id= for published
 //  docs, #p= for self-contained hash links — and render the party
 //  read-only; your own parties carry Edit and Delete from here.
+//
+//  A party someone else owns can still carry an entry point of its own: if
+//  one of its slots is fielding your build and the owner left slot edits on,
+//  "Edit my slot" opens the planner on that one slot (see PartyPlanner).
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
@@ -22,8 +26,18 @@ import {
   useAuth,
   type PartySummary,
 } from "@/lib/cloud";
-import { decodeParty, loadParty, saveParty, type Party } from "@/lib/party";
+import { decodeParty, loadParty, saveParty, type CloudParty, type Party } from "@/lib/party";
 import { NO_SYNC_NOTES, refreshParty, type SlotSyncNotes } from "@/lib/partySync";
+
+/** Which slots of a party this account may edit without owning it. */
+function claimedSlots(
+  slotUids: string[],
+  slotEdits: boolean,
+  uid: string | null | undefined,
+): number[] {
+  if (!slotEdits || !uid) return [];
+  return slotUids.flatMap((u, i) => (u && u === uid ? [i] : []));
+}
 
 /**
  * Every published party, browseable by anyone — click through to its
@@ -123,6 +137,8 @@ function PartiesList({ ownUid }: { ownUid: string | null }) {
         const owner =
           (p.ownerUid && names.get(p.ownerUid)) ||
           (p.ownerUid ? `Nightfarer-${p.ownerUid.slice(0, 4)}` : "Unknown player");
+        const isMine = p.ownerUid === ownUid;
+        const mySlots = isMine ? [] : claimedSlots(p.slotUids, p.slotEdits, ownUid);
         return (
           <div
             key={p.id}
@@ -135,8 +151,13 @@ function PartiesList({ ownUid }: { ownUid: string | null }) {
             >
               <span className="block truncate font-display font-semibold text-parchment">
                 {p.name || "Unnamed party"}
-                {p.ownerUid === ownUid && (
+                {isMine && (
                   <span className="ml-1.5 font-body text-xs font-normal text-gold-dim">yours</span>
+                )}
+                {mySlots.length > 0 && (
+                  <span className="ml-1.5 font-body text-xs font-normal text-gold-dim">
+                    you&rsquo;re in this
+                  </span>
                 )}
               </span>
               {/* The roster as faces rather than a run of names — an open
@@ -169,7 +190,7 @@ function PartiesList({ ownUid }: { ownUid: string | null }) {
             <span className="mt-2 flex items-center gap-2 font-body text-xs text-parchment-faint">
               {owner}
               {p.updatedAt !== null && ` · ${new Date(p.updatedAt).toLocaleDateString()}`}
-              {p.ownerUid === ownUid && (
+              {isMine && (
                 <span className="ml-auto flex gap-1.5">
                   <button
                     type="button"
@@ -188,6 +209,21 @@ function PartiesList({ ownUid }: { ownUid: string | null }) {
                   </button>
                 </span>
               )}
+              {/* Someone else's party, but a slot of it is yours. No draft
+                  warning: editing a slot never touches your own draft. */}
+              {mySlots.length > 0 && (
+                <span className="ml-auto flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(`/builds/party/plan?edit=${encodeURIComponent(p.id)}`)
+                    }
+                    className="rounded border border-night-600 px-2 py-0.5 text-parchment-muted hover:text-gold-bright"
+                  >
+                    Edit my slot
+                  </button>
+                </span>
+              )}
             </span>
           </div>
         );
@@ -203,7 +239,7 @@ export function PartiesDirectory() {
   // prerender /party/{id} paths — same trade as /builds/users?u=).
   const sharedId = useSearchParams().get("id");
   // A shared party (from ?id= or a #p= link), shown read-only.
-  const [shared, setShared] = useState<{ party: Party; ownerUid: string | null } | null>(null);
+  const [shared, setShared] = useState<CloudParty | null>(null);
   // What the build check did to the shared party's slots. A read-only view
   // never writes the party back — it shows the builds as they are now, and
   // the owner's next Save is what makes that stick.
@@ -222,14 +258,14 @@ export function PartiesDirectory() {
    * a shared party opens on its members' current builds, not on whatever
    * they held the day it was published.
    */
-  const showShared = (cp: { party: Party; ownerUid: string | null }, cancelled: () => boolean) => {
+  const showShared = (cp: CloudParty, cancelled: () => boolean) => {
     setShared(cp);
     setSharedNotes(NO_SYNC_NOTES);
     refreshParty(cp.party)
       .then(({ party: fresh, notes, changed }) => {
         if (cancelled()) return;
         setSharedNotes(notes);
-        if (changed) setShared({ party: fresh, ownerUid: cp.ownerUid });
+        if (changed) setShared({ ...cp, party: fresh });
       })
       .catch((err) => console.error("Refreshing party builds failed:", err));
   };
@@ -243,7 +279,9 @@ export function PartiesDirectory() {
     if (m) {
       decodeParty(m[1]).then((p) => {
         if (cancelled) return;
-        if (p) showShared({ party: p, ownerUid: null }, () => cancelled);
+        // A hash link carries the party alone — no doc, so no owner and no
+        // slot claims behind it.
+        if (p) showShared({ party: p, ownerUid: null, slotUids: [] }, () => cancelled);
         else setLinkError(true);
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
       });
@@ -293,6 +331,11 @@ export function PartiesDirectory() {
 
   // ── Own-party controls on the shared view ──────────────────────────────
   const sharedIsMine = !!shared && !!user && shared.ownerUid === user.uid;
+  // Not yours, but a slot of it is.
+  const sharedMySlots =
+    shared && !sharedIsMine
+      ? claimedSlots(shared.slotUids, shared.party.slotEdits, user?.uid)
+      : [];
 
   const editShared = () => {
     const id = shared?.party.id;
@@ -352,9 +395,24 @@ export function PartiesDirectory() {
             <span className="font-body text-xs text-parchment-faint">
               {sharedIsMine
                 ? "This is your published party."
-                : `A party of ${shared.party.slots.filter(Boolean).length}.`}
+                : sharedMySlots.length > 0
+                  ? `Slot ${sharedMySlots.map((i) => i + 1).join(" and ")} is yours — you can swap in a different build of your own.`
+                  : `A party of ${shared.party.slots.filter(Boolean).length}.`}
             </span>
             <div className="ml-auto flex gap-2">
+              {sharedMySlots.length > 0 && shared.party.id && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(
+                      `/builds/party/plan?edit=${encodeURIComponent(shared.party.id as string)}`,
+                    )
+                  }
+                  className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
+                >
+                  Edit my slot
+                </button>
+              )}
               {sharedIsMine && (
                 <>
                   <button

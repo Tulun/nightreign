@@ -11,7 +11,7 @@ import { useId, useState } from "react";
 import { nightfarers } from "@/data/characters";
 import { characterChalices, grailChalices } from "@/data/chalices";
 import { asset } from "@/lib/assets";
-import { customRelicIcon, fixedRelics, type BuildSlot, type BuildStore, type CustomRelic } from "@/lib/builds";
+import { LIMITS, customRelicIcon, fixedRelics, type BuildSlot, type BuildStore, type CustomRelic } from "@/lib/builds";
 import { SLOT_ICON, type Chalice, type SlotColor } from "@/lib/chalices";
 import {
   CURSE_VOCABULARY,
@@ -677,6 +677,9 @@ export function EffectSuggestInput({
             : undefined
         }
         placeholder={placeholder}
+        // Every effect line ends up in other people's browsers through a
+        // shared build; the longest real one is well under this.
+        maxLength={LIMITS.line}
         className={className}
       />
       <datalist id={listId}>

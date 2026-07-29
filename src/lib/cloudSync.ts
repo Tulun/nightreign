@@ -27,9 +27,12 @@ import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { cloudRead } from "@/lib/cloudRead";
 import {
+  LIMITS,
   applyTombstones,
+  clampText,
   mergeTombstones,
   normalizeStore,
+  parseForeignJson,
   sortedTags,
   type BuildStore,
 } from "@/lib/builds";
@@ -99,7 +102,13 @@ export async function getProfileName(uid: string): Promise<string | null> {
 
 /** Set the site-visible name (nickname) shown in the directory. */
 export async function setProfileName(uid: string, name: string): Promise<void> {
-  await setDoc(profileDoc(uid), { displayName: name.trim() }, { merge: true });
+  // Capped on the way out as well as on the way in (listProfiles): the input
+  // caps it too, but this is the call that decides what other people see.
+  await setDoc(
+    profileDoc(uid),
+    { displayName: clampText(name.trim(), LIMITS.displayName) },
+    { merge: true },
+  );
 }
 
 /** Write the store (and a matching profile refresh) to the account. */
@@ -118,11 +127,11 @@ export async function pullCloudStore(uid: string): Promise<BuildStore | null> {
   const snap = await cloudRead(() => getDoc(storeDoc(uid)));
   const raw = snap.data()?.store;
   if (typeof raw !== "string") return null;
-  try {
-    return normalizeStore(JSON.parse(raw));
-  } catch {
-    return null;
-  }
+  // Any uid may be read here, so this is as often someone else's document as
+  // your own. Lengths are left alone — trimming your own store on load would
+  // edit your data and then sync the edit; that clamp belongs at the points
+  // that display a foreign store (see clampStore's callers).
+  return normalizeStore(parseForeignJson(raw));
 }
 
 /**
@@ -145,12 +154,9 @@ export function watchCloudStore(uid: string, onChange: (store: BuildStore) => vo
       if (snap.metadata.hasPendingWrites) return;
       const raw = snap.data()?.store;
       if (typeof raw !== "string") return;
-      try {
-        const parsed = normalizeStore(JSON.parse(raw));
-        if (parsed) onChange(parsed);
-      } catch {
-        // An unparseable cloud copy is nothing this tab can act on.
-      }
+      // An unparseable cloud copy is nothing this tab can act on.
+      const parsed = normalizeStore(parseForeignJson(raw));
+      if (parsed) onChange(parsed);
     },
     (err) => console.error("Cloud watch failed:", err),
   );
@@ -168,7 +174,10 @@ export async function listProfiles(): Promise<UserProfile[]> {
       };
       return {
         uid: d.id,
-        displayName: data.displayName ?? defaultHandle(d.id),
+        // Every account's chosen name, rendered in everyone else's browser.
+        displayName: data.displayName
+          ? clampText(data.displayName, LIMITS.displayName)
+          : defaultHandle(d.id),
         buildCount: data.buildCount ?? 0,
         updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toMillis() : null,
       };

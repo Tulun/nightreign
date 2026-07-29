@@ -20,6 +20,8 @@
 import { pullCloudStore } from "@/lib/cloud";
 import {
   EMPTY_STORE,
+  LIMITS,
+  clampText,
   toSharedBuild,
   variantCount,
   variantLabel,
@@ -109,7 +111,11 @@ function resync(
   if (build.public === false) return { member: null, kind: "unshared" };
 
   const idx = variantIndexFor(build, member.variantLabel);
-  const label = variantCount(build) > 1 ? variantLabel(build, idx) : undefined;
+  // The label comes from the build's owner and is rendered in the slot
+  // header, so it's clamped like the rest of the snapshot (toSharedBuild
+  // handles everything below it).
+  const rawLabel = variantCount(build) > 1 ? variantLabel(build, idx) : undefined;
+  const label = rawLabel ? clampText(rawLabel, LIMITS.buildName) : undefined;
   const fresh: PartyMember = {
     ...member,
     ...(label ? { variantLabel: label } : {}),
