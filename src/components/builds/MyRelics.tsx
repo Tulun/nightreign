@@ -24,7 +24,6 @@ import {
 } from "@/lib/filterQuery";
 import { CustomRelicEditor } from "./CustomRelicEditor";
 import { FilterPanel, FilterToggle } from "./FilterPanel";
-import { ScreenshotPoolImport } from "./ScreenshotImport";
 import { TagManager } from "./TagManager";
 import { TagPicker } from "./TagPicker";
 import {
@@ -45,6 +44,7 @@ export function MyRelics({
   onAdd,
   onUpdate,
   onDelete,
+  onImport,
   tagRegistry,
   onTagsChange,
   onCreateTag,
@@ -55,6 +55,8 @@ export function MyRelics({
   onAdd: (r: CustomRelic) => void;
   onUpdate: (r: CustomRelic) => void;
   onDelete: (id: string) => void;
+  /** Hand over to the Import view — screenshots are read over there. */
+  onImport: () => void;
   /** The relic keyword registry — its own list, separate from build tags. */
   tagRegistry: string[];
   onTagsChange: (id: string, tags: string[]) => void;
@@ -106,16 +108,27 @@ export function MyRelics({
     </button>
   );
 
+  const importButton = (
+    <button
+      type="button"
+      onClick={onImport}
+      title="Read relics off screenshots of the relic rites screen — up to four at a time."
+      className="frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
+    >
+      Import
+    </button>
+  );
+
   if (relics.length === 0) {
     return (
       <div>
         <p className="font-body text-sm text-parchment-faint">
           No custom relics yet — create one here, add one while editing a build (&ldquo;+ Add
-          new relic&rdquo; in any slot), or import from a screenshot.
+          new relic&rdquo; in any slot), or import them from screenshots.
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {newRelicButton}
-          <ScreenshotPoolImport relics={relics} onAdd={onAdd} />
+          {importButton}
         </div>
         {creator}
       </div>
@@ -213,11 +226,9 @@ export function MyRelics({
       <p className="font-body text-xs text-parchment-faint">
         Custom relics you&rsquo;ve added — usable in any build with a matching slot.
       </p>
-      {/* Creation actions on their own row — parse results render full-width
-          beneath them without disturbing the filter row. */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {newRelicButton}
-        <ScreenshotPoolImport relics={relics} onAdd={onAdd} />
+        {importButton}
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <button

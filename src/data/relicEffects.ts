@@ -174,7 +174,7 @@ export const relicEffects: RelicEffect[] = [
   { name: "Scholar: Continuous Damage Inflicted on Targets Threaded by Ultimate Art", category: "character" },
   { name: "Undertaker: Activating Ultimate Art Increases Attack Power", category: "character" },
   { name: "Undertaker: Contact with Allies Restores their HP while Ultimate Art is Activated", category: "character" },
-  { name: "Undertaker: Attack Power Increased by Landing Chain Attack", category: "character" },
+  { name: "Undertaker: Attack power increased by landing the final blow of a chain attack", category: "character" },
   { name: "Undertaker: Physical Attacks Boosted while Assist Effect from Incantation is Active for Self", category: "character" },
   { name: "Vigor +1", category: "vigor" },
   { name: "Vigor +2", category: "vigor" },

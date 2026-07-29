@@ -151,8 +151,10 @@ const EFFECT_ALIASES: Record<string, string> = {
     "Max Stamina increased per Great Encampment boss",
   "[Raider] Hit With Character Skill to Reduce Enemy Attack Power":
     "[Raider] Hit With Skill to Reduce Enemy Attack Power",
-  "[Undertaker] Attack power increased by landing the final blow of a chain attack":
-    "[Undertaker] Attack Power Increased by Landing Chain Attack",
+  // The catalogue's shorthand for the line the game writes out in full — the
+  // in-game wording is the displayed name now, so this runs the other way.
+  "[Undertaker] Attack Power Increased by Landing Chain Attack":
+    "[Undertaker] Attack power increased by landing the final blow of a chain attack",
 };
 
 // The catalogue's full status names still resolve to the curse's in-game short

@@ -23,6 +23,7 @@ export function RelicPicker({
   deep,
   store,
   value,
+  taken,
   onChange,
   onNewRelic,
   onEditLines,
@@ -32,6 +33,8 @@ export function RelicPicker({
   deep: boolean;
   store: BuildStore;
   value: BuildSlot;
+  /** Fixed relics the loadout's other slots already hold — offered greyed. */
+  taken: Set<string>;
   onChange: (slot: BuildSlot) => void;
   onNewRelic: () => void;
   /**
@@ -100,6 +103,7 @@ export function RelicPicker({
           deep={deep}
           store={store}
           value={value}
+          taken={taken}
           onPick={(slot) => {
             onChange(slot);
             setOpen(false);
@@ -150,6 +154,7 @@ function RelicBrowser({
   deep,
   store,
   value,
+  taken,
   onPick,
   onNewRelic,
   onClose,
@@ -159,6 +164,7 @@ function RelicBrowser({
   deep: boolean;
   store: BuildStore;
   value: BuildSlot;
+  taken: Set<string>;
   onPick: (slot: BuildSlot) => void;
   onNewRelic: () => void;
   onClose: () => void;
@@ -207,7 +213,9 @@ function RelicBrowser({
 
   const customShown = showCustom ? filteredCustom : [];
   const pickFirst = () => {
-    const firstFixed = visibleSections[0]?.rows[0];
+    // Enter takes the first relic that can actually be slotted — one the
+    // build already holds is on screen to explain itself, not to be picked.
+    const firstFixed = visibleSections.flatMap((s) => s.rows).find((r) => !taken.has(r.name));
     if (customShown[0]) onPick({ kind: "custom", id: customShown[0].id });
     else if (firstFixed) onPick({ kind: "fixed", name: firstFixed.name });
   };
@@ -324,7 +332,13 @@ function RelicBrowser({
           {visibleSections.map(({ title, rows }) => (
             <div key={title} className="mt-4 first:mt-0">
               <p className="eyebrow mb-1.5">{title}</p>
-              <FixedRelicTable relics={rows} character={character} value={value} onPick={onPick} />
+              <FixedRelicTable
+                relics={rows}
+                character={character}
+                value={value}
+                taken={taken}
+                onPick={onPick}
+              />
             </div>
           ))}
           {customShown.length === 0 && visibleSections.length === 0 && (
@@ -349,11 +363,14 @@ function FixedRelicTable({
   relics,
   character,
   value,
+  taken,
   onPick,
 }: {
   relics: FixedRelicOption[];
   character: string;
   value: BuildSlot;
+  /** Names another slot of this loadout already holds — shown, but not pickable. */
+  taken: Set<string>;
   onPick: (slot: BuildSlot) => void;
 }) {
   return (
@@ -361,16 +378,28 @@ function FixedRelicTable({
       <tbody>
         {relics.map((r) => {
           const active = value?.kind === "fixed" && value.name === r.name;
+          // There's only ever one of each fixed relic in-game, so one already
+          // sitting in another socket stays listed — greyed and inert — rather
+          // than vanishing: a relic that quietly disappears from the list reads
+          // as missing data, where a greyed row says where it went.
+          const inUse = taken.has(r.name);
+          const pick = () => {
+            if (!inUse) onPick({ kind: "fixed", name: r.name });
+          };
           return (
             <tr
               key={r.name}
-              tabIndex={0}
-              onClick={() => onPick({ kind: "fixed", name: r.name })}
+              tabIndex={inUse ? -1 : 0}
+              aria-disabled={inUse || undefined}
+              title={inUse ? `${r.name} is already in another slot of this loadout` : undefined}
+              onClick={pick}
               onKeyDown={(e) => {
-                if (e.key === "Enter") onPick({ kind: "fixed", name: r.name });
+                if (e.key === "Enter") pick();
               }}
-              className={`cursor-pointer border-b border-night-700 transition-colors last:border-b-0 ${
-                active ? "bg-night-700" : "hover:bg-night-800"
+              className={`border-b border-night-700 transition-colors last:border-b-0 ${
+                inUse
+                  ? "cursor-not-allowed opacity-50"
+                  : `cursor-pointer ${active ? "bg-night-700" : "hover:bg-night-800"}`
               }`}
             >
               {/* A name needs far less room than three effect lines do, so the
@@ -385,6 +414,11 @@ function FixedRelicTable({
                   {r.character && r.character !== character && (
                     <span className="shrink-0 rounded border border-night-600 px-1 font-body text-[0.65rem] text-parchment-faint">
                       {r.character}
+                    </span>
+                  )}
+                  {inUse && (
+                    <span className="shrink-0 rounded border border-gold-faint px-1 font-body text-[0.65rem] text-gold-dim">
+                      In this loadout
                     </span>
                   )}
                 </span>

@@ -17,12 +17,14 @@ import {
   CURSE_VOCABULARY,
   DEEP_EFFECT_VOCABULARY,
   NORMAL_EFFECT_VOCABULARY,
+  parseRelicGroups,
   pickBestOcrPass,
+  screenIsDeep,
 } from "@/lib/effectMatch";
 import type { EffectState } from "@/lib/effectCompat";
 import { grayInvertStretch } from "@/lib/imagePrep";
 import { lineFromWords } from "@/lib/ocrClean";
-import { dominantIconColor, iconSampleRegion } from "@/lib/relicColor";
+import { colorFromRelicName, dominantIconColor, iconSampleRegion } from "@/lib/relicColor";
 import { gameEffectName } from "@/lib/relics";
 import { EffectIcon } from "@/components/EffectIcon";
 
@@ -315,7 +317,7 @@ export function XIcon() {
   );
 }
 
-export { colorFromRelicName } from "@/lib/relicColor";
+export { colorFromRelicName };
 
 export interface OcrLine {
   text: string;
@@ -323,10 +325,11 @@ export interface OcrLine {
 }
 
 /** The file drawn to a canvas with its pixels run through grayInvertStretch. */
-async function preprocessedCopy(file: File): Promise<Blob | null> {
+async function preprocessedCopy(file: Blob): Promise<Blob | null> {
+  let bmp: ImageBitmap | null = null;
+  const canvas = document.createElement("canvas");
   try {
-    const bmp = await createImageBitmap(file);
-    const canvas = document.createElement("canvas");
+    bmp = await createImageBitmap(file);
     canvas.width = bmp.width;
     canvas.height = bmp.height;
     const ctx = canvas.getContext("2d");
@@ -339,21 +342,65 @@ async function preprocessedCopy(file: File): Promise<Blob | null> {
     return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
   } catch {
     return null;
+  } finally {
+    releasePixels(bmp, canvas);
   }
 }
 
-/** Run OCR on an image and return its text lines (with positions when available). */
-export async function ocrLines(file: File, onProgress: (status: string) => void): Promise<OcrLine[]> {
+/**
+ * Drop a decoded bitmap and a canvas backing store now rather than waiting for
+ * GC. One screenshot at a time this makes no difference, but the batch import
+ * decodes several full-resolution images back to back — each one is tens of
+ * megabytes, and mobile Safari kills a tab that holds a few at once.
+ */
+function releasePixels(bmp: ImageBitmap | null, canvas: HTMLCanvasElement) {
+  bmp?.close();
+  canvas.width = 0;
+  canvas.height = 0;
+}
+
+/**
+ * A tesseract worker kept alive across several screenshots. Making one
+ * re-instantiates the WASM engine and re-reads the language data, so a batch
+ * pays that once instead of per file. Progress goes through a slot rather than
+ * a fixed callback: the worker's logger is fixed when the worker is made, but
+ * the status text depends on which file and which pass is running, so each
+ * ocrLines call fills the slot in for its own duration.
+ */
+export interface OcrSession {
+  worker: import("tesseract.js").Worker;
+  onFrac: ((fraction: number) => void) | null;
+  terminate: () => Promise<void>;
+}
+
+export async function startOcrSession(onProgress: (status: string) => void): Promise<OcrSession> {
   onProgress("Loading OCR engine (downloads a few MB on first use)…");
   const { createWorker } = await import("tesseract.js");
-  let pass = 1;
-  const worker = await createWorker("eng", 1, {
+  // Built empty so the logger below can close over the session it belongs to.
+  const session = { onFrac: null } as OcrSession;
+  session.worker = await createWorker("eng", 1, {
     logger: (m: { status: string; progress: number }) => {
-      if (m.status === "recognizing text") {
-        onProgress(`Reading screenshot (pass ${pass}/2)… ${Math.round(m.progress * 100)}%`);
-      }
+      if (m.status === "recognizing text") session.onFrac?.(m.progress);
     },
   });
+  session.terminate = async () => {
+    await session.worker.terminate();
+  };
+  return session;
+}
+
+/**
+ * Run OCR on an image and return its text lines (with positions when
+ * available). Without a session this spins up a worker and terminates it;
+ * pass one to read several screenshots on a single worker.
+ */
+export async function ocrLines(
+  file: Blob,
+  onProgress: (status: string) => void,
+  shared?: OcrSession,
+): Promise<OcrLine[]> {
+  const session = shared ?? (await startOcrSession(onProgress));
+  const { worker } = session;
   const extract = (data: Awaited<ReturnType<typeof worker.recognize>>["data"]): OcrLine[] => {
     const lines: OcrLine[] = (data.blocks ?? []).flatMap((b) =>
       (b.paragraphs ?? []).flatMap((p) =>
@@ -365,20 +412,84 @@ export async function ocrLines(file: File, onProgress: (status: string) => void)
     if (lines.length > 0) return lines;
     return data.text.split("\n").map((text) => ({ text, bbox: null }));
   };
+  const trackPass = (pass: number) => {
+    session.onFrac = (frac) =>
+      onProgress(`Reading screenshot (pass ${pass}/2)… ${Math.round(frac * 100)}%`);
+  };
   try {
+    trackPass(1);
     const { data } = await worker.recognize(file, {}, { text: true, blocks: true });
     const pass1 = extract(data);
     // Second pass on a contrast-boosted copy — it recovers lines the
     // original misses on some captures and wrecks others, so the passes
     // compete on parse quality and the better one wins per image.
-    pass = 2;
+    trackPass(2);
     const prepped = await preprocessedCopy(file);
     if (!prepped) return pass1;
     const { data: data2 } = await worker.recognize(prepped, {}, { text: true, blocks: true });
     return pickBestOcrPass([pass1, extract(data2)]);
   } finally {
-    await worker.terminate();
+    session.onFrac = null;
+    if (!shared) await session.terminate();
   }
+}
+
+/** One relic read off a screenshot, before anyone has reviewed it. */
+export interface ScreenshotRelic {
+  name: string | null;
+  /** Always three entries — "" where the screenshot had no line. */
+  effects: string[];
+  /** demerits[i] belongs to effects[i]. */
+  demerits: string[];
+  color: CustomRelic["color"] | null;
+}
+
+export interface ScreenshotRead {
+  relics: ScreenshotRelic[];
+  /** A screenshot shows either normal relics or Deep relics — never both. */
+  deep: boolean;
+  /** Every text line read, for callers matching more than relics (the chalice). */
+  lines: string[];
+}
+
+/**
+ * Read one screenshot end to end: OCR, group the lines into relics, and sample
+ * each relic's icon for its color. Pass a session to run a batch of
+ * screenshots through one worker; cap maxGroups where the destination can only
+ * take so many (a build has three slots per set).
+ */
+export async function readScreenshot(
+  file: File,
+  onProgress: (status: string) => void,
+  opts: { session?: OcrSession; maxGroups?: number } = {},
+): Promise<ScreenshotRead> {
+  const ocr = await ocrLines(file, onProgress, opts.session);
+  const all = parseRelicGroups(ocr);
+  const found = opts.maxGroups === undefined ? all : all.slice(0, opts.maxGroups);
+  const colors = await guessGroupColors(
+    file,
+    found.map((g) => {
+      // A joined wrapped line has no single OCR line with identical text, so
+      // fall back to the line the joined text starts with.
+      const first = g.effects[0]?.line.trim() ?? null;
+      const box = first
+        ? (ocr.find((l) => l.text.trim() === first) ??
+            ocr.find((l) => l.text.trim().length >= 8 && first.startsWith(l.text.trim())))?.bbox ??
+          null
+        : null;
+      return { firstLine: first, bbox: box };
+    }),
+  );
+  return {
+    deep: screenIsDeep(found),
+    lines: ocr.map((l) => l.text),
+    relics: found.map((g, i) => ({
+      name: g.name,
+      effects: [0, 1, 2].map((j) => g.effects[j]?.effect ?? ""),
+      demerits: [0, 1, 2].map((j) => g.demerits[j] ?? ""),
+      color: colorFromRelicName(g.name) ?? colors[i],
+    })),
+  };
 }
 
 /**
@@ -387,26 +498,30 @@ export async function ocrLines(file: File, onProgress: (status: string) => void)
  * returns null wherever the icon region can't be located or read.
  */
 export async function guessGroupColors(
-  file: File,
+  file: Blob,
   groups: { firstLine: string | null; bbox: OcrLine["bbox"] }[],
 ): Promise<(CustomRelic["color"] | null)[]> {
+  let bmp: ImageBitmap | null = null;
+  const canvas = document.createElement("canvas");
   try {
-    const bmp = await createImageBitmap(file);
-    const canvas = document.createElement("canvas");
+    bmp = await createImageBitmap(file);
     canvas.width = bmp.width;
     canvas.height = bmp.height;
     const ctx = canvas.getContext("2d");
     if (!ctx) return groups.map(() => null);
     ctx.drawImage(bmp, 0, 0);
+    const height = bmp.height;
     return groups.map((g) => {
       if (!g.bbox) return null;
-      const region = iconSampleRegion(g.bbox, bmp.height);
+      const region = iconSampleRegion(g.bbox, height);
       if (!region) return null;
       const pixels = ctx.getImageData(region.x0, region.y0, region.width, region.height).data;
       return dominantIconColor(pixels);
     });
   } catch {
     return groups.map(() => null);
+  } finally {
+    releasePixels(bmp, canvas);
   }
 }
 
@@ -528,6 +643,54 @@ export function EffectSuggestInput({
  * showDemerits={false} where the relic can't carry demerits (normal slots —
  * only Deep of Night relics have them).
  */
+/**
+ * The three effect lines of a relic parsed from a screenshot, each editable
+ * before it's committed. Both importers show this: OCR is never trusted
+ * outright, so every line stays a text input until the user applies it.
+ */
+export function ReviewLineInputs({
+  lines,
+  demerits,
+  deep,
+  disabled = false,
+  onLine,
+  onDemerit,
+}: {
+  lines: string[];
+  demerits: string[];
+  deep: boolean;
+  disabled?: boolean;
+  onLine: (index: number, text: string) => void;
+  onDemerit: (index: number, text: string) => void;
+}) {
+  return (
+    <div className="mt-2 space-y-1.5">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="space-y-1">
+          <EffectSuggestInput
+            value={lines[i] ?? ""}
+            vocab={effectVocabulary(deep)}
+            disabled={disabled}
+            onChange={(v) => onLine(i, v)}
+            placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
+            className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint disabled:opacity-60"
+          />
+          {deep && (lines[i] ?? "").trim() !== "" && (
+            <EffectSuggestInput
+              value={demerits[i] ?? ""}
+              vocab={CURSE_VOCABULARY}
+              disabled={disabled}
+              onChange={(v) => onDemerit(i, v)}
+              placeholder="Demerit (optional)"
+              className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40 disabled:opacity-60"
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function RelicLineInputs({
   relic,
   onUpdate,

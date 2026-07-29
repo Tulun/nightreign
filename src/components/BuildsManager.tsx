@@ -7,6 +7,7 @@ import { characterChalices } from "@/data/chalices";
 import { MultiSelect } from "@/components/MultiSelect";
 import { BuildCard } from "@/components/builds/BuildCard";
 import { BuildEditor } from "@/components/builds/BuildEditor";
+import { ImportRelics } from "@/components/builds/ImportRelics";
 import { MyRelics } from "@/components/builds/MyRelics";
 import { TagManager } from "@/components/builds/TagManager";
 import { FilterPanel, FilterToggle } from "@/components/builds/FilterPanel";
@@ -83,7 +84,7 @@ export function BuildsManager() {
     importLegacy,
     dismissLegacy,
   } = useAccountStore();
-  const [view, setView] = useState<"builds" | "relics">("builds");
+  const [view, setView] = useState<"builds" | "relics" | "import">("builds");
   const router = useRouter();
   const params = useSearchParams();
   const openId = params.get("b");
@@ -595,12 +596,13 @@ export function BuildsManager() {
           community directory. */}
       <MyNickname synced={status === "synced"} />
 
-      {/* Builds / My Relics view switch */}
+      {/* Builds / My Relics / Import view switch */}
       <div className="mb-5 flex flex-wrap gap-1 border-b border-night-700">
         {(
           [
             { key: "builds", label: "Builds", count: ownBuilds.length },
             { key: "relics", label: "My Relics", count: store.customRelics.length },
+            { key: "import", label: "Import", count: 0 },
           ] as const
         ).map((t) => {
           const active = view === t.key;
@@ -779,6 +781,7 @@ export function BuildsManager() {
           onAdd={addCustomRelic}
           onUpdate={updateCustomRelic}
           onDelete={deleteCustomRelic}
+          onImport={() => setView("import")}
           tagRegistry={store.relicTags}
           onTagsChange={setRelicTags}
           onCreateTag={createRelicTag}
@@ -786,6 +789,17 @@ export function BuildsManager() {
           onDeleteTag={deleteRelicTag}
         />
       )}
+
+      {/* Hidden rather than unmounted: reading four screenshots on a phone
+          takes minutes, and switching tabs to check a build mid-run shouldn't
+          throw the run — or the cards waiting to be reviewed — away. */}
+      <div hidden={view !== "import"}>
+        <ImportRelics
+          relics={store.customRelics}
+          onAdd={addCustomRelic}
+          onDone={() => setView("relics")}
+        />
+      </div>
     </div>
   );
 }

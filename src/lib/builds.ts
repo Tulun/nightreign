@@ -298,6 +298,27 @@ export function slotsForColors(
   return { slots: cleared > 0 ? next : slots, cleared };
 }
 
+/**
+ * The fixed relics a loadout already has slotted. A fixed relic is a single
+ * in-game item — one Glass Necklace, one Will of Balance, one of each stat
+ * swap — so it can't sit in two of the same loadout's sockets at once, and the
+ * picker greys the ones already in.
+ *
+ * `except` is the slot being filled, whose own relic mustn't count against
+ * itself (swapping a relic for itself is a no-op, not a duplicate). Deep slots
+ * never hold fixed relics, so only the normal three are ever asked about.
+ */
+export function slottedFixedNames(
+  slots: readonly BuildSlot[],
+  except?: number,
+): Set<string> {
+  const names = new Set<string>();
+  slots.forEach((slot, i) => {
+    if (i !== except && slot?.kind === "fixed") names.add(slot.name);
+  });
+  return names;
+}
+
 /** Rename variant i's tab. */
 export function withVariantLabel(b: Build, i: number, name: string): Build {
   if (i === 0) return { ...b, variantName: name };

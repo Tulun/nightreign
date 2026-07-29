@@ -289,7 +289,7 @@ export const RELIC_VALUES: Record<string, string> = {
   "Scholar: Earn Runes for Each Additional Specimen Acquired with Character Skill": "+1,300 runes per new enemy type analyzed",
   // Character — Undertaker
   "Undertaker: Activating Ultimate Art Increases Attack Power": "+18% damage for 40s after ultimate",
-  "Undertaker: Attack Power Increased by Landing Chain Attack": "+16% damage for 20s after a chain's final hit",
+  "Undertaker: Attack power increased by landing the final blow of a chain attack": "+16% damage for 20s after a chain's final hit",
   "Undertaker: Physical Attacks Boosted while Assist Effect from Incantation is Active for Self": "+19% physical for 60s after an incantation buff",
   "Undertaker: Contact with Allies Restores their HP while Ultimate Art is Activated": "Allies heal 30% max HP + 100 on contact with the ultimate",
 };

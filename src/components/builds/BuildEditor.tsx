@@ -16,6 +16,7 @@ import {
   newId,
   sameCustomRelic,
   slotsForColors,
+  slottedFixedNames,
   sortedTags,
   variantAt,
   variantCount,
@@ -44,6 +45,9 @@ import {
   type SlotRef,
 } from "./shared";
 
+/** Stable empty set for slots that can't hold a fixed relic in the first place. */
+const NO_FIXED: Set<string> = new Set();
+
 export function BuildEditor({
   initial,
   store,
@@ -68,6 +72,16 @@ export function BuildEditor({
   onCreateTag: (name: string) => void;
 }) {
   const [build, setBuild] = useState<Build>(initial);
+  // The build as it stands right now, readable without waiting for a render:
+  // "Apply all" runs a whole batch of slot fills in one tick, and each one has
+  // to see the slots the ones before it filled (a fixed relic already down
+  // can't go down twice). Every update goes through patchBuild to keep both in
+  // step — setBuild alone would leave the ref behind.
+  const buildRef = useRef(build);
+  const patchBuild = (fn: (b: Build) => Build) => {
+    buildRef.current = fn(buildRef.current);
+    setBuild(buildRef.current);
+  };
   // Which loadout variant the editor is working on (0 = the build's own).
   const [variant, setVariant] = useState(0);
   const [newRelicAt, setNewRelicAt] = useState<SlotRef | null>(null);
@@ -78,6 +92,9 @@ export function BuildEditor({
   const [newTag, setNewTag] = useState("");
   // Relics a chalice swap emptied out, reported until the next swap.
   const [cleared, setCleared] = useState<{ chalice: string; count: number } | null>(null);
+  // A scanned relic the importer read as a fixed relic the loadout already
+  // has — kept as a custom relic instead, and said so rather than silently.
+  const [duped, setDuped] = useState<string | null>(null);
   const loadout = variantAt(build, variant);
   const chalices = chalicesFor(build.character);
   const chalice = chalices.find((c) => c.name === loadout.chalice) ?? chalices[0];
@@ -96,6 +113,7 @@ export function BuildEditor({
     setNewRelicAt(null);
     setEditing([]);
     setCleared(null);
+    setDuped(null);
   };
 
   /** This loadout's slots re-checked against a chalice's socket colors. */
@@ -110,7 +128,7 @@ export function BuildEditor({
     if (!target) return;
     const normal = refit(loadout.slots, target.slots);
     const deep = refit(loadout.deepSlots, target.deep);
-    setBuild((b) =>
+    patchBuild((b) =>
       withVariantPatch(b, variant, {
         chalice: name,
         slots: normal.slots,
@@ -124,7 +142,7 @@ export function BuildEditor({
   // A new variant starts as a copy of the one on screen — variants are
   // takes on the same idea, so tweaking beats starting from empty slots.
   const addVariant = () => {
-    setBuild((b) => {
+    patchBuild((b) => {
       if (variantCount(b) >= MAX_VARIANTS) return b;
       const cur = variantAt(b, variant);
       return {
@@ -146,7 +164,7 @@ export function BuildEditor({
   const removeVariant = () => {
     if (variant === 0) return;
     if (!window.confirm(`Remove ${variantLabel(build, variant)}? Its slots are discarded.`)) return;
-    setBuild((b) => ({ ...b, variants: (b.variants ?? []).filter((_, j) => j !== variant - 1) }));
+    patchBuild((b) => ({ ...b, variants: (b.variants ?? []).filter((_, j) => j !== variant - 1) }));
     switchVariant(variant - 1);
   };
 
@@ -155,12 +173,12 @@ export function BuildEditor({
     const tag = newTag.trim();
     if (!tag) return;
     onCreateTag(tag);
-    setBuild((b) => ({ ...b, tags: sortedTags([...(b.tags ?? []), tag]) }));
+    patchBuild((b) => ({ ...b, tags: sortedTags([...(b.tags ?? []), tag]) }));
     setNewTag("");
   };
 
   const setSlot = (at: SlotRef, slot: BuildSlot) => {
-    setBuild((b) => {
+    patchBuild((b) => {
       const key = at.deep ? "deepSlots" : "slots";
       const slots = [...variantAt(b, variant)[key]] as SlotTriple;
       slots[at.index] = slot;
@@ -199,25 +217,36 @@ export function BuildEditor({
     const slotColor = (at.deep ? chalice.deep : chalice.slots)[at.index];
     // Deep slots never take fixed relics — every Depth relic is a custom
     // roll, even when it shares a name with a fixed one.
+    // Fixed relics the loadout already holds, read live — a batch of Apply all
+    // lands before any of it renders.
+    const taken = slottedFixedNames(variantAt(buildRef.current, variant).slots, at.index);
     if (!at.deep) {
       const byName = group.name ? fixedRelics.find((r) => r.name === group.name) : null;
       // No name from OCR? The effects can still give the relic away: an
       // effect that can't roll pins it to its fixed relic outright; an exact
       // copy of a fixed relic's effect set might just be a lucky roll — ask.
       const byEffects = byName ? null : matchFixedByEffects(group.effects);
-      const fixed =
-        byName ??
-        (byEffects &&
-        (byEffects.certain ||
-          window.confirm(
-            `These effects exactly match ${byEffects.relic.name}. Slot that relic?\n\n(Cancel keeps it as a custom relic that happens to have the same effects.)`,
-          ))
+      const candidate = byName ?? byEffects?.relic ?? null;
+      const fixed = (() => {
+        // A fixed relic is a single in-game item, so one already sitting in
+        // another socket of this loadout can't be here too — a second read of
+        // it is a misread, and falls through to a custom relic below with what
+        // was scanned kept for the user to correct.
+        if (!candidate || taken.has(candidate.name)) return null;
+        if (byName) return byName;
+        if (!byEffects) return null;
+        if (byEffects.certain) return byEffects.relic;
+        return window.confirm(
+          `These effects exactly match ${byEffects.relic.name}. Slot that relic?\n\n(Cancel keeps it as a custom relic that happens to have the same effects.)`,
+        )
           ? byEffects.relic
-          : null);
+          : null;
+      })();
       if (fixed) {
         setSlot(at, { kind: "fixed", name: fixed.name });
         return;
       }
+      if (candidate && taken.has(candidate.name)) setDuped(candidate.name);
     }
     // A colored slot dictates the relic's color; the sampled icon color only
     // decides for White slots (the screenshot's blue cast makes it easy to
@@ -247,7 +276,7 @@ export function BuildEditor({
     if (filled === 0) return;
     const what = deep ? "Deep of Night slots" : "relic slots";
     if (filled > 1 && !window.confirm(`Clear all ${filled} relics from the ${what}?`)) return;
-    setBuild((b) => withVariantPatch(b, variant, { [key]: [...EMPTY_SLOTS] as SlotTriple }));
+    patchBuild((b) => withVariantPatch(b, variant, { [key]: [...EMPTY_SLOTS] as SlotTriple }));
     setNewRelicAt((cur) => (cur && cur.deep === deep ? null : cur));
     setEditing((cur) => cur.filter((k) => k.startsWith(deep ? "n" : "d")));
   };
@@ -284,6 +313,8 @@ export function BuildEditor({
               deep={deep}
               store={store}
               value={value}
+              // Deep slots hold no fixed relics, so nothing there to grey.
+              taken={deep ? NO_FIXED : slottedFixedNames(loadout.slots, index)}
               onChange={(slot) => setSlot(at, slot)}
               onNewRelic={() => setNewRelicAt(isNewHere ? null : at)}
               // While the lines are open the editor carries its own Save and
@@ -361,7 +392,7 @@ export function BuildEditor({
                 key={c.name}
                 type="button"
                 onClick={() =>
-                  setBuild((b) => {
+                  patchBuild((b) => {
                     if (b.character === c.name) return b;
                     // Every loadout lands on the new Nightfarer's first
                     // vessel, so every loadout gets refitted to its sockets.
@@ -431,7 +462,7 @@ export function BuildEditor({
             <input
               type="text"
               value={variant === 0 ? build.variantName ?? "" : build.variants?.[variant - 1]?.name ?? ""}
-              onChange={(e) => setBuild((b) => withVariantLabel(b, variant, e.target.value))}
+              onChange={(e) => patchBuild((b) => withVariantLabel(b, variant, e.target.value))}
               placeholder={variantLabel(build, variant)}
               aria-label="Variant name"
               className="frame w-32 rounded bg-night-900 px-2 py-1 font-body text-xs text-parchment placeholder:text-parchment-faint"
@@ -453,7 +484,7 @@ export function BuildEditor({
         <input
           type="text"
           value={build.name}
-          onChange={(e) => setBuild((b) => ({ ...b, name: e.target.value }))}
+          onChange={(e) => patchBuild((b) => ({ ...b, name: e.target.value }))}
           placeholder="Build name"
           className="frame w-64 rounded bg-night-900 px-3 py-2 font-display text-lg text-parchment placeholder:text-parchment-faint"
         />
@@ -472,6 +503,12 @@ export function BuildEditor({
           ’s sockets and {cleared.count === 1 ? "was" : "were"} cleared.
         </p>
       )}
+      {duped && (
+        <p className="mt-2 font-body text-xs text-red-300/80">
+          {duped} is already in another slot — there’s only one in-game, so the second
+          scan was kept as a custom relic. Check which slot got misread.
+        </p>
+      )}
 
       {/* Tags — pick from your registry, or create one right here. */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -479,7 +516,7 @@ export function BuildEditor({
           <MultiSelect
             values={build.tags ?? []}
             options={store.tags.map((t) => ({ value: t, label: t }))}
-            onChange={(tags) => setBuild((b) => ({ ...b, tags }))}
+            onChange={(tags) => patchBuild((b) => ({ ...b, tags }))}
             placeholder="Tags"
             className="w-44"
           />
