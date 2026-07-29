@@ -11,6 +11,10 @@
 //  draft, and returns to the Parties list — so each save is its own
 //  party. Signed out, Copy link shares a self-contained #p= hash link.
 //  Browsing and opening shared parties happens in PartiesDirectory.
+//
+//  Whichever way it opens, the party is checked against the builds behind
+//  its slots first (refreshParty): edits and relic upgrades land in the
+//  slot, and a build that's gone empties its slot with the reason shown.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useState } from "react";
@@ -31,6 +35,13 @@ import {
   type PartyMember,
   type PartySlots,
 } from "@/lib/party";
+import {
+  NO_SYNC_NOTES,
+  refreshParty,
+  syncNoteText,
+  type SlotSyncNote,
+  type SlotSyncNotes,
+} from "@/lib/partySync";
 
 function Avatar({ name, size }: { name: string; size: number }) {
   return (
@@ -85,12 +96,15 @@ function NightViewToggle({
 function SlotSection({
   index,
   member,
+  note,
   readOnly,
   onChoose,
   onClear,
 }: {
   index: number;
   member: PartyMember | null;
+  /** What the last build check did to this slot, if anything. */
+  note?: SlotSyncNote | null;
   readOnly: boolean;
   onChoose?: () => void;
   onClear?: () => void;
@@ -163,6 +177,17 @@ function SlotSection({
           </span>
         )}
       </div>
+      {/* Why this slot isn't what it was: refreshed from a build that has
+          changed, or emptied because that build is no longer there. */}
+      {note && (
+        <p
+          className={`mb-3 font-body text-xs ${
+            note.kind === "updated" ? "text-gold-dim" : "text-parchment-muted"
+          }`}
+        >
+          {syncNoteText(note)}
+        </p>
+      )}
       {/* Nothing to toggle to unless this member runs Deep of Night relics. */}
       {build && build.deepSlots.some(Boolean) && (
         <NightViewToggle view={view} onChange={setView} className="mb-3" />
@@ -199,11 +224,14 @@ function SlotSection({
  */
 export function PartySlotGrid({
   slots,
+  notes = NO_SYNC_NOTES,
   readOnly,
   onChoose,
   onClear,
 }: {
   slots: PartySlots;
+  /** Per-slot result of the build check (see partySync). */
+  notes?: SlotSyncNotes;
   readOnly: boolean;
   onChoose?: (index: number) => void;
   onClear?: (index: number) => void;
@@ -215,6 +243,7 @@ export function PartySlotGrid({
           key={i}
           index={i}
           member={member}
+          note={notes[i]}
           readOnly={readOnly}
           onChoose={onChoose && (() => onChoose(i))}
           onClear={onClear && (() => onClear(i))}
@@ -237,31 +266,63 @@ export function PartyPlanner() {
   const [copied, setCopied] = useState<"cloud" | "hash" | null>(null);
   const [saving, setSaving] = useState(false);
   const [storageBroken, setStorageBroken] = useState(false);
+  const [slotNotes, setSlotNotes] = useState<SlotSyncNotes>(NO_SYNC_NOTES);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    setSlotNotes(NO_SYNC_NOTES);
+
+    // Whatever the party was saved as, open it on the builds as they stand
+    // now. The refresh lands in the draft; Save is what publishes it.
+    const start = (loaded: Party) => {
+      setParty(loaded);
+      setSyncing(true);
+      refreshParty(loaded)
+        .then(({ party: fresh, notes, changed }) => {
+          if (cancelled) return;
+          setSlotNotes(notes);
+          if (!changed) return;
+          // Merge rather than replace: a slot the user filled while the
+          // check was in flight is their pick, and stays.
+          setParty((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  slots: prev.slots.map((s, i) =>
+                    s === loaded.slots[i] ? fresh.slots[i] : s,
+                  ) as PartySlots,
+                }
+              : fresh,
+          );
+        })
+        .catch((err) => console.error("Refreshing party builds failed:", err))
+        .finally(() => !cancelled && setSyncing(false));
+    };
+
     if (editId) {
-      let cancelled = false;
       fetchParty(editId)
         .then((cp) => {
           if (cancelled) return;
-          if (cp) setParty(cp.party);
+          if (cp) start(cp.party);
           else {
             setShareError("Couldn't load that party for editing — starting from your draft.");
-            setParty(loadParty());
+            start(loadParty());
           }
         })
         .catch((err) => {
           console.error("Loading party for editing failed:", err);
           if (!cancelled) {
             setShareError("Couldn't load that party for editing — starting from your draft.");
-            setParty(loadParty());
+            start(loadParty());
           }
         });
-      return () => {
-        cancelled = true;
-      };
+    } else {
+      start(isNew ? EMPTY_PARTY : loadParty());
     }
-    setParty(isNew ? EMPTY_PARTY : loadParty());
+    return () => {
+      cancelled = true;
+    };
   }, [editId, isNew]);
 
   useEffect(() => {
@@ -272,7 +333,10 @@ export function PartyPlanner() {
     return <p className="font-body text-sm text-parchment-faint">Loading party…</p>;
   }
 
-  const setSlot = (index: number, member: PartyMember | null) =>
+  const setSlot = (index: number, member: PartyMember | null) => {
+    // The note explains what the last check did to the slot; once the user
+    // has picked for it themselves, it has nothing left to explain.
+    setSlotNotes((n) => n.map((x, i) => (i === index ? null : x)) as SlotSyncNotes);
     setParty((p) => {
       const prev = p ?? EMPTY_PARTY;
       return {
@@ -280,6 +344,7 @@ export function PartyPlanner() {
         slots: prev.slots.map((s, i) => (i === index ? member : s)) as PartySlots,
       };
     });
+  };
 
   const memberCount = party.slots.filter(Boolean).length;
 
@@ -371,6 +436,7 @@ export function PartyPlanner() {
             type="button"
             onClick={() => {
               if (window.confirm("Clear all three slots?")) {
+                setSlotNotes(NO_SYNC_NOTES);
                 setParty((p) => ({ ...(p ?? EMPTY_PARTY), slots: [null, null, null] }));
               }
             }}
@@ -400,8 +466,9 @@ export function PartyPlanner() {
           )}
         </span>
         <span className="basis-full font-body text-xs text-parchment-faint">
-          Drafts stay on this device; slots hold a snapshot of each build, so the party keeps
-          working even if a build is later edited or deleted — swap the slot to pick up changes.{" "}
+          {syncing
+            ? "Checking each slot against its build… "
+            : "Drafts stay on this device; opening a party re-reads every slot from its owner's build, so edits and relic upgrades follow it here. A build its owner has deleted leaves its slot empty. "}
           {user
             ? party.id
               ? "Saving updates this published party and returns you to the Parties list."
@@ -412,6 +479,7 @@ export function PartyPlanner() {
 
       <PartySlotGrid
         slots={party.slots}
+        notes={slotNotes}
         readOnly={false}
         onChoose={setPickerSlot}
         onClear={(i) => setSlot(i, null)}

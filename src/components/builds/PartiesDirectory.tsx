@@ -23,6 +23,7 @@ import {
   type PartySummary,
 } from "@/lib/cloud";
 import { decodeParty, loadParty, saveParty, type Party } from "@/lib/party";
+import { NO_SYNC_NOTES, refreshParty, type SlotSyncNotes } from "@/lib/partySync";
 
 /**
  * Every published party, browseable by anyone — click through to its
@@ -203,6 +204,10 @@ export function PartiesDirectory() {
   const sharedId = useSearchParams().get("id");
   // A shared party (from ?id= or a #p= link), shown read-only.
   const [shared, setShared] = useState<{ party: Party; ownerUid: string | null } | null>(null);
+  // What the build check did to the shared party's slots. A read-only view
+  // never writes the party back — it shows the builds as they are now, and
+  // the owner's next Save is what makes that stick.
+  const [sharedNotes, setSharedNotes] = useState<SlotSyncNotes>(NO_SYNC_NOTES);
   // The link resolved to nothing (stale/deleted/truncated) …
   const [linkError, setLinkError] = useState(false);
   // … versus the read itself failing, which is a different message.
@@ -212,18 +217,41 @@ export function PartiesDirectory() {
   // confirms). Null until read client-side.
   const [draft, setDraft] = useState<Party | null>(null);
 
+  /**
+   * Show a party, then re-read each slot from the build it was taken from —
+   * a shared party opens on its members' current builds, not on whatever
+   * they held the day it was published.
+   */
+  const showShared = (cp: { party: Party; ownerUid: string | null }, cancelled: () => boolean) => {
+    setShared(cp);
+    setSharedNotes(NO_SYNC_NOTES);
+    refreshParty(cp.party)
+      .then(({ party: fresh, notes, changed }) => {
+        if (cancelled()) return;
+        setSharedNotes(notes);
+        if (changed) setShared({ party: fresh, ownerUid: cp.ownerUid });
+      })
+      .catch((err) => console.error("Refreshing party builds failed:", err));
+  };
+
   useEffect(() => {
+    let cancelled = false;
     setDraft(loadParty());
     // Legacy/self-contained links carry the party in the hash — read it
     // once and clear it so a reload doesn't re-trigger.
     const m = window.location.hash.match(/^#p=(.+)$/);
     if (m) {
       decodeParty(m[1]).then((p) => {
-        if (p) setShared({ party: p, ownerUid: null });
+        if (cancelled) return;
+        if (p) showShared({ party: p, ownerUid: null }, () => cancelled);
         else setLinkError(true);
         window.history.replaceState(null, "", window.location.pathname + window.location.search);
       });
     }
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Published-party links: fetch the doc whenever ?id= changes.
@@ -233,7 +261,7 @@ export function PartiesDirectory() {
     fetchParty(sharedId)
       .then((cp) => {
         if (cancelled) return;
-        if (cp) setShared(cp);
+        if (cp) showShared(cp, () => cancelled);
         else setLinkError(true);
       })
       .catch((err) => {
@@ -243,6 +271,7 @@ export function PartiesDirectory() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sharedId]);
 
   // Waiting on the ?id= fetch.
@@ -252,6 +281,7 @@ export function PartiesDirectory() {
 
   const dismissShared = () => {
     setShared(null);
+    setSharedNotes(NO_SYNC_NOTES);
     setLinkError(false);
     setLinkFetchError(null);
     if (sharedId) router.replace("/builds/party");
@@ -359,7 +389,7 @@ export function PartiesDirectory() {
             </p>
           )}
         </section>
-        <PartySlotGrid slots={shared.party.slots} readOnly />
+        <PartySlotGrid slots={shared.party.slots} notes={sharedNotes} readOnly />
       </div>
     );
   }
