@@ -18,13 +18,13 @@ export default function BuildsUsersPage() {
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
           <Link
             href="/builds"
-            className="font-body text-sm text-gold-dim hover:text-gold-bright"
+            className="font-body py-1 text-base text-gold-dim hover:text-gold-bright"
           >
             ← Back to your builds
           </Link>
           <Link
             href="/builds/party"
-            className="font-body text-sm text-gold-dim hover:text-gold-bright"
+            className="font-body py-1 text-base text-gold-dim hover:text-gold-bright"
           >
             Parties →
           </Link>

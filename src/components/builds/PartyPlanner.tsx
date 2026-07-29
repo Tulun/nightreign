@@ -44,6 +44,41 @@ function Avatar({ name, size }: { name: string; size: number }) {
 }
 
 /**
+ * One member's Normal / Deep of Night switch. It sits in the slot it belongs
+ * to rather than above the party: stacked on a phone, a single switch up top
+ * is several screens behind you by the time you reach the third member.
+ */
+function NightViewToggle({
+  view,
+  onChange,
+  className = "",
+}: {
+  view: "normal" | "deep";
+  onChange: (v: "normal" | "deep") => void;
+  className?: string;
+}) {
+  return (
+    <div className={`flex items-center gap-1 ${className}`} role="group" aria-label="Which relics to show">
+      {(["normal", "deep"] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onChange(v)}
+          aria-pressed={view === v}
+          className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
+            view === v
+              ? "bg-night-700 text-gold-bright"
+              : "bg-night-900 text-parchment-muted hover:text-parchment"
+          }`}
+        >
+          {v === "normal" ? "Normal" : "Deep of Night"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/**
  * One party slot: the member's build, open to its relics, or an invitation to
  * fill the slot. Read-only mode (shared view) hides controls.
  */
@@ -51,18 +86,19 @@ function SlotSection({
   index,
   member,
   readOnly,
-  nightView,
   onChoose,
   onClear,
 }: {
   index: number;
   member: PartyMember | null;
   readOnly: boolean;
-  /** Which slot set the whole party is showing — see PartySlotGrid. */
-  nightView: "normal" | "deep";
   onChoose?: () => void;
   onClear?: () => void;
 }) {
+  // Which slot set this member shows — each one switches on its own, so a
+  // party can be read as everyone's normal run, or one member's Deep of Night
+  // relics against the other two.
+  const [view, setView] = useState<"normal" | "deep">("normal");
   // Profile links carry where to come back to, so a visit to the owner's
   // profile isn't a one-way trip out of the party. A party opened from a #p=
   // hash link has already had its hash cleared, so that one returns to the
@@ -90,7 +126,7 @@ function SlotSection({
             {member.uid && (
               <Link
                 href={`/builds/users?u=${encodeURIComponent(member.uid)}&from=${encodeURIComponent(returnTo)}`}
-                className="font-body text-xs text-gold-dim hover:text-gold-bright"
+                className="font-body text-sm text-gold-dim hover:text-gold-bright"
               >
                 profile →
               </Link>
@@ -127,13 +163,17 @@ function SlotSection({
           </span>
         )}
       </div>
+      {/* Nothing to toggle to unless this member runs Deep of Night relics. */}
+      {build && build.deepSlots.some(Boolean) && (
+        <NightViewToggle view={view} onChange={setView} className="mb-3" />
+      )}
       {build ? (
         <BuildCard
           build={build}
           store={EMPTY_STORE}
           expandable
           defaultExpanded
-          nightView={nightView}
+          nightView={view}
         />
       ) : (
         /* flex-1: beside two filled columns, an open slot is the whole
@@ -154,9 +194,8 @@ function SlotSection({
 /**
  * The party's three slots: a row of columns on a desktop screen, stacked
  * below that. A column is too narrow for a build card's side-by-side slot
- * sets, and six relics per member would bury the party anyway — so one
- * toggle up top picks the set all three members show, which is also the
- * comparison that matters (the party's normal run, or its Deep of Night one).
+ * sets, and six relics per member would bury the party anyway — so each slot
+ * shows one set at a time, switched from inside the slot itself.
  */
 export function PartySlotGrid({
   slots,
@@ -169,43 +208,18 @@ export function PartySlotGrid({
   onChoose?: (index: number) => void;
   onClear?: (index: number) => void;
 }) {
-  const [view, setView] = useState<"normal" | "deep">("normal");
-  // Nothing to toggle to if no one in the party runs Deep of Night relics.
-  const anyDeep = slots.some((m) => m?.build.build.deepSlots.some(Boolean));
   return (
-    <div>
-      {anyDeep && (
-        <div className="mb-3 flex items-center gap-1" role="group" aria-label="Which relics to show">
-          {(["normal", "deep"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              aria-pressed={view === v}
-              className={`frame rounded-md px-2.5 py-1 font-body text-xs transition-colors ${
-                view === v
-                  ? "bg-night-700 text-gold-bright"
-                  : "bg-night-900 text-parchment-muted hover:text-parchment"
-              }`}
-            >
-              {v === "normal" ? "Normal" : "Deep of Night"}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="grid gap-4 lg:grid-cols-3">
-        {slots.map((member, i) => (
-          <SlotSection
-            key={i}
-            index={i}
-            member={member}
-            readOnly={readOnly}
-            nightView={view}
-            onChoose={onChoose && (() => onChoose(i))}
-            onClear={onClear && (() => onClear(i))}
-          />
-        ))}
-      </div>
+    <div className="grid gap-4 lg:grid-cols-3">
+      {slots.map((member, i) => (
+        <SlotSection
+          key={i}
+          index={i}
+          member={member}
+          readOnly={readOnly}
+          onChoose={onChoose && (() => onChoose(i))}
+          onClear={onClear && (() => onClear(i))}
+        />
+      ))}
     </div>
   );
 }

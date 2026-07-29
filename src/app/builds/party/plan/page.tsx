@@ -18,13 +18,13 @@ export default function PartyPlanPage() {
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1">
           <Link
             href="/builds/party"
-            className="font-body text-sm text-gold-dim hover:text-gold-bright"
+            className="font-body py-1 text-base text-gold-dim hover:text-gold-bright"
           >
             ← All parties
           </Link>
           <Link
             href="/builds/users"
-            className="font-body text-sm text-gold-dim hover:text-gold-bright"
+            className="font-body py-1 text-base text-gold-dim hover:text-gold-bright"
           >
             Community Builds →
           </Link>

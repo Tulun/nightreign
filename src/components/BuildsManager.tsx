@@ -579,7 +579,7 @@ export function BuildsManager() {
           [
             { key: "builds", label: "Builds", count: ownBuilds.length },
             { key: "relics", label: "My Relics", count: store.customRelics.length },
-            { key: "import", label: "Import Relics", count: 0 },
+            { key: "import", label: "Import", count: 0 },
           ] as const
         ).map((t) => {
           const active = view === t.key;
@@ -600,7 +600,9 @@ export function BuildsManager() {
             </button>
           );
         })}
-        <div className="ml-auto flex">
+        {/* Phone-sized, these wrap onto a line of their own and crowd the
+            tabs — the sidebar carries both routes there. */}
+        <div className="ml-auto hidden sm:flex">
           <Link
             href="/builds/party"
             className="-mb-px rounded-t-md border-b-2 border-transparent px-4 py-2 font-display text-sm font-semibold text-parchment-muted hover:text-parchment"

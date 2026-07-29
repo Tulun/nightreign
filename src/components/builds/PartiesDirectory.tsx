@@ -389,7 +389,7 @@ export function PartiesDirectory() {
         {draftCount > 0 && (
           <Link
             href="/builds/party/plan"
-            className="font-body text-sm text-gold-dim hover:text-gold-bright"
+            className="font-body py-1 text-base text-gold-dim hover:text-gold-bright"
           >
             Continue your draft ({draftCount}/3 slots) →
           </Link>
