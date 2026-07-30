@@ -18,7 +18,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { characterChalices } from "@/data/chalices";
 import { BuildCard } from "@/components/builds/BuildCard";
-import { CopyLinkButton } from "@/components/builds/shared";
+import { CharacterImg, CopyLinkButton } from "@/components/builds/shared";
 import { NicknameCard } from "@/components/builds/NicknameCard";
 import { MultiSelect } from "@/components/MultiSelect";
 import { cloudErrorMessage } from "@/lib/cloudRead";
@@ -236,15 +236,19 @@ function ProfileBuilds({
         <div className="space-y-6">
           {groups.map((g) => (
             <section key={g.name}>
-              <h4 className="eyebrow mb-2 border-b border-night-700 pb-1.5 text-gold-dim">
+              {/* Portrait on the heading, not the tiles — every build under
+                  it is the same Nightfarer (as on the Builds page). */}
+              <h4 className="eyebrow mb-2 flex items-center gap-2 border-b border-night-700 pb-1.5 text-gold-dim">
+                <CharacterImg name={g.name} size={24} />
                 {g.name}
-                <span className="ml-2 font-body text-xs normal-case tracking-normal text-parchment-faint">
+                <span className="font-body text-xs normal-case tracking-normal text-parchment-faint">
                   {g.builds.length}
                 </span>
               </h4>
-              {/* Cards pair up once there's room for a full relic strip
-                  beside the title — below that they'd truncate the name. */}
-              <div className="grid gap-3 xl:grid-cols-2">
+              {/* Same tile shape and columns as the Builds page: the relics
+                  sit under the name rather than beside it, so a narrower
+                  column costs the name nothing and a row fits three. */}
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {g.builds.map((b) => (
                   <BuildCard
                     key={b.id}

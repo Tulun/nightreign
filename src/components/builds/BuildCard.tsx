@@ -317,7 +317,7 @@ export function BuildCard({
   // that keeps the action buttons out of a nested-button situation.
   if (onOpen) {
     return (
-      <article className="frame group relative flex flex-col rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700">
+      <article className="frame group relative flex min-w-0 flex-col rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700">
         <button
           type="button"
           onClick={onOpen}
@@ -392,8 +392,8 @@ export function BuildCard({
   if (href) {
     // Actions on a link card (your own build, listed on your community
     // profile) can't sit *inside* the link — a button in an anchor is neither
-    // valid nor clickable — so the link becomes an overlay behind the row and
-    // the buttons, being positioned, stay on top of it.
+    // valid nor clickable — so the link becomes an overlay behind the content
+    // and the buttons, being positioned, stay on top of it.
     const actions = (onEdit || onDelete) && (
       <span className="relative flex shrink-0 gap-1">
         {onEdit && (
@@ -420,47 +420,42 @@ export function BuildCard({
         )}
       </span>
     );
-    const cardClass =
-      "frame group flex items-center gap-4 rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700 sm:gap-6 sm:p-5";
-    const row = (
-      <>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-display text-lg font-semibold text-parchment transition-colors group-hover:text-gold-bright">
-            {build.name || "Unnamed build"}
-          </span>
-          <span className="block truncate font-body text-sm text-parchment-faint">
-            {build.character} · {build.chalice}
-            {variants > 1 && ` · ${variants} variants`}
-          </span>
-          {tagChips && <span className="mt-2 flex">{tagChips}</span>}
-          {/* Narrow screens have no room beside the title — the relics drop
-              under it instead, at a size that still fits. */}
-          <span className="mt-2.5 flex sm:hidden">{iconStrip(30, "gap-1.5")}</span>
-        </span>
-        {/* The relics are what the card is really about, so they take the
-            width the title doesn't need — big enough to actually read. */}
-        <span className="hidden shrink-0 sm:flex">{iconStrip(44, "gap-2")}</span>
-        {actions}
-        <span className="shrink-0 text-parchment-faint transition-colors group-hover:text-gold-bright">
-          <Chevron open={false} className="" />
-        </span>
-      </>
-    );
-    if (!actions) {
-      return (
-        <Link href={href} className={cardClass}>
-          {row}
-        </Link>
-      );
-    }
+    // Title above the relics rather than beside them — the same shape as the
+    // Builds page tile. Side by side, half a grid row had to seat a name, six
+    // relics, the actions and the arrow: the strip and the buttons hold their
+    // width, so the name was what gave, and cards read as "Nap ti…". Stacked,
+    // it has the card's full width at every size and never truncates.
+    // min-w-0, as on the tile above: a grid item won't shrink under its own
+    // min-content, and a card whose title is one nowrap line *is* that wide —
+    // so on a phone the cards stood proud of the screen instead of truncating
+    // the name they were given `truncate` for.
     return (
-      <article className={`relative ${cardClass}`}>
+      <article className="frame group relative flex min-w-0 flex-col rounded-md bg-night-800 p-4 transition-colors hover:bg-night-700">
         <Link
           href={href}
           className="absolute inset-0 rounded-md"
           aria-label={`Open ${build.name || "Unnamed build"}`}
         />
-        {row}
+        <div className="flex items-start gap-2">
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-display text-lg font-semibold text-parchment transition-colors group-hover:text-gold-bright">
+              {build.name || "Unnamed build"}
+            </span>
+            <span className="block truncate font-body text-sm text-parchment-faint">
+              {build.character} · {build.chalice}
+              {variants > 1 && ` · ${variants} variants`}
+            </span>
+          </span>
+          {actions}
+          <span className="shrink-0 pt-1.5 text-parchment-faint transition-colors group-hover:text-gold-bright">
+            <Chevron open={false} className="" />
+          </span>
+        </div>
+        {tagChips && <div className="mt-2 flex">{tagChips}</div>}
+        {/* mt-auto, as on the Builds tile: grid rows stretch every card to the
+            tallest, so an untagged card takes the slack above its strip rather
+            than riding it up out of line with its neighbours'. */}
+        <div className="mt-auto flex pt-3">{iconStrip(38, "gap-1.5")}</div>
       </article>
     );
   }

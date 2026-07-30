@@ -35,6 +35,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BuildCard } from "@/components/builds/BuildCard";
 import { PartyBuildPicker } from "@/components/builds/PartyBuildPicker";
 import { CharacterImg } from "@/components/builds/shared";
+import { asset } from "@/lib/assets";
 import { EMPTY_STORE, type Build } from "@/lib/builds";
 import { fetchParty, publishParty, updateSlot, useAuth, watchParty } from "@/lib/cloud";
 import {
@@ -308,6 +309,10 @@ export function PartySlotGrid({
   );
 }
 
+/** Everything about a party a save would publish — the draft is stale if these differ. */
+const partyShape = (p: Party) =>
+  JSON.stringify([p.name, p.blurb, p.slotEdits, p.slots.map((s) => s ?? null)]);
+
 /** "slot 2", "slots 1 and 3" — for talking about what just moved. */
 function slotList(indices: number[]): string {
   const ns = indices.map((i) => i + 1);
@@ -346,6 +351,10 @@ export function PartyPlanner() {
   const seen = useRef<(string | null)[] | null>(null);
   const ownsRef = useRef(true);
   const writableRef = useRef<number[]>([]);
+  // The published party as it actually stands, for discarding back to.
+  const docParty = useRef<Party | null>(null);
+  // Unsaved edits from a previous visit were picked back up.
+  const [restored, setRestored] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -355,7 +364,18 @@ export function PartyPlanner() {
 
     // Whatever the party was saved as, open it on the builds as they stand
     // now. The refresh lands in the draft; Save is what publishes it.
-    const start = (loaded: Party) => {
+    //
+    // `base` is the published version when `loaded` is a draft that has moved
+    // on from it: the slots that differ are the unsaved ones, and marking
+    // them held stops the live watch putting the doc's version back.
+    const start = (loaded: Party, base?: Party) => {
+      if (base) {
+        loaded.slots.forEach((s, i) => {
+          if (JSON.stringify(s ?? null) !== JSON.stringify(base.slots[i] ?? null)) {
+            dirty.current.add(i);
+          }
+        });
+      }
       setParty(loaded);
       setSyncing(true);
       refreshParty(loaded)
@@ -389,7 +409,18 @@ export function PartyPlanner() {
             // Before the party, so the first render already knows whose it
             // is — the form must never open editable on someone else's.
             setCloud({ ownerUid: cp.ownerUid, slotUids: cp.slotUids });
-            start(cp.party);
+            docParty.current = cp.party;
+            // The draft is written on every change, but this path re-reads
+            // the doc — so without picking the draft back up, a reload after
+            // an edit you hadn't saved yet silently threw it away. Only a
+            // draft of *this* party counts; anything else belongs to another
+            // one and was already consented away on the way in.
+            const draft = loadParty();
+            const unsaved =
+              draft.id === editId && partyShape(draft) !== partyShape(cp.party);
+            setRestored(unsaved);
+            if (unsaved) start(draft, cp.party);
+            else start(cp.party);
           } else {
             setShareError("Couldn't load that party for editing — starting from your draft.");
             start(loadParty());
@@ -439,6 +470,7 @@ export function PartyPlanner() {
     if (!editId) return;
     return watchParty(editId, (cp) => {
       setCloud({ ownerUid: cp.ownerUid, slotUids: cp.slotUids });
+      docParty.current = cp.party;
       const json = cp.party.slots.map((s) => (s ? JSON.stringify(s) : null));
       const before = seen.current;
       seen.current = json;
@@ -565,8 +597,14 @@ export function PartyPlanner() {
 
   // Saved parties share by their short ?id= link; unsaved ones fall back to
   // the self-contained hash link. Both land on the Parties page.
+  //
+  // asset() puts the base path back on: on GitHub Pages the site is served
+  // from /nightreign/, and an origin-plus-route URL built without it is a
+  // 404 for whoever it's pasted to. The trailing slash is the route as
+  // exported (next.config trailingSlash) — Pages redirects to it anyway, but
+  // the link on the clipboard shouldn't need the redirect to work.
   const copyLink = async () => {
-    const base = `${window.location.origin}/builds/party`;
+    const base = `${window.location.origin}${asset("/builds/party/")}`;
     if (party.id) await copy(`${base}?id=${party.id}`, "cloud");
     else await copy(`${base}#p=${await encodeParty(party)}`, "hash");
   };
@@ -584,6 +622,29 @@ export function PartyPlanner() {
         <p className="mb-4 font-body text-sm text-gold-dim" role="status">
           {remoteNote}
         </p>
+      )}
+      {/* Picked back up rather than thrown away — but the party as published
+          doesn't have these yet, which is worth being explicit about. */}
+      {restored && (
+        <div className="mb-4 flex flex-wrap items-center gap-3" role="status">
+          <p className="font-body text-base text-gold-dim">
+            Changes you hadn&rsquo;t saved are back. They aren&rsquo;t published until you save.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (!window.confirm("Discard your unsaved changes to this party?")) return;
+              dirty.current = new Set();
+              setRestored(false);
+              setSlotNotes(NO_SYNC_NOTES);
+              if (docParty.current) setParty(docParty.current);
+              saveParty(EMPTY_PARTY);
+            }}
+            className="rounded border border-night-600 px-2 py-0.5 font-body text-sm text-parchment-muted hover:text-red-300"
+          >
+            Discard them
+          </button>
+        </div>
       )}
 
       {/* ── Someone else's party ────────────────────────────────────────
