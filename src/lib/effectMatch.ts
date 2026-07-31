@@ -24,14 +24,14 @@ const WEAPON_CLASSES = [
   "Torch", "Small Shield", "Medium Shield", "Greatshield",
 ];
 const ELEMENTS = ["Magic", "Fire", "Lightning", "Holy"];
-const STATUSES = ["Poison", "Scarlet Rot", "Blood Loss", "Frostbite", "Sleep", "Madness", "Death Blight"];
 /**
- * The curse line names its status the short way — "Taking Damage Causes Rot
- * Buildup", "… Frost Buildup" (both verified in-game), where the resistance
- * effects use the full status name. Only this one template expands with them.
+ * Relic lines name a status the short way wherever one appears — "Improved
+ * Rot Resistance", "Taking Damage Causes Frost Buildup" (both verified
+ * in-game, and the resistances are the normal catalogue's spelling too). The
+ * wiki writes two of them out in full; those are alias phrasings below.
  */
-const CURSE_STATUSES = ["Poison", "Rot", "Blood Loss", "Frost", "Sleep", "Madness", "Death Blight"];
-const CURSE_STATUS_TEMPLATE = "Taking Damage Causes [Status] Buildup";
+const STATUSES = ["Poison", "Rot", "Blood Loss", "Frost", "Sleep", "Madness", "Death Blight"];
+const STATUS_LEGACY: Record<string, string> = { Rot: "Scarlet Rot", Frost: "Frostbite" };
 
 /** The "[Item] in possession…" pool: crystal/cracked tears and perfume items. */
 const POSSESSION_ITEMS = [
@@ -108,7 +108,7 @@ function expandTemplates(name: string): string[] {
       if (!token) return [v];
       const list =
         token === "[Element]" ? ELEMENTS
-        : token === "[Status]" ? (v === CURSE_STATUS_TEMPLATE ? CURSE_STATUSES : STATUSES)
+        : token === "[Status]" ? STATUSES
         : token === "[Item]" ? POSSESSION_ITEMS
         : WEAPON_CLASSES;
       return list.map((x) => v.split(token).join(x));
@@ -211,15 +211,6 @@ for (const n of [1, 2, 3]) {
   EFFECT_ALIASES[`Ultimate Art Gauge +${n}`] = `Ultimate Art Auto Charge +${n}`;
 }
 
-// The catalogue's full status names still resolve to the curse's in-game short
-// ones ("… Scarlet Rot Buildup" → "… Rot Buildup"), so wiki-styled input and
-// relics saved before the rename keep matching.
-STATUSES.forEach((status, i) => {
-  if (status === CURSE_STATUSES[i]) return;
-  EFFECT_ALIASES[CURSE_STATUS_TEMPLATE.replace("[Status]", status)] =
-    CURSE_STATUS_TEMPLATE.replace("[Status]", CURSE_STATUSES[i]);
-});
-
 /** "Great Hammer" → "Great Hammers", "Torch" → "Torches"; "Staves" stays. */
 function pluralizeWeapon(w: string): string {
   if (w.endsWith("s")) return w;
@@ -263,6 +254,31 @@ for (const name of EFFECT_VOCABULARY) {
   const dormant = name.match(/^Dormant Power Helps Discover (.+?)( \+\d)?$/);
   if (dormant && pluralizeWeapon(dormant[1]) !== dormant[1]) {
     EFFECT_ALIASES[`Dormant Power Helps Discover ${pluralizeWeapon(dormant[1])}${dormant[2] ?? ""}`] = name;
+  }
+  // The elemental negation lines read "Improved Fire Damage Negation" in
+  // game, with the tiers above them spelled the same way; the normal
+  // catalogue's "Fire Damage Negation Up" was the sheet's wording, so it is
+  // the alias now (the base tier is the only one it ever named).
+  const elemNeg = name.match(/^Improved (Magic|Fire|Lightning|Holy) Damage Negation$/);
+  if (elemNeg) EFFECT_ALIASES[`${elemNeg[1]} Damage Negation Up`] = name;
+  // Two lines the two pools spelled differently, each settled on the game's
+  // wording: the guard-counter one keeps the normal catalogue's sentence, the
+  // stamina one takes the Deep catalogue's — so each pool's other spelling is
+  // now the alias, and relics saved under it convert on their next load.
+  if (name === "Guard counter is given a boost based on current HP") {
+    EFFECT_ALIASES["Guard Counter Boosted by Current HP"] = name;
+  }
+  const stamina = name.match(/^Stamina Recovery upon Landing Attacks( \+\d)?$/);
+  if (stamina) {
+    EFFECT_ALIASES[`Stamina recovers with each successful attack${stamina[1] ?? ""}`] = name;
+  }
+  // The wiki spells two statuses out in full where the game abbreviates them
+  // on relic lines — "Improved Scarlet Rot Resistance", "… Frostbite
+  // Buildup". Its spelling is the alias, on every line that names one and at
+  // every tier, so relics saved under the old resistance names convert too.
+  for (const [short, full] of Object.entries(STATUS_LEGACY)) {
+    const word = new RegExp(`\\b${short}\\b`);
+    if (word.test(name)) EFFECT_ALIASES[name.replace(word, full)] = name;
   }
   // The sheet grouped the perfume line with the three throwing-item ones and
   // gave it their "Damage" suffix; in game it is just "Improved Perfuming

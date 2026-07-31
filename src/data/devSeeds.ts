@@ -59,7 +59,7 @@ function demo(now: number): BuildStore {
         id: "seed-relic-green-1",
         name: "",
         color: "Green",
-        effects: ["Stamina recovers with each successful attack"],
+        effects: ["Stamina Recovery upon Landing Attacks"],
         demerits: [""],
         deep: false,
       },

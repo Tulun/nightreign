@@ -37,7 +37,7 @@ export const uniqueRelics: UniqueRelic[] = [
     effects: ["Improved Critical Hits +1", "Art gauge fills moderately upon critical hit", "Critical Hit Boosts Stamina Recovery Speed"],
     source: "Defeat Gaping Jaw (first clear)" },
   { name: "Night of the Beast", color: "Green", icon: "night-of-the-beast.png", group: "nightlord",
-    effects: ["Stamina recovers with each successful attack +1", "Starting armament deals fire damage"],
+    effects: ["Stamina Recovery upon Landing Attacks +1", "Starting armament deals fire damage"],
     source: "Defeat Gladius, Beast of Night (first clear)" },
   { name: "Night of the Champion", color: "Green", icon: "night-of-the-champion.png", group: "nightlord",
     effects: ["Increased Maximum Stamina", "Guard counter is given a boost based on current HP", "HP Restoration upon Thrusting Counterattack"],
@@ -112,7 +112,7 @@ export const uniqueRelics: UniqueRelic[] = [
     effects: ["[Wylder] Art gauge greatly filled when ability is activated", "Ultimate Art Auto Charge +3", "Arcane +3"],
     source: "Wylder Remembrance quest III" },
   { name: "The Wylder's Earring", color: "Red", icon: "the-wylders-earring.png", group: "character", character: "Wylder",
-    effects: ["[Wylder] Art activation spreads fire in area", "[Wylder] +1 additional Character Skill use", "Stamina recovers with each successful attack"],
+    effects: ["[Wylder] Art activation spreads fire in area", "[Wylder] +1 additional Character Skill use", "Stamina Recovery upon Landing Attacks"],
     source: "Wylder's ending — defeat Heolstor with the Silver Tear equipped" },
   // Guardian
   { name: "Stone Stake", color: "Red", icon: "stone-stake.png", group: "character", character: "Guardian",

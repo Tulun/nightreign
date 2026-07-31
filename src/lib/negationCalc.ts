@@ -72,7 +72,7 @@ export interface NegEffect {
 
 export const NEG_EFFECTS: NegEffect[] = [
   // ── Relic effects (shown in relic slots) ──
-  { id: "r-elem10", label: "[Element] Damage Negation Up", source: "relic", group: "Elemental", scope: "element", value: 10, needsElement: true, stack: "yes" },
+  { id: "r-elem10", label: "Improved [Element] Damage Negation", source: "relic", group: "Elemental", scope: "element", value: 10, needsElement: true, stack: "yes" },
   { id: "r-elem-d1", label: "Improved [Element] Damage Negation +1", source: "relic", group: "Elemental", scope: "element", value: 15, needsElement: true, stack: "yes" },
   { id: "r-elem-d2", label: "Improved [Element] Damage Negation +2", source: "relic", group: "Elemental", scope: "element", value: 16, needsElement: true, stack: "yes" },
   { id: "r-phys", label: "Improved Physical Damage Negation", source: "relic", group: "Physical", scope: "physical", value: 10, stack: "yes" },
