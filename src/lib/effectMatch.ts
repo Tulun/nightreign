@@ -96,7 +96,7 @@ function splitTierSuffix(name: string): string[] {
   return m[2].split("/").map((t) => `${m[1]} +${t.replace(/^\+/, "")}`);
 }
 
-function expandName(name: string): string[] {
+function expandTemplates(name: string): string[] {
   return splitTierSuffix(name).flatMap((tiered) => {
     const group = NAME_GROUPS.find(([key]) => tiered.startsWith(key));
     const variants = group ? group[1].map((v) => tiered.replace(group[0], v)) : [tiered];
@@ -111,6 +111,39 @@ function expandName(name: string): string[] {
       return list.map((x) => v.split(token).join(x));
     });
   });
+}
+
+/**
+ * Every name the catalogue spells without a tier suffix: the normal pool,
+ * plus the fixed relics, which carry base-tier lines the normal pool doesn't
+ * list at all (Cleansing Tear's Improved Affinity Damage Negation is the only
+ * one today — and a Deep screenshot fixture shows that same line untiered).
+ */
+const UNTIERED_NAMES = new Set(
+  [...relicEffects.map((e) => e.name), ...uniqueRelics.flatMap((r) => r.effects)]
+    .flatMap(expandTemplates)
+    .map(nameKey),
+);
+
+/**
+ * The sheet wrote the Deep base tier as "+0", but the game prints it with no
+ * suffix at all — it is the same line the normal pool already carries, and
+ * all 18 effects this applies to are confirmed to roll on Deep. Collapsing
+ * the two leaves one name per effect: the build page can offer it when you
+ * build a Deep relic by hand, and the matcher no longer has two spellings of
+ * one line sitting equally close to a scanned row, where the tie went to
+ * whichever the vocabulary happened to list first.
+ *
+ * Deep-only "+0" lines (nothing untiered to collapse into, e.g. Improved
+ * Affinity Attack Power) keep the suffix and get an untiered alias below.
+ */
+function dropZeroTier(name: string): string {
+  const m = name.match(/^(.+) \+0$/);
+  return m && UNTIERED_NAMES.has(nameKey(m[1])) ? m[1] : name;
+}
+
+function expandName(name: string): string[] {
+  return expandTemplates(name).map(dropZeroTier);
 }
 
 /** Case/punctuation-insensitive key for spotting duplicate spellings. */
@@ -258,6 +291,17 @@ for (const name of EFFECT_VOCABULARY) {
   // writes "+0" ("Improved Affinity Attack Power" — verified in-game).
   const base = name.match(/^(.+) \+0$/);
   if (base && !CANONICAL_BY_KEY.has(nameKey(base[1]))) EFFECT_ALIASES[base[1]] = name;
+}
+
+// The other side of dropZeroTier: the sheet's "+0" spelling for a line the
+// game prints tierless, kept so wiki-styled input and relics saved under it
+// still resolve. Only the Deep rows that actually carry a "+0" get one — an
+// alias per untiered effect would hand OCR a pile of targets no screen shows.
+for (const d of deepRelics) {
+  for (const n of expandTemplates(d.name)) {
+    const zero = n.match(/^(.+) \+0$/);
+    if (zero && UNTIERED_NAMES.has(nameKey(zero[1]))) EFFECT_ALIASES[n] = canonicalEffectName(zero[1]);
+  }
 }
 
 const LOWER_ALIASES = new Map(

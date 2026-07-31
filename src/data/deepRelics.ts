@@ -137,6 +137,7 @@ export const deepRelics: DeepRelic[] = [
   { name: "HP Restoration upon Thrusting Counterattack +0", effect: "Restores ~2.5% of max HP on counterhits", category: "regen", stack: "tiers", crossover: true },
   { name: "HP Restored When Using Medicinal Boluses, etc. +0", effect: "Replenishes 50 HP from certain consumables", category: "regen", stack: "tiers", crossover: true },
   { name: "Critical Hit Boosts Stamina Recovery Speed +0", effect: "+10 stamina/s for 15s after a critical hit", category: "regen", stack: "tiers", crossover: true },
+  { name: "HP Recovery From Successful Guarding", effect: "Restores HP on blocking an attack", category: "regen", stack: "no", crossover: true, note: "Seen in-game on a Deep relic; the sheet listed it as normal-only. Amount and stack behaviour not recorded yet." },
   { name: "Slowly Restore HP for Self & Nearby Allies When HP Is Low", effect: "+0.5% max HP + 1 HP/s for 50s while below 20% HP", category: "regen", stack: "no", crossover: true },
   { name: "Raised Stamina Recovery for Nearby Allies, but Not for Self", effect: "+4 stamina/s for nearby allies", category: "regen", stack: "no", crossover: true },
   { name: "Defeating Enemies Restores HP for Allies but Not for Self", effect: "Allies recover 20 HP per enemy kill", category: "regen", stack: "no", crossover: true },
@@ -147,6 +148,7 @@ export const deepRelics: DeepRelic[] = [
   { name: "Items Confer Effect to All Nearby Allies", effect: "Items you use also confer their effect to nearby allies", category: "exploration", stack: "no", crossover: true },
   { name: "Increased Rune Acquisition for Self and Allies", effect: "+3.5% rune gain for you and nearby allies", category: "exploration", stack: "yes", crossover: true },
   { name: "Rune Discount for Shop Purchases While on Expedition", effect: "10% discount at merchants", category: "exploration", stack: "no", crossover: true },
+  { name: "Critical Hits Earn Runes", effect: "Earn runes for landing a critical hit", category: "exploration", stack: "no", crossover: true, note: "Seen in-game on a Deep relic; the sheet listed it as normal-only. Rune value and stack behaviour not recorded yet." },
   { name: "Treasure Marked upon Map", effect: "Reveals hidden chest locations", category: "exploration", stack: "no", crossover: true },
   { name: "Flask Also Heals Allies", effect: "Heals nearby allies for 50% of the flask's HP", category: "exploration", stack: "no", crossover: true },
   // Start of Game
