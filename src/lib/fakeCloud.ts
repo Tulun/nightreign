@@ -258,15 +258,23 @@ export async function pullCloudStore(uid: string): Promise<BuildStore | null> {
   }
 }
 
-export async function pushCloudStore(user: User, store: BuildStore): Promise<void> {
+export async function pushCloudStore(
+  user: User,
+  store: BuildStore,
+  refreshProfile = true,
+): Promise<void> {
   update((s) => ({
     ...s,
     profiles: {
       ...s.profiles,
       [user.uid]: {
         displayName: s.profiles[user.uid]?.displayName ?? null,
-        buildCount: store.builds.length,
-        updatedAt: Date.now(),
+        // Skipping the profile refresh leaves the directory fields where they
+        // were, exactly as the real backend does — a store-only write.
+        buildCount: refreshProfile
+          ? store.builds.length
+          : (s.profiles[user.uid]?.buildCount ?? store.builds.length),
+        updatedAt: refreshProfile ? Date.now() : (s.profiles[user.uid]?.updatedAt ?? Date.now()),
         store: JSON.stringify(store),
       },
     },

@@ -111,10 +111,23 @@ export async function setProfileName(uid: string, name: string): Promise<void> {
   );
 }
 
-/** Write the store (and a matching profile refresh) to the account. */
-export async function pushCloudStore(user: User, store: BuildStore): Promise<void> {
+/**
+ * Write the store to the account, and normally the profile alongside it.
+ *
+ * `refreshProfile` exists because the profile doc doubles the cost of every
+ * save while carrying almost nothing that changes: a build count, and a date
+ * the directory renders to the day (see CommunityUsers). A caller that saves
+ * often — the debounced write-through does, once per edit pause — passes
+ * false for the runs in between and keeps the directory current on its own
+ * schedule (see useAccountStore's PROFILE_REFRESH_MS).
+ */
+export async function pushCloudStore(
+  user: User,
+  store: BuildStore,
+  refreshProfile = true,
+): Promise<void> {
   await Promise.all([
-    upsertProfile(user, store),
+    ...(refreshProfile ? [upsertProfile(user, store)] : []),
     setDoc(storeDoc(user.uid), { store: JSON.stringify(store), updatedAt: serverTimestamp() }),
   ]);
 }

@@ -121,6 +121,55 @@ export function OfflineBanner({ onRetry }: { onRetry: () => void }) {
 }
 
 /**
+ * Syncing stopped itself after writing in a loop (see useAccountStore's
+ * PUSH_LIMIT). Says what to do about it, since the cause is nearly always
+ * another tab or device on the same account rather than anything on this one.
+ */
+export function RunawayBanner({ onRetry }: { onRetry: () => void }) {
+  return (
+    <section className="frame mb-5 rounded-md bg-night-850 p-4" style={{ borderColor: "rgb(248 113 113 / 0.6)" }}>
+      <p className="font-body text-base text-red-200">
+        Saving to your account has been paused — it was saving over and over.
+      </p>
+      <p className="mt-1 max-w-prose font-body text-sm text-parchment-faint">
+        This usually means another tab or device is signed in to this account and
+        the two are overwriting each other. Close the others, then resume. Your
+        edits are safe in this browser in the meantime — but don&rsquo;t clear its
+        storage until saving is back.
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-2 frame rounded-md bg-night-800 px-3 py-1.5 font-body text-sm text-parchment-muted hover:bg-night-700 hover:text-parchment"
+      >
+        Resume saving
+      </button>
+    </section>
+  );
+}
+
+/**
+ * Dev servers read the real database and don't write to it (see
+ * CLOUD_READONLY). Never rendered by a deployed build.
+ */
+export function DevReadOnlyBanner() {
+  return (
+    <section className="frame mb-5 rounded-md bg-night-850 p-4" style={{ borderColor: "rgb(250 204 21 / 0.5)" }}>
+      <p className="font-body text-base text-gold-bright">
+        Dev server: your account is read-only here.
+      </p>
+      <p className="mt-1 max-w-prose font-body text-sm text-parchment-faint">
+        Edits stay in this browser and never reach the real database, so a
+        half-finished migration can&rsquo;t land in a live account. Run{" "}
+        <code className="font-mono">npm run dev:fake</code> for a writable stub
+        backend, or set <code className="font-mono">NEXT_PUBLIC_REAL_CLOUD=1</code> to
+        write for real.
+      </p>
+    </section>
+  );
+}
+
+/**
  * The one-time offer of the pre-account store. Asked rather than merged
  * silently: on a shared or borrowed browser those builds may well be someone
  * else's, and an account is the one place they'd be awkward to unpick from.

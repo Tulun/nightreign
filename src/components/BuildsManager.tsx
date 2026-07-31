@@ -45,9 +45,11 @@ import {
 import { useAuth } from "@/lib/cloud";
 import { useAccountStore } from "@/lib/useAccountStore";
 import {
+  DevReadOnlyBanner,
   LegacyImportCard,
   LoadFailed,
   OfflineBanner,
+  RunawayBanner,
   SignInWall,
 } from "@/components/builds/AccountGate";
 import { MyNickname } from "@/components/builds/NicknameCard";
@@ -323,6 +325,8 @@ export function BuildsManager() {
   const banners = (
     <>
       {status === "offline" && <OfflineBanner onRetry={retry} />}
+      {status === "runaway" && <RunawayBanner onRetry={retry} />}
+      {status === "readonly" && <DevReadOnlyBanner />}
       {legacy && (
         <LegacyImportCard legacy={legacy} onImport={importLegacy} onDismiss={dismissLegacy} />
       )}
