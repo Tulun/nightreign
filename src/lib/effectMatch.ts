@@ -8,7 +8,7 @@ import { deepRelics } from "@/data/deepRelics";
 import { relicEffects } from "@/data/relicEffects";
 import { characterSwaps } from "@/data/statSwaps";
 import { uniqueRelics } from "@/data/uniqueRelics";
-import { gameEffectName } from "@/lib/relics";
+import { gameEffectName, type RelicCategory } from "@/lib/relics";
 import { swapEffectName } from "@/lib/statSwaps";
 
 // Template effect names ("Improved [Weapon] Attack Power") are expanded into
@@ -58,6 +58,15 @@ const AFFLICTED_LEGACY: Record<string, string> = {
   poison: "Poison", "scarlet rot": "Rot", frostbite: "Frost",
 };
 const AFFLICTED = Object.keys(AFFLICTED_LEGACY).map((s) => `Attack power up when facing ${s}-afflicted enemy`);
+
+/**
+ * The concrete names behind the Deep catalogue's grouped rows are taken from
+ * the normal catalogue rather than respelled here, so one effect keeps one
+ * spelling across both pools.
+ */
+const catalogueNames = (category: RelicCategory, prefix = "") =>
+  relicEffects.filter((e) => e.category === category && e.name.startsWith(prefix)).map((e) => e.name);
+
 const NAME_GROUPS: [string, string[]][] = [
   ["Magic/Fire/Lightning/Holy Attack Up", ELEMENTS.map((e) => `${e} Attack Power Up`)],
   ["Attack power up when facing poison/scarlet rot/frostbite-afflicted enemy", AFFLICTED],
@@ -70,6 +79,14 @@ const NAME_GROUPS: [string, string[]][] = [
   ["Improved [Consumable] Damage",
     ["Improved Throwing Pot Damage", "Improved Throwing Knife Damage",
      "Improved Throwing Stone Damage", "Improved Perfuming Arts Damage"]],
+  // The sheet folded whole pools into a single row. "[Spell School]" is no
+  // token expandName knows, so the placeholder went into the vocabulary
+  // verbatim: every school was missing from the Deep pool (the build page
+  // found nothing for "gravity") while the placeholder itself sat there as a
+  // match target for OCR to snap a real school line onto.
+  ["Improved [Spell School] Sorcery/Incantation", catalogueNames("spell-school")],
+  ["Max FP Up with 3+ Staves/Seals Equipped", catalogueNames("loadout", "Max FP")],
+  ["Max HP Up with 3+ Shields Equipped", catalogueNames("loadout", "Max HP")],
 ];
 
 /** "Foo +3/4" → ["Foo +3", "Foo +4"]; names without a tier group pass through. */
