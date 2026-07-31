@@ -527,6 +527,17 @@ export function BuildsManager() {
           onAddCustomRelic={addCustomRelic}
           onUpdateCustomRelic={updateCustomRelic}
           onCreateTag={createTag}
+          // Only a new build offers this — leaving drops the draft, which is
+          // nothing yet on a build that hasn't been filled in.
+          onImportRelics={
+            isNew
+              ? () => {
+                  setImportTab("relics");
+                  setView("import");
+                  showList();
+                }
+              : undefined
+          }
         />
       </div>
     );
@@ -615,13 +626,13 @@ export function BuildsManager() {
           community directory. */}
       <MyNickname synced={status === "synced"} />
 
-      {/* Builds / My Relics / Import view switch */}
+      {/* Builds / My Relics view switch. Import isn't one of these — it's a
+          thing you go and do, reached by the button beside "New build". */}
       <div className="mb-5 flex flex-wrap gap-1 border-b border-night-700">
         {(
           [
             { key: "builds", label: "Builds", count: ownBuilds.length },
             { key: "relics", label: "My Relics", count: store.customRelics.length },
-            { key: "import", label: "Import", count: 0 },
           ] as const
         ).map((t) => {
           const active = view === t.key;
@@ -662,14 +673,22 @@ export function BuildsManager() {
 
       {view === "builds" && (
         <>
-      {/* Primary CTA — on its own line, ahead of the filtering toolbar. */}
-      <div className="mb-4">
+      {/* Primary CTA — on its own line, ahead of the filtering toolbar, with
+          the way into the importers beside it. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={startNew}
           className="rounded-md border border-gold-bright bg-gold px-6 py-3 font-display text-base font-semibold text-night-950 shadow-seal transition hover:bg-gold-bright"
         >
           + New build
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("import")}
+          className="frame rounded-md bg-night-800 px-6 py-3 font-display text-base font-semibold text-parchment-muted transition hover:bg-night-700 hover:text-gold-bright"
+        >
+          Import from Screenshots
         </button>
       </div>
 
@@ -810,6 +829,16 @@ export function BuildsManager() {
           throw the run — or the cards waiting to be reviewed — away. The two
           importers below are kept apart for the same reason. */}
       <div hidden={view !== "import"}>
+        {/* Import is no longer a tab, so it carries its own way back. */}
+        <button
+          type="button"
+          onClick={() => setView("builds")}
+          className="frame mb-4 rounded-md bg-night-800 px-4 py-2 font-body text-base text-parchment-muted hover:bg-night-700 hover:text-parchment"
+        >
+          ← Back to builds
+        </button>
+        <h3 className="mb-4 font-display text-xl text-parchment">Import from Screenshots</h3>
+
         {/* Two ways in: relics into the pool, or a whole build in one go. */}
         <div className="mb-5 flex flex-wrap gap-1.5">
           {(

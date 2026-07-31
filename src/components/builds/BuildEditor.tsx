@@ -2,7 +2,7 @@
 
 // ─────────────────────────────────────────────────────────────────────────
 //  Editor view: full-width build editor with searchable relic pickers,
-//  Deep of Night slots, and tags. Screenshots are read on the Import tab,
+//  Deep of Night slots, and tags. Screenshots are read in the Import view,
 //  which assembles a whole build in one pass — this view is for working on a
 //  build that already exists.
 // ─────────────────────────────────────────────────────────────────────────
@@ -69,6 +69,7 @@ export function BuildEditor({
   onAddCustomRelic,
   onUpdateCustomRelic,
   onCreateTag,
+  onImportRelics,
 }: {
   initial: Build;
   store: BuildStore;
@@ -78,6 +79,9 @@ export function BuildEditor({
   backLabel?: string;
   /** Saved builds keep their Nightfarer — only a new build picks one. */
   lockCharacter?: boolean;
+  /** Leave for the relic importer — offered on a new build, which is where
+      "I don't have these relics in my pool yet" comes up. */
+  onImportRelics?: () => void;
   onAddCustomRelic: (r: CustomRelic) => void;
   onUpdateCustomRelic: (r: CustomRelic) => void;
   onCreateTag: (name: string) => void;
@@ -345,6 +349,23 @@ export function BuildEditor({
           {backLabel}
         </button>
         <StepTrail steps={STEP_LABELS} at={0} />
+
+        {/* What this flow builds from, and where to go if the relics you want
+            aren't in the pool yet. */}
+        {onImportRelics && (
+          <p className="mb-5 max-w-prose font-body text-base text-parchment-muted">
+            Create a build from relics you have in your relic pool. If you want to add new
+            relics from screenshots,{" "}
+            <button
+              type="button"
+              onClick={onImportRelics}
+              className="font-semibold text-gold-bright underline underline-offset-2 hover:text-parchment"
+            >
+              click here
+            </button>
+            .
+          </p>
+        )}
 
         <section>
           <h4 className="font-display text-lg text-parchment">Who are you building for?</h4>

@@ -78,7 +78,7 @@ export const NEG_EFFECTS: NegEffect[] = [
   { id: "r-phys", label: "Improved Physical Damage Negation", source: "relic", group: "Physical", scope: "physical", value: 10, stack: "yes" },
   { id: "r-phys-d1", label: "Improved Physical Damage Negation +1", source: "relic", group: "Physical", scope: "physical", value: 10.5, stack: "yes" },
   { id: "r-phys-d2", label: "Improved Physical Damage Negation +2", source: "relic", group: "Physical", scope: "physical", value: 12, stack: "yes" },
-  { id: "r-aff0", label: "Improved Affinity Damage Negation +0", source: "relic", group: "Affinity", scope: "affinity", value: 6, stack: "yes" },
+  { id: "r-aff0", label: "Improved Affinity Damage Negation", source: "relic", group: "Affinity", scope: "affinity", value: 6, stack: "yes" },
   { id: "r-aff1", label: "Improved Affinity Damage Negation +1", source: "relic", group: "Affinity", scope: "affinity", value: 10.5, stack: "yes" },
   { id: "r-aff2", label: "Improved Affinity Damage Negation +2", source: "relic", group: "Affinity", scope: "affinity", value: 12, stack: "yes" },
   { id: "r-lowhp", label: "Improved Damage Negation at Low HP", source: "relic", group: "Conditional", scope: "all", value: 16, condition: "Below 40% HP", stack: "yes" },

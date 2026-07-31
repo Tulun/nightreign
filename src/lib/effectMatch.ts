@@ -76,9 +76,12 @@ const NAME_GROUPS: [string, string[]][] = [
   // The game shows these as separate per-spell-type lines ("Improved
   // Sorceries +1" — seen on a Deep relic in-game).
   ["Improved Sorceries/Incantations", ["Improved Sorceries", "Improved Incantations"]],
+  // Three of the four carry "Damage"; the perfume line is just "Improved
+  // Perfuming Arts" in game, which is also the normal catalogue's name — so
+  // spelling it the sheet's way left the Deep tiers on an effect of their own.
   ["Improved [Consumable] Damage",
     ["Improved Throwing Pot Damage", "Improved Throwing Knife Damage",
-     "Improved Throwing Stone Damage", "Improved Perfuming Arts Damage"]],
+     "Improved Throwing Stone Damage", "Improved Perfuming Arts"]],
   // The sheet folded whole pools into a single row. "[Spell School]" is no
   // token expandName knows, so the placeholder went into the vocabulary
   // verbatim: every school was missing from the Deep pool (the build page
@@ -114,32 +117,18 @@ function expandTemplates(name: string): string[] {
 }
 
 /**
- * Every name the catalogue spells without a tier suffix: the normal pool,
- * plus the fixed relics, which carry base-tier lines the normal pool doesn't
- * list at all (Cleansing Tear's Improved Affinity Damage Negation is the only
- * one today — and a Deep screenshot fixture shows that same line untiered).
- */
-const UNTIERED_NAMES = new Set(
-  [...relicEffects.map((e) => e.name), ...uniqueRelics.flatMap((r) => r.effects)]
-    .flatMap(expandTemplates)
-    .map(nameKey),
-);
-
-/**
- * The sheet wrote the Deep base tier as "+0", but the game prints it with no
- * suffix at all — it is the same line the normal pool already carries, and
- * all 18 effects this applies to are confirmed to roll on Deep. Collapsing
- * the two leaves one name per effect: the build page can offer it when you
- * build a Deep relic by hand, and the matcher no longer has two spellings of
- * one line sitting equally close to a scanned row, where the tie went to
- * whichever the vocabulary happened to list first.
+ * "+0" never reaches a relic — the game drops the suffix and prints the base
+ * tier as a bare line (verified in game). The community sheet wrote it, so it
+ * comes off during expansion: one name per effect, the one the screen shows.
  *
- * Deep-only "+0" lines (nothing untiered to collapse into, e.g. Improved
- * Affinity Attack Power) keep the suffix and get an untiered alias below.
+ * That name is often already the normal pool's, which is the point — a Deep
+ * relic's base-tier line and the normal effect are one line, so the build
+ * page can offer it on a Deep relic and the matcher isn't picking between two
+ * spellings that sit equally close to a scanned row. The "+0" spelling stays
+ * an alias below, so relics saved under it convert on their next load.
  */
 function dropZeroTier(name: string): string {
-  const m = name.match(/^(.+) \+0$/);
-  return m && UNTIERED_NAMES.has(nameKey(m[1])) ? m[1] : name;
+  return name.replace(/ \+0$/, "");
 }
 
 function expandName(name: string): string[] {
@@ -275,6 +264,11 @@ for (const name of EFFECT_VOCABULARY) {
   if (dormant && pluralizeWeapon(dormant[1]) !== dormant[1]) {
     EFFECT_ALIASES[`Dormant Power Helps Discover ${pluralizeWeapon(dormant[1])}${dormant[2] ?? ""}`] = name;
   }
+  // The sheet grouped the perfume line with the three throwing-item ones and
+  // gave it their "Damage" suffix; in game it is just "Improved Perfuming
+  // Arts". Its spelling is the alias, tier and all.
+  const perfume = name.match(/^Improved Perfuming Arts( \+\d)?$/);
+  if (perfume) EFFECT_ALIASES[`Improved Perfuming Arts Damage${perfume[1] ?? ""}`] = name;
   // The two Art-gauge fill effects are named for the line the game shows
   // ("Successful guarding fills more of the Art gauge"); the community
   // sheet's shorthand for them, which the catalogue used to display, is the
@@ -287,20 +281,15 @@ for (const name of EFFECT_VOCABULARY) {
         : "Defeating Enemies Fills More Art Gauge";
     EFFECT_ALIASES[`${sheet}${gauge[2] ?? ""}`] = name;
   }
-  // Deep relics display the base tier with no suffix where the catalogue
-  // writes "+0" ("Improved Affinity Attack Power" — verified in-game).
-  const base = name.match(/^(.+) \+0$/);
-  if (base && !CANONICAL_BY_KEY.has(nameKey(base[1]))) EFFECT_ALIASES[base[1]] = name;
 }
 
-// The other side of dropZeroTier: the sheet's "+0" spelling for a line the
-// game prints tierless, kept so wiki-styled input and relics saved under it
-// still resolve. Only the Deep rows that actually carry a "+0" get one — an
-// alias per untiered effect would hand OCR a pile of targets no screen shows.
+// The other side of dropZeroTier: the sheet's "+0" spelling, kept so
+// wiki-styled input and relics saved under it still resolve. Only the Deep
+// rows that carry a "+0" get one — an alias per untiered effect would hand
+// OCR a pile of targets no relic ever shows.
 for (const d of deepRelics) {
   for (const n of expandTemplates(d.name)) {
-    const zero = n.match(/^(.+) \+0$/);
-    if (zero && UNTIERED_NAMES.has(nameKey(zero[1]))) EFFECT_ALIASES[n] = canonicalEffectName(zero[1]);
+    if (n.endsWith(" +0")) EFFECT_ALIASES[n] = canonicalEffectName(dropZeroTier(n));
   }
 }
 

@@ -232,8 +232,10 @@ function groupTiers(items: RelicEffect[]): { base: string; tiers: string[]; stac
   }
   return order.map((base) => {
     const g = map.get(base)!;
-    // Show an explicit "+0" when a base version coexists with tier variants.
-    const tiers = g.tiers.length > 0 && g.hasBase ? ["+0", ...g.tiers] : g.tiers;
+    // Mark the tierless version when it coexists with tier variants — not as
+    // "+0", which is a suffix no relic ever shows: the game prints the base
+    // tier as a bare line.
+    const tiers = g.tiers.length > 0 && g.hasBase ? ["base", ...g.tiers] : g.tiers;
     return { base, tiers, stackable: g.stackable, note: g.note };
   });
 }
