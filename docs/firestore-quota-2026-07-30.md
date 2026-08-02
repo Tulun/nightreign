@@ -1,7 +1,12 @@
 # Firestore quota spike — 2026-07-30
 
 Handoff for a deeper look. Written the evening it was noticed; the mitigations
-below are already in `main`'s working tree, the root cause is **not confirmed**.
+below are already in `main`'s working tree.
+
+**Update 2026-08-02: root cause confirmed — twice over. See "Answers" at the
+bottom.** Two independent loop mechanisms were reproduced; the array-order one
+is fixed in the working tree, the cross-version one is real but contained by
+the runaway guard. `scripts/sync-convergence.ts` is the regression harness.
 
 ## What was seen
 
@@ -113,3 +118,72 @@ instrument: if `status: "runaway"` ever trips in a real session, the
 `console.error` names the account and the cause is reproducible from there.
 Watch the daily write count for a few days with dev servers read-only — if it
 drops to something proportional to real users, the diagnosis was right.
+
+## Answers — 2026-08-02
+
+Both investigations ran to ground. There are **two** real loop mechanisms, and
+the incident's two climbs likely map to one each.
+
+### Q2 — the merge is NOT convergent, but preferLocalRelics is innocent
+
+`preferLocalRelics` itself settles: the flag is only true while
+`localJson !== lastPushed`, which clears on the next successful push, after
+which the other side's flag-false merge accepts the cloud copy wholesale.
+Simulated over thousands of adversarial trials — no loop from relic-id clashes.
+
+What does NOT settle is **array order**. `mergeWithCloud` builds its maps
+local-first, so its output carries the merging tab's order; `storeKey` sorted
+object keys but left arrays positional. Two tabs holding identical contents in
+different orders each read the other's push as "cloud is missing local data"
+(`mergedJson !== cloudJson`) and push their own order back — one write per
+debounce, forever, both tabs idle.
+
+The trigger is mundane and same-version: device A creates build b1 while
+device B has b2 (or either edits any build — `commitBuild` re-appends the
+edited build at the end of the array). B's sign-in merge yields `[b2, b1]`,
+A's listener merge yields `[b1, b2]`, and the pair never agrees again.
+Reproduced deterministically: 60+ writes from two simulated tabs running the
+exact `useAccountStore` logic, nobody editing. At ~2.5–3s per round it is the
+observed ~48 writes/min, and each write echoing to both listeners is the 2:1
+read ratio. This mechanism needs no dev server, which fits the unexplained
+morning climb (Q3): any two open tabs/devices with permuted arrays suffice.
+
+**Fixed** (working tree): `storeKey` now compares `builds`/`customRelics`
+by-id order-insensitively, and `applyTombstones` emits them in canonical id
+order (ids lead with a timestamp, so this is ≈ creation order; the builds UI
+sorts by character/updatedAt for display, so nothing user-visible moves).
+The comparison fix also defuses mixed-version fights: a still-open tab on
+pre-fix code may push its own order back once, but the fixed tab reads it as
+content-equal and goes quiet.
+
+### Q1 — cross-version normalization ping-pong is CONFIRMED
+
+Swept the union of every effect spelling either side knows (vocabulary +
+alias-table domains, 835 strings) through
+`resolveEffectAlias(gameEffectName(s))` under 8 recent commits (`e69d512` …
+`258c9f0`) in scratch worktrees, then alternated each pair's rewrites to a
+fixpoint or a cycle. Result: **13 distinct canonical strings 2-cycle between
+current code and recent-past versions** — each version knows both spellings
+(nameKey is case/punctuation-insensitive) and maps the other's canonical back
+to its own. Sample: `Improved Incantations` (old code re-adds the sheet's
+`+0`, new code strips it), the four `Improved <Element> Damage Negation`
+lines, `Reduced FP Consumption`, `Art gauge fills moderately upon critical
+hit +1` (pure case flip vs `cf31832`/`fe639d7`). These are common effects; a
+real store carrying any one of them plus one tab on old code and one on new
+loops exactly as hypothesized — the evening climb, with the 18:31 dev server
+on fresh alias tables against a deployed tab.
+
+Not fixable by ordering: the strings genuinely differ. Current containment is
+real, though: dev servers are read-only (`CLOUD_READONLY`), and post-`de625b9`
+code carries the runaway guard, which stops the new-code side within a minute
+and thereby quiets the old-code side too. The residual window is stale
+deployed tabs across a rollout — bounded to ≤ PUSH_LIMIT writes per pair.
+A durable fix, if wanted later: stamp the store with a normalization revision
+and have older code decline to re-normalize a store stamped newer.
+
+### Verification
+
+`npx tsx scripts/sync-convergence.ts [trials] [seed]` — checks normalize
+round-trip fixpoints, merge algebra (idempotence, push-back fixpoint in both
+flag positions), and a randomized two-tab protocol simulation with loop
+detection. 2,000 trials pass post-fix; pre-fix, every protocol trial ran away.

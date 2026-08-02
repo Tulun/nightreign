@@ -468,8 +468,14 @@ export function applyTombstones(store: BuildStore, now = Date.now()): BuildStore
     });
   return {
     ...store,
-    builds,
-    customRelics,
+    // Id order is the canonical order (ids lead with a timestamp, so this is
+    // ≈ creation order). Merges insert local entries first, so without one
+    // canonical form two devices holding the same contents serialize them
+    // differently — and each then reads the other's push as a change to push
+    // back, a write per debounce for as long as both are open (the
+    // 2026-07-30 quota spike; see docs/firestore-quota-2026-07-30.md).
+    builds: sortById(builds),
+    customRelics: sortById(customRelics),
     // A tag a surviving build still carries stays in the registry — same rule
     // normalizeStore uses to keep every tag in use declared.
     tags: sortedTags([
@@ -540,6 +546,11 @@ function isTombstoneMap(v: unknown): v is Record<string, number> {
     !Array.isArray(v) &&
     Object.values(v).every((at) => typeof at === "number" && Number.isFinite(at))
   );
+}
+
+/** Canonical order for the top-level build/relic lists — see applyTombstones. */
+function sortById<T extends { id: string }>(xs: T[]): T[] {
+  return [...xs].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
 
 /** Dedupe + alphabetize a tag list (the registry's canonical form). */

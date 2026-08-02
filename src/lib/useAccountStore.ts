@@ -92,10 +92,21 @@ export interface AccountStore {
  * a different order than the object we sent — plain JSON.stringify would read
  * that as a change and bounce a write back and forth forever. Sorting keys at
  * every level makes the comparison about content only.
+ *
+ * The builds and customRelics arrays are compared by-id-order for the same
+ * reason: mergeWithCloud emits its own tab's order (local entries first), so
+ * two devices holding identical contents in different orders each read the
+ * other's push as a change and push their own order straight back — one
+ * write per debounce, forever, with nobody touching either machine. That
+ * loop is the 2026-07-30 quota spike (see docs/firestore-quota-2026-07-30.md).
+ * Order inside a build (slots, variants) is meaning, and stays significant.
  */
 function storeKey(store: BuildStore | null): string | null {
   if (!store) return null;
-  return JSON.stringify(store, (_k, v: unknown) =>
+  const byId = <T extends { id: string }>(xs: T[]) =>
+    [...xs].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  const canonical = { ...store, builds: byId(store.builds), customRelics: byId(store.customRelics) };
+  return JSON.stringify(canonical, (_k, v: unknown) =>
     v && typeof v === "object" && !Array.isArray(v)
       ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : 1)))
       : v,
