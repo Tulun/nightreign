@@ -1,0 +1,32 @@
+{
+  "deep": true,
+  "notes": "YouTube capture, Guardian build video — vessel Slot 1 pane, Deep relics; relic 1's third slot is blank; relic 3's last demerit is clipped by the bottom crop.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Character Skill Boosts Damage Negation of Nearby Allies",
+        "Physical Attack Up +4"
+      ],
+      "demerits": [null, "Reduced Intelligence and Dexterity"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Dormant Power Helps Discover Greatshields",
+        "Physical Attack Up +3",
+        "Improved Affinity Damage Negation"
+      ],
+      "demerits": [null, "Lower Attack When Below Max HP", null]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Improved Strength and Dexterity, Reduced Vigor",
+        "Partial HP Restoration upon Post-Damage Attacks +2",
+        "Physical Attack Up +3"
+      ],
+      "demerits": [null, "Reduced Intelligence and Dexterity", "Reduced Strength & Intelligence"]
+    }
+  ]
+}

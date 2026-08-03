@@ -1,0 +1,31 @@
+{
+  "deep": true,
+  "notes": "YouTube capture, Guardian build video — vessel Slot 1 pane, Deep relics; relics 1 and 2 have blank third slots.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Character Skill Boosts Damage Negation of Nearby Allies",
+        "Physical Attack Up +4"
+      ],
+      "demerits": [null, "Reduced Intelligence and Dexterity"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Physical Attack Up +4",
+        "Improved Physical Damage Negation +2"
+      ],
+      "demerits": ["Reduced Damage Negation for Flask Usages", "Reduced Strength & Intelligence"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "FP Restoration upon Whip Attacks",
+        "Dormant Power Helps Discover Greatshields",
+        "Physical Attack Up +3"
+      ],
+      "demerits": [null, null, "Taking Damage Causes Poison Buildup"]
+    }
+  ]
+}

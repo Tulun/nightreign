@@ -541,7 +541,8 @@ export function BuildCard({
                   : "bg-night-900 text-parchment-muted hover:text-parchment"
               }`}
             >
-              {variantLabel(build, i)}
+              {/* 4ch floor so short labels ("V2") match the width of "Main". */}
+              <span className="inline-block min-w-[4ch] text-center">{variantLabel(build, i)}</span>
             </button>
           ))}
         </div>

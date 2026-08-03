@@ -51,6 +51,7 @@ import {
   type OcrSession,
   type ScreenshotRead,
 } from "./shared";
+import { RelicBrowser } from "./RelicBrowser";
 
 /** Slot 1–3, then Deep 1–3 — the build's six sockets, in one flat list. */
 const SLOT_LABELS = ["Slot 1", "Slot 2", "Slot 3", "Deep 1", "Deep 2", "Deep 3"] as const;
@@ -137,6 +138,44 @@ const EMPTY_DRAFTS: Slots = [null, null, null, null, null, null];
 function relicColor(d: Draft, socket: SlotColor): CustomRelic["color"] {
   if (socket !== "White") return socket as CustomRelic["color"];
   return d.color ?? d.read ?? colorFromRelicName(d.name) ?? "Red";
+}
+
+/**
+ * A socket filled from the pool rather than from a photo. Most of a build is
+ * usually already saved — the relics carried every run — so loading those and
+ * photographing only what's new turns six screenshots into one.
+ *
+ * What comes back is an ordinary draft, lines and all, for two reasons: the
+ * lines stay editable like any other socket's, and the save's own dedupe then
+ * recognizes the relic as the pool entry it came from rather than writing a
+ * second copy of it.
+ */
+function draftFromSlot(slot: BuildSlot, store: BuildStore): Draft | null {
+  const blank = { key: newId(), demerits: ["", "", ""], read: null, suggest: null };
+  if (slot?.kind === "fixed") {
+    // Its lines come along even though the fixed view doesn't show them, so
+    // that "not that relic" leaves an editable copy rather than a blank card.
+    const f = fixedRelics.find((r) => r.name === slot.name);
+    return {
+      ...blank,
+      name: slot.name,
+      lines: [0, 1, 2].map((j) => f?.effects[j] ?? ""),
+      color: f?.color ?? null,
+      fixed: slot.name,
+    };
+  }
+  const r = slot?.kind === "custom" ? store.customRelics.find((c) => c.id === slot.id) : null;
+  if (!r) return null;
+  return {
+    ...blank,
+    name: r.name,
+    lines: [0, 1, 2].map((j) => r.effects[j] ?? ""),
+    demerits: [0, 1, 2].map((j) => r.demerits?.[j] ?? ""),
+    // Picking a relic out of the browser is choosing its color by hand, which
+    // is the only thing a White socket asks for.
+    color: r.color,
+    fixed: null,
+  };
 }
 
 /** A draft's effect/demerit pairs, normalized — its identity for comparing. */
@@ -862,7 +901,8 @@ export function ImportBuild({
           <p className="mt-4 max-w-prose font-body text-base text-parchment-muted">
             Fix anything the parser got wrong — the effect boxes suggest as you type. Each relic
             takes the color of the socket it&rsquo;s in, so if a color looks off, the relic is
-            probably in the wrong socket.
+            probably in the wrong socket. A socket left empty can be loaded straight from your
+            relic pool, so a build you mostly own already only needs the new relics photographed.
           </p>
 
           {[false, true].map((deep) => {
@@ -911,6 +951,20 @@ export function ImportBuild({
                         others={SLOT_LABELS.map((l, k) => ({ label: l, index: k })).filter(
                           (o) => o.index !== i,
                         )}
+                        character={character}
+                        store={store}
+                        // A fixed relic is one in-game item, so one already in
+                        // another socket can't be loaded into this one too.
+                        taken={
+                          new Set(
+                            drafts.flatMap((d, k) => (d?.fixed && k !== i ? [d.fixed] : [])),
+                          )
+                        }
+                        onLoad={(slot) =>
+                          patchDrafts((ds) =>
+                            ds.map((d, k) => (k === i ? draftFromSlot(slot, store) : d)),
+                          )
+                        }
                         onName={(v) => setDraft(i, (d) => ({ ...d, name: v }))}
                         onLine={(li, v) =>
                           setDraft(i, (d) => ({
@@ -1139,6 +1193,10 @@ function SlotCard({
   deep,
   draft,
   others,
+  character,
+  store,
+  taken,
+  onLoad,
   onName,
   onLine,
   onDemerit,
@@ -1155,6 +1213,13 @@ function SlotCard({
   deep: boolean;
   draft: Draft | null;
   others: { label: string; index: number }[];
+  /** Whose pool and whose fixed relics the browser offers. */
+  character: string;
+  store: BuildStore;
+  /** Fixed relics the other sockets already hold — offered greyed. */
+  taken: Set<string>;
+  /** Fill this socket from the pool instead of from a screenshot. */
+  onLoad: (slot: BuildSlot) => void;
   onName: (v: string) => void;
   onLine: (index: number, v: string) => void;
   onDemerit: (index: number, v: string) => void;
@@ -1168,6 +1233,7 @@ function SlotCard({
   onClear: () => void;
   onFill: () => void;
 }) {
+  const [browsing, setBrowsing] = useState(false);
   const fixed = draft?.fixed ? fixedRelics.find((r) => r.name === draft.fixed) : null;
   // The sampled color disagreeing with the socket usually means the relics
   // came off the screenshot in a different order than the sockets run.
@@ -1179,18 +1245,50 @@ function SlotCard({
 
   if (!draft) {
     return (
-      <div className="frame flex items-center gap-2 rounded-md bg-night-900/60 p-3">
-        <SlotIconImg color={socket} size={20} />
-        <span className="font-body text-base text-parchment-faint">
-          {label} — empty
-        </span>
-        <button
-          type="button"
-          onClick={onFill}
-          className="ml-auto rounded border border-night-600 px-2 py-0.5 font-body text-sm text-parchment-muted hover:border-gold-faint hover:text-gold-bright"
-        >
-          + Type one in
-        </button>
+      <div className="frame rounded-md bg-night-900/60 p-3">
+        <div className="flex items-center gap-2">
+          <SlotIconImg color={socket} size={20} />
+          <span className="font-body text-base text-parchment-faint">
+            {label} — empty
+          </span>
+        </div>
+        {/* The pool leads: a build is mostly relics already owned, and every
+            socket filled from it is one less that has to be photographed. */}
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setBrowsing(true)}
+            className="frame rounded-md bg-night-700 px-3 py-1.5 font-body text-sm text-gold-bright hover:bg-night-600"
+          >
+            Load from pool…
+          </button>
+          <button
+            type="button"
+            onClick={onFill}
+            className="rounded border border-night-600 px-3 py-1.5 font-body text-sm text-parchment-muted hover:border-gold-faint hover:text-gold-bright"
+          >
+            + Type one in
+          </button>
+        </div>
+        {browsing && (
+          <RelicBrowser
+            character={character}
+            slotColor={socket}
+            deep={deep}
+            store={store}
+            value={null}
+            taken={taken}
+            onPick={(slot) => {
+              onLoad(slot);
+              setBrowsing(false);
+            }}
+            onNewRelic={() => {
+              setBrowsing(false);
+              onFill();
+            }}
+            onClose={() => setBrowsing(false)}
+          />
+        )}
       </div>
     );
   }

@@ -2,7 +2,7 @@
   "deep": false,
   "relics": [
     {
-      "name": null,
+      "name": "Leather Monocle Case",
       "color": "Blue",
       "effects": [
         "[Undertaker] Physical attacks boosted while assist effect from incantation is active for self",
@@ -12,8 +12,8 @@
       "notes": "relic is Leather Monocle Case (name not shown on screen)"
     },
     {
-      "name": null,
-      "color": "Yellow",
+      "name": "Glass Necklace",
+      "color": "Green",
       "effects": [
         "[Undertaker] Activating Ultimate Art increases attack power",
         "Successive Attacks Boost Attack Power",

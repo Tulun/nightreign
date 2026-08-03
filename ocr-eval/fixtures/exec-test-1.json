@@ -2,7 +2,7 @@
   "deep": false,
   "relics": [
     {
-      "name": null,
+      "name": "The Will of Balance",
       "color": "Red",
       "effects": [
         "Improved Melee Attack Power",
@@ -12,7 +12,7 @@
       "notes": "relic is The Will of Balance (name not shown on screen)"
     },
     {
-      "name": null,
+      "name": "Dark Night of the Fathom",
       "color": "Blue",
       "effects": [
         "Increased Maximum HP",

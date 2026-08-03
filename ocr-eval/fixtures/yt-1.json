@@ -1,0 +1,29 @@
+{
+  "notes": "YouTube capture, Guardian build video — vessel Slot 1 pane, normal relics, wrapped [Guardian] line.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "Taking attacks improves attack power",
+        "Gesture \"Crossed Legs\" Builds Up Madness",
+        "Madness Continually Recovers FP"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Slowly restores nearby allies' HP while Art is active",
+        "Attack power increased for each Night Invader defeated",
+        "Poise +3"
+      ]
+    },
+    {
+      "name": "The Night of Dregs",
+      "effects": [
+        "Status Ailment Gauges Slowly Increase Attack Power",
+        "Attacks Inflict Rot when Damage is Taken",
+        "Rot in Vicinity Causes Continuous HP Recovery"
+      ]
+    }
+  ]
+}

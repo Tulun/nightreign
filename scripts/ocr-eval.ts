@@ -22,6 +22,7 @@ import {
   CURSE_VOCABULARY,
   EFFECT_VOCABULARY,
   RELIC_NAME_VOCABULARY,
+  identifyUniqueRelic,
   parseRelicGroups,
   pickBestOcrPass,
   resolveEffectAlias,
@@ -29,7 +30,7 @@ import {
   similarity,
 } from "@/lib/effectMatch";
 import { grayInvertStretch, maxChannelInvertStretch } from "@/lib/imagePrep";
-import { lineFromWords } from "@/lib/ocrClean";
+import { lineFromWords, retryUnmatchedLines } from "@/lib/ocrClean";
 import {
   colorFromRelicName,
   dominantIconColor,
@@ -55,14 +56,15 @@ const CACHE_DIR = path.join(ROOT, "ocr-eval", ".cache");
 //
 // OCR_EXP holds comma-separated experiment flags, folded into the cache key
 // so each configuration caches separately:
-//   psm=<n>    set tessedit_pageseg_mode (default AUTO=3)
+//   psm=<n>    set tessedit_pageseg_mode (default SINGLE_BLOCK=6 — measured;
+//              tesseract.js never sets it, and the engine default is 6)
 //   whitelist  restrict tessedit_char_whitelist to game-text characters
 //   maxchan    add a third pass: max-channel grayscale (targets blue demerits)
 const OCR_EXP = (process.env.OCR_EXP ?? "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
-const OCR_CONFIG_KEY = ["tesseract7-eng-v6-best-pass", ...OCR_EXP].join("+");
+const OCR_CONFIG_KEY = ["tesseract7-eng-v7-line-retry", ...OCR_EXP].join("+");
 
 // ── Expected-output fixture format ───────────────────────────────────────
 
@@ -161,17 +163,45 @@ async function ocrLines(worker: Worker, imagePath: string): Promise<OcrLine[]> {
   // parse quality and the better one wins per image.
   const img = decodeImage(imagePath);
   if (!img) return pass1;
-  const passes = [pass1];
-  const preps = [grayInvertStretch];
-  if (OCR_EXP.includes("maxchan")) preps.push(maxChannelInvertStretch);
-  for (const prep of preps) {
-    const prepped = prep(img);
-    const png = new PNG({ width: prepped.width, height: prepped.height });
-    png.data = Buffer.from(prepped.data);
-    const { data: d } = await worker.recognize(PNG.sync.write(png), {}, { text: true, blocks: true });
+  const pngOf = (raw: ReturnType<typeof grayInvertStretch>) => {
+    const png = new PNG({ width: raw.width, height: raw.height });
+    png.data = Buffer.from(raw.data);
+    return PNG.sync.write(png);
+  };
+  const grayPng = pngOf(grayInvertStretch(img));
+  const passes = [pass1, extract((await worker.recognize(grayPng, {}, { text: true, blocks: true })).data)];
+  if (OCR_EXP.includes("maxchan")) {
+    const { data: d } = await worker.recognize(pngOf(maxChannelInvertStretch(img)), {}, { text: true, blocks: true });
     passes.push(extract(d));
   }
-  return pickBestOcrPass(passes);
+  const best = pickBestOcrPass(passes);
+
+  // Crop-and-retry (see retryUnmatchedLines): unmatched effect-column rows
+  // get a single-line re-OCR of just their strip, on the original plus both
+  // preprocessed variants, gated per line by the effect matcher.
+  const mainPsm = OCR_EXP.find((f) => f.startsWith("psm="))?.slice(4) ?? "6";
+  let maxchanPng: Buffer | null = null;
+  const readStrip = async (rect: IconBox): Promise<string[]> => {
+    const left = Math.max(0, Math.floor(rect.x0));
+    const top = Math.max(0, Math.floor(rect.y0));
+    const width = Math.min(img.width, Math.ceil(rect.x1)) - left;
+    const height = Math.min(img.height, Math.ceil(rect.y1)) - top;
+    if (width < 8 || height < 4) return [];
+    maxchanPng ??= pngOf(maxChannelInvertStretch(img));
+    const psm = (v: string) => ({ tessedit_pageseg_mode: v as import("tesseract.js").PSM });
+    const texts: string[] = [];
+    try {
+      await worker.setParameters(psm("7"));
+      for (const src of [imagePath, grayPng, maxchanPng] as const) {
+        const { data: d } = await worker.recognize(src, { rectangle: { left, top, width, height } });
+        texts.push(d.text.replace(/\n/g, " ").trim());
+      }
+    } finally {
+      await worker.setParameters(psm(mainPsm));
+    }
+    return texts;
+  };
+  return retryUnmatchedLines(best, readStrip);
 }
 
 // ── Claude vision engine ─────────────────────────────────────────────────
@@ -640,8 +670,22 @@ async function main() {
     }
 
     // Same pipeline as ScreenshotImport.tsx.
-    const groups = parseRelicGroups(lines);
-    const allDeep = screenIsDeep(groups);
+    const rawGroups = parseRelicGroups(lines);
+    const allDeep = screenIsDeep(rawGroups);
+    // Same unique-relic identification as readScreenshot: a unique's fixed
+    // effect set names it, and the catalogue's effects replace OCR's.
+    const groups = rawGroups.map((g) => {
+      if (allDeep || g.name != null) return g;
+      const u = identifyUniqueRelic(g.effects.map((e) => e.effect));
+      return u
+        ? {
+            ...g,
+            name: u.name,
+            effects: u.effects.map((effect) => ({ effect, score: 1, line: effect })),
+            demerits: u.effects.map(() => null),
+          }
+        : g;
+    });
     const img = isLinesFixture ? null : decodeImage(imagePath);
     const colors = groups.map((g) => {
       // A joined wrapped line has no single OCR line with identical text, so

@@ -86,6 +86,13 @@ the defaults (psm=4: 80% effects; whitelist: 157/161 +1 spurious; maxchan:
 recovers blue demerit lines but garbles others wins images it shouldn't).
 The defaults are the tuned state, not an accident.
 
+The max-channel transform did find its place at line level: the pipeline's
+crop-and-retry pass (`retryUnmatchedLines` in `src/lib/ocrClean.ts`) re-OCRs
+each unmatched effect-column row's strip in single-line mode across all
+three variants, accepting text only when it clears the parser's own match
+bar. Added 2026-08-03: +4 matched, −3 spurious on the 40-fixture set, zero
+regressions.
+
 ## Adding a fixture
 
 A fixture is a screenshot plus a JSON file with the same base name, both in
@@ -190,7 +197,11 @@ Field notes:
   normal relics.
 - `name` — the relic's display name, e.g. `"Grand Drizzly Scene"`,
   `"Deep Delicate Luminous Scene"`, or a unique relic like `"Besmirched Frame"`.
-  Use `null` if the name is cropped out of the shot.
+  Use `null` if the name is cropped out of the shot — **except** for unique
+  relics: the pipeline identifies those from their fixed effect sets even when
+  no name is on screen (`identifyUniqueRelic` in `src/lib/effectMatch.ts`), so
+  set the unique's name (and color) whenever you know which relic it is; that
+  pins the identification.
 - `color` — `"Red" | "Blue" | "Green" | "Yellow"`, as shown in game. Omit to
   leave the color unscored for that relic (e.g. the icon is cropped out).
   Remember the in-game scene↔color pairing: Burning=Red, **Drizzly=Blue,

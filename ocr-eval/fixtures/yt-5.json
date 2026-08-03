@@ -1,0 +1,29 @@
+{
+  "notes": "YouTube capture, Guardian build video — vessel Slot 1 pane, normal relics; relic 3's last effect wraps and its tail is clipped by the bottom crop.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Improved Strength and Dexterity, Reduced Vigor",
+        "Strength +3",
+        "Dexterity +3"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Successful guards send out shockwaves while ability is active",
+        "HP restored when using medicinal boluses, etc.",
+        "Taking attacks improves attack power"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Slowly restores nearby allies' HP while Art is active",
+        "Attack power increased for each Night Invader defeated",
+        "Improved Poise & Damage Negation When Knocked Back by Damage"
+      ]
+    }
+  ]
+}

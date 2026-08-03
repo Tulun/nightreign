@@ -2,7 +2,7 @@
 //  OCR line cleanup shared by the screenshot importer and the eval harness.
 // ─────────────────────────────────────────────────────────────────────────
 
-import { screenTextScore } from "./effectMatch";
+import { retryCandidates, retryLineScore, screenTextScore } from "./effectMatch";
 
 export interface OcrBox {
   x0: number;
@@ -77,4 +77,39 @@ export function lineFromWords(
       y1: Math.max(...chosen.seg.map((w) => w.bbox!.y1)),
     },
   };
+}
+
+/**
+ * Second-chance OCR for rows the full-page pass garbled. pickBestOcrPass
+ * chooses whole passes, so a preprocessing variant that recovers one line but
+ * wrecks others can never win — which left lines like the light-blue demerits
+ * permanently unread. This sidesteps that: for each row that sits in the
+ * effect column but matched nothing (retryCandidates), the host re-OCRs just
+ * that strip in single-line mode across its preprocessing variants, and the
+ * text replaces the row only when it clears the same match bar the parser
+ * holds every line to (retryLineScore). Per-line acceptance bounds the
+ * spurious risk — junk that can't pass the matcher can't enter the list —
+ * and turns the max-channel variant from a global loser into a local winner
+ * on exactly the blue lines it was built for.
+ *
+ * `readStrip` OCRs one rectangle of the screenshot and returns the text each
+ * variant produced; it owns psm switching and coordinate clamping.
+ */
+export async function retryUnmatchedLines(
+  lines: OcrLine[],
+  readStrip: (rect: OcrBox) => Promise<string[]>,
+): Promise<OcrLine[]> {
+  const strips = retryCandidates(lines);
+  if (strips.length === 0) return lines;
+  const out = lines.slice();
+  for (const s of strips) {
+    const rect = { x0: s.x0, y0: s.y0, x1: s.x1, y1: s.y1 };
+    let best: { text: string; score: number } | null = null;
+    for (const text of await readStrip(rect)) {
+      const score = retryLineScore(text);
+      if (score > 0 && (!best || score > best.score)) best = { text: text.trim(), score };
+    }
+    if (best) out[s.index] = { text: best.text, bbox: rect };
+  }
+  return out;
 }

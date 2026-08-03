@@ -1,0 +1,34 @@
+{
+  "deep": true,
+  "notes": "TV photo 2026-08-03 — Deep relic list. Reported in real use: the app read relic 3's blank third slot as a spurious 'Arcane +1'. Colors omitted pending in-game confirmation.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks +1",
+        "Improved Sorceries +1",
+        "Increased Maximum HP"
+      ],
+      "demerits": [
+        "Reduced Strength and Intelligence",
+        "Reduced Dexterity and Faith",
+        "Taking Damage Causes Blood Loss Buildup"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Undertaker] Executing Art readies Character Skill",
+        "Max stamina increased for each great enemy defeated at a Great Encampment",
+        "Dormant Power Helps Discover Fists"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Undertaker] Improved Dexterity, Reduced Vigor and Faith",
+        "Improved Rot Resistance +1"
+      ]
+    }
+  ]
+}

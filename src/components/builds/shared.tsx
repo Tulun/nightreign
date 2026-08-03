@@ -17,13 +17,14 @@ import {
   CURSE_VOCABULARY,
   DEEP_EFFECT_VOCABULARY,
   NORMAL_EFFECT_VOCABULARY,
+  identifyUniqueRelic,
   parseRelicGroups,
   pickBestOcrPass,
   screenIsDeep,
 } from "@/lib/effectMatch";
 import type { EffectState } from "@/lib/effectCompat";
-import { grayInvertStretch } from "@/lib/imagePrep";
-import { lineFromWords } from "@/lib/ocrClean";
+import { grayInvertStretch, maxChannelInvertStretch } from "@/lib/imagePrep";
+import { lineFromWords, retryUnmatchedLines } from "@/lib/ocrClean";
 import { colorFromRelicName, dominantIconColor, iconSampleRegion } from "@/lib/relicColor";
 import { gameEffectName } from "@/lib/relics";
 import { EffectIcon } from "@/components/EffectIcon";
@@ -332,8 +333,11 @@ export interface OcrLine {
   bbox: { x0: number; y0: number; x1: number; y1: number } | null;
 }
 
-/** The file drawn to a canvas with its pixels run through grayInvertStretch. */
-async function preprocessedCopy(file: Blob): Promise<Blob | null> {
+/** The file drawn to a canvas with its pixels run through `prep`. */
+async function preprocessedCopy(
+  file: Blob,
+  prep: typeof grayInvertStretch = grayInvertStretch,
+): Promise<{ blob: Blob; width: number; height: number } | null> {
   let bmp: ImageBitmap | null = null;
   const canvas = document.createElement("canvas");
   try {
@@ -344,10 +348,11 @@ async function preprocessedCopy(file: Blob): Promise<Blob | null> {
     if (!ctx) return null;
     ctx.drawImage(bmp, 0, 0);
     const pixels = ctx.getImageData(0, 0, bmp.width, bmp.height);
-    const prepped = grayInvertStretch({ width: bmp.width, height: bmp.height, data: pixels.data });
+    const prepped = prep({ width: bmp.width, height: bmp.height, data: pixels.data });
     pixels.data.set(prepped.data);
     ctx.putImageData(pixels, 0, 0);
-    return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    return blob ? { blob, width: bmp.width, height: bmp.height } : null;
   } catch {
     return null;
   } finally {
@@ -432,10 +437,43 @@ export async function ocrLines(
     // original misses on some captures and wrecks others, so the passes
     // compete on parse quality and the better one wins per image.
     trackPass(2);
-    const prepped = await preprocessedCopy(file);
-    if (!prepped) return pass1;
-    const { data: data2 } = await worker.recognize(prepped, {}, { text: true, blocks: true });
-    return pickBestOcrPass([pass1, extract(data2)]);
+    const gray = await preprocessedCopy(file);
+    if (!gray) return pass1;
+    const { data: data2 } = await worker.recognize(gray.blob, {}, { text: true, blocks: true });
+    const best = pickBestOcrPass([pass1, extract(data2)]);
+
+    // Crop-and-retry (see retryUnmatchedLines): unmatched effect-column rows
+    // get a single-line re-OCR of just their strip, on the original plus
+    // both preprocessed variants, gated per line by the effect matcher.
+    session.onFrac = null;
+    let announced = false;
+    let maxchan: { blob: Blob } | null | undefined;
+    const psm = (v: string) => ({ tessedit_pageseg_mode: v as import("tesseract.js").PSM });
+    const readStrip = async (rect: NonNullable<OcrLine["bbox"]>): Promise<string[]> => {
+      if (!announced) {
+        announced = true;
+        onProgress("Rereading unclear lines…");
+      }
+      const left = Math.max(0, Math.floor(rect.x0));
+      const top = Math.max(0, Math.floor(rect.y0));
+      const width = Math.min(gray.width, Math.ceil(rect.x1)) - left;
+      const height = Math.min(gray.height, Math.ceil(rect.y1)) - top;
+      if (width < 8 || height < 4) return [];
+      maxchan ??= await preprocessedCopy(file, maxChannelInvertStretch);
+      const texts: string[] = [];
+      try {
+        await worker.setParameters(psm("7"));
+        for (const src of [file, gray.blob, maxchan?.blob].filter((s): s is Blob => s != null)) {
+          const { data: d } = await worker.recognize(src, { rectangle: { left, top, width, height } });
+          texts.push(d.text.replace(/\n/g, " ").trim());
+        }
+      } finally {
+        // 6 (SINGLE_BLOCK) is the engine default the main passes run under.
+        await worker.setParameters(psm("6"));
+      }
+      return texts;
+    };
+    return await retryUnmatchedLines(best, readStrip);
   } finally {
     session.onFrac = null;
     if (!shared) await session.terminate();
@@ -474,6 +512,14 @@ export async function readScreenshot(
   const ocr = await ocrLines(file, onProgress, opts.session);
   const all = parseRelicGroups(ocr);
   const found = opts.maxGroups === undefined ? all : all.slice(0, opts.maxGroups);
+  const deep = screenIsDeep(found);
+  // A unique relic's fixed effect set names it even though list screens
+  // never show the name — and once named, its effects and color are the
+  // catalogue's, not whatever OCR made of the lines (uniques aren't Deep,
+  // so a Deep screen skips this).
+  const uniques = found.map((g) =>
+    deep || g.name != null ? null : identifyUniqueRelic(g.effects.map((e) => e.effect)),
+  );
   const colors = await guessGroupColors(
     file,
     found.map((g) => {
@@ -489,14 +535,25 @@ export async function readScreenshot(
     }),
   );
   return {
-    deep: screenIsDeep(found),
+    deep,
     lines: ocr.map((l) => l.text),
-    relics: found.map((g, i) => ({
-      name: g.name,
-      effects: [0, 1, 2].map((j) => g.effects[j]?.effect ?? ""),
-      demerits: [0, 1, 2].map((j) => g.demerits[j] ?? ""),
-      color: colorFromRelicName(g.name) ?? colors[i],
-    })),
+    relics: found.map((g, i) => {
+      const unique = uniques[i];
+      if (unique) {
+        return {
+          name: unique.name,
+          effects: [0, 1, 2].map((j) => unique.effects[j] ?? ""),
+          demerits: ["", "", ""],
+          color: unique.color,
+        };
+      }
+      return {
+        name: g.name,
+        effects: [0, 1, 2].map((j) => g.effects[j]?.effect ?? ""),
+        demerits: [0, 1, 2].map((j) => g.demerits[j] ?? ""),
+        color: colorFromRelicName(g.name) ?? colors[i],
+      };
+    }),
   };
 }
 

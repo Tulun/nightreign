@@ -147,8 +147,11 @@ function rankOtherSection(r: FixedRelicOption, character: string): number {
  * Full-screen modal relic browser: relics that fit the slot shown as cards
  * with every effect line visible, so similar relics can be told apart at a
  * glance. Search covers names, effects, and character.
+ *
+ * Exported as well as used by the picker above — the screenshot importer opens
+ * it directly, to fill a socket from the pool instead of from a photo.
  */
-function RelicBrowser({
+export function RelicBrowser({
   character,
   slotColor,
   deep,

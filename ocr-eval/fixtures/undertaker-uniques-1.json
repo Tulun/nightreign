@@ -1,5 +1,6 @@
 {
   "deep": false,
+  "notes": "TV photo 2026-08-03 — relic list ordered by color; relics 1 and 3 are uniques (Glass Necklace, Leather Monocle Case), pinned by name via effect-set identification. Reported in real use: relic 3 got a spurious Fire Pots line (the wrapped 'at start of expedition' fragment) and the Leather Monocle Case went unrecognized.",
   "relics": [
     {
       "name": "Glass Necklace",
@@ -8,8 +9,7 @@
         "[Undertaker] Activating Ultimate Art increases attack power",
         "Successive Attacks Boost Attack Power",
         "Ultimate Art Auto Charge +3"
-      ],
-      "notes": "relic is Glass Necklace (name not shown on screen)"
+      ]
     },
     {
       "name": null,
@@ -19,7 +19,7 @@
         "Attack power increased for each Night Invader defeated",
         "Changes compatible armament's skill to Sacred Blade at start of expedition"
       ],
-      "notes": "relic is Grand Luminous Scene (name not shown on screen)"
+      "notes": "same Grand Luminous Scene swap relic as undertaker-test-2 relic 2"
     },
     {
       "name": "Leather Monocle Case",
@@ -28,8 +28,7 @@
         "[Undertaker] Physical attacks boosted while assist effect from incantation is active for self",
         "Extended Spell Duration",
         "Physical Attack Up +2"
-      ],
-      "notes": "relic is Leather Monocle Case (name not shown on screen)"
+      ]
     }
   ]
 }

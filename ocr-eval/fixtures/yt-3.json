@@ -1,0 +1,29 @@
+{
+  "notes": "YouTube capture, Guardian build video — vessel Slot 1 pane, normal relics, two wrapped [Guardian] lines.",
+  "relics": [
+    {
+      "name": "The Will of Balance",
+      "effects": [
+        "Improved Melee Attack Power",
+        "Improved Skill Attack Power",
+        "Occasionally Nullify Attacks When Damage Negation is Lowered"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Slowly restores nearby allies' HP while Art is active",
+        "Attack power increased for each Night Invader defeated",
+        "Poise +3"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Successful guards send out shockwaves while ability is active",
+        "HP Recovery From Successful Guarding",
+        "Holy Attack Power Up"
+      ]
+    }
+  ]
+}

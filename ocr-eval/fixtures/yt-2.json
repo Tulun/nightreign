@@ -1,0 +1,32 @@
+{
+  "deep": true,
+  "notes": "YouTube capture, Guardian build video — vessel Slot 1 pane, Deep relics; relic 2's third slot is blank.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Improved Strength and Dexterity, Reduced Vigor",
+        "Physical Attack Up +4",
+        "Improved Rot Resistance +1"
+      ],
+      "demerits": [null, "Reduced Strength & Intelligence", null]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Physical Attack Up +4",
+        "Improved Physical Damage Negation +1"
+      ],
+      "demerits": ["Taking Damage Causes Blood Loss Buildup", "Taking Damage Causes Frost Buildup"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks +1",
+        "Physical Attack Up +4",
+        "Improved Holy Damage Negation +2"
+      ],
+      "demerits": ["Poison Buildup When Below Max HP", "Ultimate Art Charging Impaired", null]
+    }
+  ]
+}

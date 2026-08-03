@@ -7,7 +7,7 @@
 import { deepRelics } from "@/data/deepRelics";
 import { relicEffects } from "@/data/relicEffects";
 import { characterSwaps } from "@/data/statSwaps";
-import { uniqueRelics } from "@/data/uniqueRelics";
+import { uniqueRelics, type UniqueRelicColor } from "@/data/uniqueRelics";
 import { gameEffectName, type RelicCategory } from "@/lib/relics";
 import { swapEffectName } from "@/lib/statSwaps";
 
@@ -194,6 +194,10 @@ const EFFECT_ALIASES: Record<string, string> = {
     "Max Stamina increased per Great Encampment boss",
   "[Raider] Hit With Character Skill to Reduce Enemy Attack Power":
     "[Raider] Hit With Skill to Reduce Enemy Attack Power",
+  // Seen in-game 2026-08-03 (yt-4/yt-6 fixtures): the game writes "Character
+  // Skill" where the catalogue shortens to "Skill".
+  "[Guardian] Character Skill Boosts Damage Negation of Nearby Allies":
+    "[Guardian] Skill Boosts Damage Negation of Nearby Allies",
   // The catalogue's shorthand for the line the game writes out in full — the
   // in-game wording is the displayed name now, so this runs the other way.
   "[Undertaker] Attack Power Increased by Landing Chain Attack":
@@ -867,6 +871,154 @@ export function parseRelicGroups(
  */
 export function screenIsDeep(groups: ParsedRelicGroup[]): boolean {
   return groups.filter((g) => g.deep).length * 2 > groups.length;
+}
+
+// ── Unique-relic identification ──────────────────────────────────────────
+// List screens show a relic's effects but never its name — yet unique relics
+// have fixed effect sets, so the effects can name the relic. The anchor rule
+// keeps this honest: identification needs at least one parsed effect that
+// can never roll on a custom relic (it exists only through uniqueRelics), so
+// a custom relic that happens to share common lines with a unique can't be
+// mislabeled as one. "Extend Spell Duration" appears on exactly one relic in
+// the game; reading it IS reading the name.
+
+/**
+ * Effects obtainable outside unique relics — custom rolls plus the signboard
+ * swap lines — i.e. everything that must never anchor an identification.
+ */
+const CUSTOM_ROLLABLE_KEYS = new Set(
+  [...relicEffects.map((e) => e.name), ...deepRelics.map((e) => e.name), ...SWAP_EFFECT_NAMES]
+    .flatMap(expandName)
+    .map((n) => nameKey(gameEffectName(n))),
+);
+
+export interface IdentifiedUnique {
+  name: string;
+  color: UniqueRelicColor;
+  /** The relic's full fixed effect list, in canonical vocabulary spelling. */
+  effects: string[];
+}
+
+/**
+ * The unique relic a parsed effect list identifies, or null when nothing is
+ * decisive. Requires an anchor (see above) and that the parsed lines don't
+ * leave the pick ambiguous: either at least two lines belong to the relic,
+ * or every parsed line does (a close-up may only show one). A tie between
+ * two uniques — same anchors, same overlap — identifies nothing; OCR noise
+ * must never pick a winner.
+ */
+export function identifyUniqueRelic(parsedEffects: string[]): IdentifiedUnique | null {
+  if (parsedEffects.length === 0) return null;
+  const parsedKeys = new Set(parsedEffects.map(nameKey));
+  let best: { relic: (typeof uniqueRelics)[number]; overlap: number; anchors: number } | null = null;
+  let tie = false;
+  for (const relic of uniqueRelics) {
+    const overlapKeys = relic.effects
+      .map((e) => nameKey(gameEffectName(e)))
+      .filter((k) => parsedKeys.has(k));
+    const anchors = overlapKeys.filter((k) => !CUSTOM_ROLLABLE_KEYS.has(k)).length;
+    if (anchors === 0) continue;
+    const overlap = overlapKeys.length;
+    if (!best || anchors > best.anchors || (anchors === best.anchors && overlap > best.overlap)) {
+      best = { relic, overlap, anchors };
+      tie = false;
+    } else if (anchors === best.anchors && overlap === best.overlap) {
+      tie = true;
+    }
+  }
+  if (!best || tie) return null;
+  if (best.overlap < 2 && best.overlap < parsedEffects.length) return null;
+  return {
+    name: best.relic.name,
+    color: best.relic.color,
+    effects: best.relic.effects.map((e) => canonicalEffectName(gameEffectName(e))),
+  };
+}
+
+/** A strip of screenshot worth re-OCRing; replaces lines[index] on success. */
+export interface RetryStrip {
+  index: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+/**
+ * Rows worth a second OCR attempt: they sit inside the relic list — in the
+ * effect column, vertically among the rows that DID match — but matched
+ * nothing themselves. That's a garbled effect ("IB rch) Use Charcot amines"),
+ * a demerit read as junk, or a line so lost that OCR left only a smudge of
+ * it. Geometry is learned from the matched rows the same way parseRelicGroups
+ * learns it, and each strip spans the full column width at the row's height,
+ * so a two-word fragment still crops the whole line it sits on. Blank-slot
+ * dashes are boundaries, not unread text, and are never candidates — nor is
+ * any row sharing its height with a matched line (the good read wins).
+ */
+export function retryCandidates(lines: ParseLine[]): RetryStrip[] {
+  const rows = lines.map((l, index) => ({ index, text: l.text.trim(), bbox: l.bbox ?? null }));
+  const matched = rows.filter(
+    (r) =>
+      r.bbox &&
+      r.text.length >= 8 &&
+      (bestMatch(r.text, RELIC_NAME_VOCABULARY, 0.62) !== null || bestEffectMatch(r.text, 0.5) !== null),
+  );
+  if (matched.length < 2) return [];
+  // Same pitch learning as parseRelicGroups: median y0 step of matched rows,
+  // excluding curse lines, which sit sub-row-height under their effect.
+  const ys = matched
+    .filter((r) => {
+      const m = bestEffectMatch(r.text, 0.5);
+      return !(m && CURSE_EFFECTS.has(m.effect));
+    })
+    .map((r) => r.bbox!.y0)
+    .sort((a, b) => a - b);
+  const steps = ys.slice(1).map((y, i) => y - ys[i]).filter((s) => s > 0).sort((a, b) => a - b);
+  const pitch = steps[steps.length >> 1] ?? 0;
+  if (pitch === 0) return [];
+  const x0s = matched.map((r) => r.bbox!.x0).sort((a, b) => a - b);
+  const columnX = x0s[x0s.length >> 1];
+  const columnRight = Math.max(...matched.map((r) => r.bbox!.x1));
+  const top = Math.min(...matched.map((r) => r.bbox!.y0)) - 1.2 * pitch;
+  const bottom = Math.max(...matched.map((r) => r.bbox!.y1)) + 1.6 * pitch;
+  const isMatched = new Set(matched);
+  const rowCenter = (b: NonNullable<ParseLine["bbox"]>) => (b.y0 + b.y1) / 2;
+
+  const strips: RetryStrip[] = [];
+  for (const r of rows) {
+    if (!r.bbox || r.text.length === 0 || isMatched.has(r) || isEmptySlotRow(r.text)) continue;
+    const cy = rowCenter(r.bbox);
+    if (cy < top || cy > bottom) continue;
+    if (r.bbox.x1 < columnX - pitch || r.bbox.x0 > columnRight) continue;
+    if (matched.some((m) => Math.abs(rowCenter(m.bbox!) - cy) < 0.5 * pitch)) continue;
+    // Two junk fragments on one physical row get one strip, not two.
+    if (strips.some((s) => Math.abs((s.y0 + s.y1) / 2 - cy) < 0.5 * pitch)) continue;
+    const h = Math.max(r.bbox.y1 - r.bbox.y0, 0.62 * pitch);
+    strips.push({
+      index: r.index,
+      x0: Math.max(0, columnX - 0.2 * pitch),
+      y0: Math.max(0, cy - h / 2 - 0.12 * pitch),
+      x1: columnRight + 0.2 * pitch,
+      y1: cy + h / 2 + 0.12 * pitch,
+    });
+  }
+  return strips;
+}
+
+/**
+ * Whether re-OCR'd strip text earns a place in the line list: the same bar
+ * the parser holds every line to (effect ≥ 0.5, relic name ≥ 0.62), returned
+ * as a score so competing preprocessing variants can be ranked. 0 = rejected.
+ * This gate is what bounds the retry pass's spurious risk — text that clears
+ * it would have been accepted from the main pass too.
+ */
+export function retryLineScore(text: string): number {
+  const t = text.trim();
+  if (t.length < 8) return 0;
+  return Math.max(
+    bestEffectMatch(t, 0.5)?.score ?? 0,
+    bestMatch(t, RELIC_NAME_VOCABULARY, 0.62)?.score ?? 0,
+  );
 }
 
 /**

@@ -3,16 +3,21 @@
 //  and the OCR eval harness (Node). Pure pixel math — no DOM dependencies.
 // ─────────────────────────────────────────────────────────────────────────
 
+import { uniqueRelics } from "@/data/uniqueRelics";
+
 export type RelicColor = "Red" | "Blue" | "Green" | "Yellow";
 
-/** Infer a relic color from a scene name (Drizzly=Blue, Tranquil=Green in-game). */
+const UNIQUE_COLOR_BY_NAME = new Map(uniqueRelics.map((r) => [r.name.toLowerCase(), r.color]));
+
+/** Infer a relic color from a scene name (Drizzly=Blue, Tranquil=Green in-game) or a unique relic's name. */
+
 export function colorFromRelicName(name: string | null): RelicColor | null {
   if (!name) return null;
   if (/burning/i.test(name)) return "Red";
   if (/drizzly/i.test(name)) return "Blue";
   if (/tranquil/i.test(name)) return "Green";
   if (/luminous/i.test(name)) return "Yellow";
-  return null;
+  return UNIQUE_COLOR_BY_NAME.get(name.trim().toLowerCase()) ?? null;
 }
 
 export interface IconBox {
