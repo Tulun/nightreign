@@ -416,10 +416,24 @@ export function similarity(a: string, b: string): number {
   if (!na || !nb) return 0;
   if (na === nb) return 1;
   // One string fully contained in the other is a strong hit, scaled by how
-  // much of the longer one it covers — so a short entry ("HP Restoration")
-  // buried in a long line can't outscore the line's real, longer effect.
-  if (na.length >= 12 && nb.includes(na)) return 0.9 + 0.1 * (na.length / nb.length);
-  if (nb.length >= 12 && na.includes(nb)) return 0.9 + 0.1 * (nb.length / na.length);
+  // much of the longer one it covers. How much containment proves depends on
+  // the contained text's own length: 20+ characters of exact substring don't
+  // happen by accident — junk padding can't hide a long effect, and a clean
+  // truncated front half still names its entry (nightman-2). A short needle
+  // is fragment bait though, so 12–19 characters must also cover at least
+  // half of the longer string. Without that, the 0.9 floor did the opposite
+  // of its job: a garbled "Partal HP Restoration upon Pose age" contains
+  // "hp restoration", and the floor handed that fragment 0.94 while the
+  // line's real, longer effect sat in the 0.6s (dayman-rot-failure).
+  // Low-coverage short containment falls through to edit distance, which
+  // scores fragments poorly on its own. Thresholds fixed by the 48-fixture
+  // eval — re-measure there before moving them.
+  const contained = (needle: string, hay: string) =>
+    needle.length >= 12 &&
+    (needle.length >= 20 || needle.length * 2 >= hay.length) &&
+    hay.includes(needle);
+  if (contained(na, nb)) return 0.9 + 0.1 * (na.length / nb.length);
+  if (contained(nb, na)) return 0.9 + 0.1 * (nb.length / na.length);
   const dist = levenshtein(na, nb);
   return 1 - dist / Math.max(na.length, nb.length);
 }
