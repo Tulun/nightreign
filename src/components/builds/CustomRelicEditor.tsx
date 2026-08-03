@@ -16,6 +16,7 @@ import {
   RELIC_COLORS,
   RelicLineInputs,
   SlotIconImg,
+  lineGapError,
   ocrLines,
 } from "./shared";
 
@@ -87,11 +88,15 @@ export function CustomRelicEditor({
   const chosen = new Set([...draft.effects, ...draft.demerits].filter((e) => e.trim()));
 
   const save = () => {
-    const kept = [0, 1, 2].filter((i) => (draft.effects[i] ?? "").trim());
-    if (kept.length === 0) {
-      window.alert("Add at least one effect.");
+    // Lines have to run from the top — a gap left behind by a move is the one
+    // thing between here and a saved relic, and the note under the lines says
+    // which way to close it.
+    const problem = lineGapError(draft.effects);
+    if (problem) {
+      window.alert(problem);
       return;
     }
+    const kept = [0, 1, 2].filter((i) => (draft.effects[i] ?? "").trim());
     onSave({
       id: newId(),
       name: draft.name.trim(),

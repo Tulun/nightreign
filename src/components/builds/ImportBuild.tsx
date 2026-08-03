@@ -43,8 +43,11 @@ import {
   XIcon,
   chalicesFor,
   colorFromRelicName,
+  hasLineGap,
+  lineGapError,
   readScreenshot,
   startOcrSession,
+  swapLines,
   type OcrSession,
   type ScreenshotRead,
 } from "./shared";
@@ -500,6 +503,15 @@ export function ImportBuild({
 
   // ── Saving ─────────────────────────────────────────────────────────────
   const save = () => {
+    // A move can leave a gap in a socket's lines. The card says so itself, but
+    // the save is one button for all six, so it has to name the one at fault.
+    // A socket left empty isn't a gap — it's an empty socket, which saves fine
+    // — and a fixed relic outside the Deep set never reads its lines at all.
+    const gap = drafts.findIndex((d, i) => d && !(d.fixed && i < 3) && hasLineGap(d.lines));
+    if (gap !== -1) {
+      setNotice(`${SLOT_LABELS[gap]}: ${lineGapError(drafts[gap]!.lines)}`);
+      return;
+    }
     // The pool as it stands *before* this save — what the new relics are
     // weighed against, both for exact repeats and for the near-misses below.
     const pool = store.customRelics;
@@ -912,6 +924,13 @@ export function ImportBuild({
                             demerits: d.demerits.map((x, k) => (k === li ? v : x)),
                           }))
                         }
+                        onSwap={(a, b) =>
+                          setDraft(i, (d) => ({
+                            ...d,
+                            lines: swapLines(d.lines, a, b),
+                            demerits: swapLines(d.demerits, a, b),
+                          }))
+                        }
                         onUnfix={() => setDraft(i, (d) => ({ ...d, fixed: null }))}
                         onColor={(c) => setDraft(i, (d) => ({ ...d, color: c }))}
                         onUseSuggested={() =>
@@ -1123,6 +1142,7 @@ function SlotCard({
   onName,
   onLine,
   onDemerit,
+  onSwap,
   onUnfix,
   onColor,
   onUseSuggested,
@@ -1138,6 +1158,7 @@ function SlotCard({
   onName: (v: string) => void;
   onLine: (index: number, v: string) => void;
   onDemerit: (index: number, v: string) => void;
+  onSwap: (a: number, b: number) => void;
   onUnfix: () => void;
   /** Set the relic's own color — only ever asked for a White socket. */
   onColor: (c: CustomRelic["color"]) => void;
@@ -1219,6 +1240,7 @@ function SlotCard({
             deep={deep}
             onLine={onLine}
             onDemerit={onDemerit}
+            onSwap={onSwap}
           />
           {mismatch && (
             <p className="mt-1.5 font-body text-base text-gold-dim">

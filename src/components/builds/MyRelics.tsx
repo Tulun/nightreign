@@ -35,6 +35,7 @@ import {
   RelicLineInputs,
   SlotIconImg,
   TrashIcon,
+  lineGapError,
 } from "./shared";
 
 const COLOR_ORDER: Record<CustomRelic["color"], number> = { Red: 0, Blue: 1, Green: 2, Yellow: 3 };
@@ -369,6 +370,9 @@ function RelicCardEditor({
         // Enter in any of the text inputs submits — the editor's inner
         // buttons are all type="button", so only Save gets here.
         e.preventDefault();
+        // A move can leave a gap in the lines; the note under them says so,
+        // and this is where it stops being saveable.
+        if (lineGapError(draft.effects)) return;
         onSave(draft);
       }}
       onKeyDown={(e) => {

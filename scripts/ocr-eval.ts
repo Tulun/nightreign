@@ -4,7 +4,9 @@
 //  screenshots with verified expected output, and scores the results.
 //
 //  Usage:  npm run ocr:eval [-- --verbose] [-- --no-cache] [-- --filter <s>]
-//                           [-- --engine claude]
+//                           [-- --engine claude] [-- --sweep]
+//  --sweep grids over the parseRelicGroups geometry thresholds instead of
+//  scoring once — matching-side only, so it runs entirely off cached OCR.
 //  --engine claude scores the Claude vision reader (the same request the
 //  parseRelicScreenshot Firebase Function makes, called directly with your
 //  Anthropic credentials) instead of tesseract. Fixtures live in
@@ -334,7 +336,7 @@ interface FixtureResult {
   diffs: RelicDiff[];
 }
 
-const tally = {
+const newTally = () => ({
   fixtures: 0,
   effectsExpected: 0,
   effectsMatched: 0,
@@ -347,7 +349,9 @@ const tally = {
   colorsUnread: 0,
   colorsWrong: 0,
   deepOk: 0,
-};
+});
+// Reassigned per configuration in --sweep mode; scoreFixture adds into it.
+let tally = newTally();
 
 function scoreFixture(
   file: string,
@@ -423,6 +427,64 @@ function scoreFixture(
   return { file, expectedRelics: fx.relics.length, parsedRelics: groups.length, deepOk, diffs };
 }
 
+// ── Parameter sweep (--sweep) ────────────────────────────────────────────
+// The two parseRelicGroups thresholds were hand-tuned against the original
+// fixture set; this grids over both, re-scoring the same cached OCR lines
+// per configuration, and ranks by net effects (matched − spurious) — a
+// misgrouped line costs one of each, so net is what grouping actually moves.
+
+interface SweepEntry {
+  file: string;
+  fx: Fixture;
+  lines: OcrLine[];
+}
+
+const SWEEP_BOUNDARY_STEPS = [1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.4];
+const SWEEP_BLANK_SPANS = [0.8, 0.9, 1.0, 1.02, 1.05, 1.08, 1.1, 1.15, 1.2, 1.3, 1.4, 1.6];
+const DEFAULT_TUNING = { boundaryStepPitches: 2.4, blankSpanPitches: 1.05 };
+
+function runSweep(entries: SweepEntry[]) {
+  const rows: { step: number; span: number; t: ReturnType<typeof newTally>; relicsExact: number }[] = [];
+  for (const step of SWEEP_BOUNDARY_STEPS) {
+    for (const span of SWEEP_BLANK_SPANS) {
+      tally = newTally();
+      let relicsExact = 0;
+      for (const e of entries) {
+        const groups = parseRelicGroups(e.lines, 6, { boundaryStepPitches: step, blankSpanPitches: span });
+        const r = scoreFixture(e.file, e.fx, groups, screenIsDeep(groups), groups.map(() => null));
+        if (r.parsedRelics === r.expectedRelics) relicsExact += 1;
+      }
+      rows.push({ step, span, t: tally, relicsExact });
+    }
+  }
+  // Net effects first; grouping mistakes also misalign names, demerits, and
+  // relic counts, so those break ties in that order.
+  rows.sort(
+    (a, b) =>
+      b.t.effectsMatched - b.t.effectsSpurious - (a.t.effectsMatched - a.t.effectsSpurious) ||
+      b.t.namesOk - a.t.namesOk ||
+      b.t.demeritsOk - a.t.demeritsOk ||
+      b.relicsExact - a.relicsExact,
+  );
+  console.log(`\nSweep over ${entries.length} fixtures (${rows.length} configurations):\n`);
+  console.log("  step  span   net  effects        spur  names    demerits  relics= deep");
+  for (const r of rows) {
+    const isDefault =
+      r.step === DEFAULT_TUNING.boundaryStepPitches && r.span === DEFAULT_TUNING.blankSpanPitches;
+    console.log(
+      `  ${r.step.toFixed(2).padEnd(5)} ${r.span.toFixed(2).padEnd(5)}` +
+        ` ${String(r.t.effectsMatched - r.t.effectsSpurious).padStart(4)}` +
+        `  ${`${r.t.effectsMatched}/${r.t.effectsExpected} (${pct(r.t.effectsMatched, r.t.effectsExpected)})`.padEnd(15)}` +
+        ` ${String(r.t.effectsSpurious).padStart(4)}` +
+        `  ${`${r.t.namesOk}/${r.t.namesExpected}`.padEnd(8)}` +
+        ` ${`${r.t.demeritsOk}/${r.t.demeritsExpected}`.padEnd(9)}` +
+        ` ${String(r.relicsExact).padStart(2)}/${entries.length}` +
+        `   ${r.t.deepOk}/${r.t.fixtures}` +
+        (isDefault ? "   ← current default" : ""),
+    );
+  }
+}
+
 // ── Reporting ────────────────────────────────────────────────────────────
 
 const pct = (n: number, d: number) => (d === 0 ? "—" : `${Math.round((n / d) * 100)}%`);
@@ -476,6 +538,11 @@ async function main() {
     console.error(`Unknown engine "${engine}" — use "ocr" (default) or "claude"`);
     process.exit(1);
   }
+  const sweep = argv.includes("--sweep");
+  if (sweep && engine !== "ocr") {
+    console.error("--sweep tunes the OCR grouping thresholds — it has no meaning for the claude engine");
+    process.exit(1);
+  }
 
   if (!existsSync(FIXTURES_DIR)) {
     console.error(`No fixtures directory at ${FIXTURES_DIR} — see ocr-eval/README.md`);
@@ -513,6 +580,7 @@ async function main() {
 
   const results: FixtureResult[] = [];
   const fixtures = new Map<string, Fixture>();
+  const sweepEntries: SweepEntry[] = [];
   let fixtureErrors = 0;
 
   for (const image of images) {
@@ -562,6 +630,10 @@ async function main() {
     const lines = isLinesFixture
       ? (JSON.parse(readFileSync(imagePath, "utf8")) as OcrLine[])
       : await cachedOcrLines(getWorker, imagePath, useCache);
+    if (sweep) {
+      sweepEntries.push({ file: image, fx, lines });
+      continue;
+    }
     if (verbose) {
       console.log(`  OCR lines (${lines.length}):`);
       for (const l of lines) console.log(`    | ${l.text.trimEnd()}`);
@@ -612,6 +684,12 @@ async function main() {
   }
 
   if (worker) await (worker as Worker).terminate();
+
+  if (sweep) {
+    runSweep(sweepEntries);
+    if (fixtureErrors > 0) process.exitCode = 1;
+    return;
+  }
 
   for (const r of results) printFixture(r, fixtures.get(r.file)!);
 

@@ -20,8 +20,10 @@ import {
   ReviewLineInputs,
   SlotIconImg,
   XIcon,
+  lineGapError,
   readScreenshot,
   startOcrSession,
+  swapLines,
   type OcrSession,
 } from "./shared";
 
@@ -59,11 +61,13 @@ interface Shot {
   relics: ReviewRelic[];
 }
 
-/** The relic a card would add, or null while it has no effect lines. */
+/** The relic a card would add, or null while its lines aren't a relic yet. */
 function draftFrom(shot: Shot, r: ReviewRelic): Omit<CustomRelic, "id"> | null {
+  // No effects at all, or a gap left by moving a line — neither saves, and
+  // "Add to pool" is disabled for both, so this is the backstop for Add all.
+  if (lineGapError(r.lines)) return null;
   // Keep effect/demerit pairs together; drop pairs with no effect text.
   const kept = [0, 1, 2].filter((j) => (r.lines[j] ?? "").trim());
-  if (kept.length === 0) return null;
   return {
     name: r.name ?? "",
     color: r.color,
@@ -397,6 +401,13 @@ export function ImportRelics({
                 demerits: r.demerits.map((d, j) => (j === li ? v : d)),
               }))
             }
+            onSwap={(ri, a, b) =>
+              setRelic(si, ri, (r) => ({
+                ...r,
+                lines: swapLines(r.lines, a, b),
+                demerits: swapLines(r.demerits, a, b),
+              }))
+            }
             onColor={(ri, color) => setRelic(si, ri, (r) => ({ ...r, color }))}
             onAddRelic={(ri) => addOne(si, ri)}
             onDropRelic={(ri) => dropRelic(si, ri)}
@@ -422,6 +433,7 @@ function ShotSection({
   onDeep,
   onLine,
   onDemerit,
+  onSwap,
   onColor,
   onAddRelic,
   onDropRelic,
@@ -432,6 +444,7 @@ function ShotSection({
   onDeep: (deep: boolean) => void;
   onLine: (ri: number, li: number, v: string) => void;
   onDemerit: (ri: number, li: number, v: string) => void;
+  onSwap: (ri: number, a: number, b: number) => void;
   onColor: (ri: number, color: CustomRelic["color"]) => void;
   onAddRelic: (ri: number) => void;
   onDropRelic: (ri: number) => void;
@@ -524,6 +537,7 @@ function ShotSection({
                   deep={shot.deep}
                   onLine={(li, v) => onLine(ri, li, v)}
                   onDemerit={(li, v) => onDemerit(ri, li, v)}
+                  onSwap={(a, b) => onSwap(ri, a, b)}
                 />
                 <div className="mt-2 flex items-center gap-2">
                   <SlotIconImg color={r.color} size={18} />
@@ -539,10 +553,13 @@ function ShotSection({
                       </option>
                     ))}
                   </select>
+                  {/* Lines with a gap in them aren't a relic yet — the note
+                      under them says which way to close it. */}
                   <button
                     type="button"
+                    disabled={lineGapError(r.lines) !== null}
                     onClick={() => onAddRelic(ri)}
-                    className="frame rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600"
+                    className="frame rounded-md bg-night-700 px-3 py-1 font-body text-xs text-gold-bright hover:bg-night-600 disabled:opacity-40 disabled:hover:bg-night-700"
                   >
                     Add to pool
                   </button>

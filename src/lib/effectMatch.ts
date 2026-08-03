@@ -447,15 +447,32 @@ export function matchOcrLines(lines: string[], minScore = 0.5): EffectMatch[] {
   return Array.from(best.values()).sort((a, b) => b.score - a.score);
 }
 
+// Matching is pure and the parse path asks the same question over and over —
+// joinWrappedLines probes candidate joins, then the pitch and column learners
+// and the main loop of parseRelicGroups each consult every line, and the
+// eval's --sweep re-parses identical lines dozens of times. Results are
+// memoized per vocabulary; nothing mutates a returned match, and a screenshot
+// carries ~50 short lines, so the maps stay small.
+const matchMemo = new WeakMap<object, Map<string, EffectMatch | null>>();
+function memoizedMatch(vocab: object, key: string, compute: () => EffectMatch | null): EffectMatch | null {
+  let cache = matchMemo.get(vocab);
+  if (!cache) matchMemo.set(vocab, (cache = new Map()));
+  let hit = cache.get(key);
+  if (hit === undefined) cache.set(key, (hit = compute()));
+  return hit;
+}
+
 function bestMatch(line: string, vocab: string[], minScore: number): EffectMatch | null {
-  let top: EffectMatch | null = null;
-  for (const effect of vocab) {
-    const score = similarity(line, effect);
-    if (score >= minScore && (!top || score > top.score)) {
-      top = { effect, score, line };
+  return memoizedMatch(vocab, `${minScore}|${line}`, () => {
+    let top: EffectMatch | null = null;
+    for (const effect of vocab) {
+      const score = similarity(line, effect);
+      if (score >= minScore && (!top || score > top.score)) {
+        top = { effect, score, line };
+      }
     }
-  }
-  return top;
+    return top;
+  });
 }
 
 /**
@@ -523,20 +540,22 @@ function characterTag(text: string): string | null {
  * chain attack", which shares that clause word for word.
  */
 function bestEffectMatch(line: string, minScore: number): EffectMatch | null {
-  const tag = characterTag(line);
-  let top: EffectMatch | null = null;
-  for (const entry of MATCH_ENTRIES) {
-    const entryTag = characterTag(entry.text);
-    // An untagged entry stays eligible for a tagged line: OCR reads the tag
-    // off some rows and not others, and a tagged line that matches nothing
-    // is worse than one matched to a general effect.
-    if (tag && entryTag && entryTag !== tag) continue;
-    const score = similarity(line, entry.text);
-    if (score >= minScore && (!top || score > top.score)) {
-      top = { effect: entry.canonical, score, line };
+  return memoizedMatch(MATCH_ENTRIES, `${minScore}|${line}`, () => {
+    const tag = characterTag(line);
+    let top: EffectMatch | null = null;
+    for (const entry of MATCH_ENTRIES) {
+      const entryTag = characterTag(entry.text);
+      // An untagged entry stays eligible for a tagged line: OCR reads the tag
+      // off some rows and not others, and a tagged line that matches nothing
+      // is worse than one matched to a general effect.
+      if (tag && entryTag && entryTag !== tag) continue;
+      const score = similarity(line, entry.text);
+      if (score >= minScore && (!top || score > top.score)) {
+        top = { effect: entry.canonical, score, line };
+      }
     }
-  }
-  return top ? rescueTierSuffix(line, top) : null;
+    return top ? rescueTierSuffix(line, top) : null;
+  });
 }
 
 /**
@@ -677,6 +696,18 @@ function isBlankSlotDash(text: string): boolean {
 }
 
 /**
+ * The geometry thresholds parseRelicGroups clusters with, in units of the
+ * learned line pitch. The defaults are what the app ships with; the eval's
+ * --sweep mode grids over them, which is the only reason they're exposed.
+ */
+export interface RelicGroupTuning {
+  /** y-step from the previous row that starts a new relic. */
+  boundaryStepPitches?: number;
+  /** Truly empty vertical span that ends a relic (blank slot + divider). */
+  blankSpanPitches?: number;
+}
+
+/**
  * Cluster OCR lines into relic groups. A line matching a relic name starts a
  * new group; effect lines attach to the current group (max 3 per relic, as in
  * game). A curse line is the demerit of the effect directly above it. When
@@ -685,7 +716,17 @@ function isBlankSlotDash(text: string): boolean {
  * so one unreadable line can't spill the next relic's effects into this one.
  * Returns at most `maxGroups` groups that contain something.
  */
-export function parseRelicGroups(lines: (string | ParseLine)[], maxGroups = 6): ParsedRelicGroup[] {
+export function parseRelicGroups(
+  lines: (string | ParseLine)[],
+  maxGroups = 6,
+  tuning?: RelicGroupTuning,
+): ParsedRelicGroup[] {
+  // Defaults from the eval's --sweep over the 40-fixture set (2026-08-03):
+  // the boundary step is flat from 1.8–2.6 pitches so 2.4 sits mid-plateau;
+  // the blank span peaks on 1.02–1.08 with cliffs both at 1.0 (false splits)
+  // and past 1.1 (real boundaries missed), so 1.05 is the plateau's center.
+  const boundaryStepPitches = tuning?.boundaryStepPitches ?? 2.4;
+  const blankSpanPitches = tuning?.blankSpanPitches ?? 1.05;
   const norm: ParseLine[] = lines.map((l) => (typeof l === "string" ? { text: l } : l));
   const groups: ParsedRelicGroup[] = [];
   let current: ParsedRelicGroup | null = null;
@@ -793,12 +834,12 @@ export function parseRelicGroups(lines: (string | ParseLine)[], maxGroups = 6): 
         pl.bbox != null &&
         prevBox != null &&
         pitch > 0 &&
-        pl.bbox.y0 - prevBox.y1 > 1.2 * pitch &&
+        pl.bbox.y0 - prevBox.y1 > blankSpanPitches * pitch &&
         spanIsEmpty(prevBox, pl.bbox);
       if (
         !current ||
         current.effects.length >= 3 ||
-        (current.effects.length > 0 && (step > 2.4 * pitch || blankAbove))
+        (current.effects.length > 0 && (step > boundaryStepPitches * pitch || blankAbove))
       ) {
         current = push({ name: null, effects: [], demerits: [], deep: false });
       }

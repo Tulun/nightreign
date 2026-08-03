@@ -317,6 +317,14 @@ export function XIcon() {
   );
 }
 
+function ChevronIcon({ up }: { up: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={up ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} />
+    </svg>
+  );
+}
+
 export { colorFromRelicName };
 
 export interface OcrLine {
@@ -692,6 +700,95 @@ export function EffectSuggestInput({
 }
 
 /**
+ * Swap two of a relic's three line slots. Callers apply it to the effects and
+ * the demerits with the same pair of indices, which is what keeps a Deep
+ * relic's demerit attached to the effect it belongs to as lines move. Short
+ * arrays pad out to three so the result is always a full set of lines.
+ */
+export function swapLines(xs: string[], a: number, b: number): string[] {
+  const at = (i: number) => xs[i] ?? "";
+  return [0, 1, 2].map((i) => (i === a ? at(b) : i === b ? at(a) : at(i)));
+}
+
+/**
+ * Why a set of effect lines can't be saved yet, or null when they're fine.
+ *
+ * A relic's effects have to fill the lines from the top — two effects sit on
+ * lines 1 and 2, never on 1 and 3. Moving a line is deliberately *not*
+ * restricted to keeping that true, since getting an effect from line 1 to
+ * line 3 means passing through an arrangement that momentarily isn't; the gap
+ * is caught here, on the way out, rather than by refusing the move that made
+ * it.
+ */
+export function lineGapError(lines: string[]): string | null {
+  const filled = [0, 1, 2].map((i) => (lines[i] ?? "").trim() !== "");
+  const n = filled.filter(Boolean).length;
+  if (n === 0) return "Add at least one effect.";
+  if (filled.slice(0, n).every(Boolean)) return null;
+  return n === 1
+    ? "Move the effect up to line 1 — effects can't sit below an empty line."
+    : `Move the effects up to lines 1–${n} — they can't sit below an empty line.`;
+}
+
+/**
+ * A gap in otherwise-filled lines. Lines with nothing in them at all aren't a
+ * gap — they're an empty relic, which some surfaces (an unused socket, an
+ * untouched editor) are perfectly happy with, so they ask this rather than
+ * treating every blank form as a mistake.
+ */
+export function hasLineGap(lines: string[]): boolean {
+  return lines.some((l) => (l ?? "").trim() !== "") && lineGapError(lines) !== null;
+}
+
+/** The gap warning, shown under the lines the moment one opens up. */
+function LineGapNote({ lines }: { lines: string[] }) {
+  if (!hasLineGap(lines)) return null;
+  return <p className="font-body text-sm text-gold-dim">{lineGapError(lines)}</p>;
+}
+
+/**
+ * Up/down controls for one effect line. The reader regularly lands a relic's
+ * lines in a different order than the game shows them, and rewriting two long
+ * effects to fix that is the slow way round — these move a whole line, demerit
+ * included, so the fix is one tap.
+ */
+function LineMoveButtons({
+  index,
+  onSwap,
+  withDemerit,
+  disabled = false,
+}: {
+  index: number;
+  onSwap: (a: number, b: number) => void;
+  /** Deep relics carry a demerit per line, and it travels with the line. */
+  withDemerit: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex shrink-0 gap-0.5">
+      {([-1, 1] as const).map((dir) => {
+        const to = index + dir;
+        const dead = disabled || to < 0 || to > 2;
+        const where = dir < 0 ? "up" : "down";
+        return (
+          <button
+            key={dir}
+            type="button"
+            disabled={dead}
+            onClick={() => onSwap(index, to)}
+            aria-label={`Move effect ${index + 1} ${where}`}
+            title={`Move effect ${index + 1} ${where}${withDemerit ? ", demerit and all" : ""}`}
+            className="grid h-8 w-7 place-items-center rounded border border-night-600 text-parchment-muted transition-colors hover:border-gold-faint hover:text-gold-bright disabled:pointer-events-none disabled:opacity-25"
+          >
+            <ChevronIcon up={dir < 0} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
  * Editable effect lines for a pool relic — each effect input gets a demerit
  * input beneath it (demerits are tied to their line on Deep relics). The
  * demerit input appears once its effect line has text. Pass
@@ -710,6 +807,7 @@ export function ReviewLineInputs({
   disabled = false,
   onLine,
   onDemerit,
+  onSwap,
 }: {
   lines: string[];
   demerits: string[];
@@ -717,34 +815,40 @@ export function ReviewLineInputs({
   disabled?: boolean;
   onLine: (index: number, text: string) => void;
   onDemerit: (index: number, text: string) => void;
+  /** Trade line `a` with line `b` — effect and demerit together. */
+  onSwap: (a: number, b: number) => void;
 }) {
   return (
     <div className="mt-2 space-y-1.5">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="space-y-1">
-          {/* These are the flow's main editing surface — a misread line is
-              corrected here, often on a phone — so they read at body size
-              rather than the dense size a read-only list can get away with. */}
-          <EffectSuggestInput
-            value={lines[i] ?? ""}
-            vocab={effectVocabulary(deep)}
-            disabled={disabled}
-            onChange={(v) => onLine(i, v)}
-            placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
-            className="frame w-full rounded bg-night-800 px-2 py-1.5 font-body text-base text-parchment placeholder:text-parchment-faint disabled:opacity-60"
-          />
-          {deep && (lines[i] ?? "").trim() !== "" && (
+        <div key={i} className="flex items-start gap-1.5">
+          <div className="min-w-0 flex-1 space-y-1">
+            {/* These are the flow's main editing surface — a misread line is
+                corrected here, often on a phone — so they read at body size
+                rather than the dense size a read-only list can get away with. */}
             <EffectSuggestInput
-              value={demerits[i] ?? ""}
-              vocab={CURSE_VOCABULARY}
+              value={lines[i] ?? ""}
+              vocab={effectVocabulary(deep)}
               disabled={disabled}
-              onChange={(v) => onDemerit(i, v)}
-              placeholder="Demerit (optional)"
-              className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-1 font-body text-sm text-red-200/90 placeholder:text-red-300/40 disabled:opacity-60"
+              onChange={(v) => onLine(i, v)}
+              placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
+              className="frame w-full rounded bg-night-800 px-2 py-1.5 font-body text-base text-parchment placeholder:text-parchment-faint disabled:opacity-60"
             />
-          )}
+            {deep && (lines[i] ?? "").trim() !== "" && (
+              <EffectSuggestInput
+                value={demerits[i] ?? ""}
+                vocab={CURSE_VOCABULARY}
+                disabled={disabled}
+                onChange={(v) => onDemerit(i, v)}
+                placeholder="Demerit (optional)"
+                className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-1 font-body text-sm text-red-200/90 placeholder:text-red-300/40 disabled:opacity-60"
+              />
+            )}
+          </div>
+          <LineMoveButtons index={i} onSwap={onSwap} withDemerit={deep} disabled={disabled} />
         </div>
       ))}
+      <LineGapNote lines={lines} />
     </div>
   );
 }
@@ -772,28 +876,40 @@ export function RelicLineInputs({
       effects: [0, 1, 2].map((j) => relic.effects[j] ?? ""),
       demerits: [0, 1, 2].map((j) => (j === i ? v : relic.demerits?.[j] ?? "")),
     });
+  // The relic is right here, so the swap needs no help from the caller — the
+  // demerits move with the same indices, keeping each tied to its own effect.
+  const swap = (a: number, b: number) =>
+    onUpdate({
+      ...relic,
+      effects: swapLines(relic.effects, a, b),
+      demerits: swapLines(relic.demerits ?? [], a, b),
+    });
   return (
     <div className={`space-y-1.5 ${className ?? ""}`}>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="space-y-1">
-          <EffectSuggestInput
-            value={relic.effects[i] ?? ""}
-            vocab={effectVocabulary(!!relic.deep)}
-            onChange={(v) => setEffect(i, v)}
-            placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
-            className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
-          />
-          {showDemerits && (relic.effects[i] ?? "").trim() !== "" && (
+        <div key={i} className="flex items-start gap-1.5">
+          <div className="min-w-0 flex-1 space-y-1">
             <EffectSuggestInput
-              value={relic.demerits?.[i] ?? ""}
-              vocab={CURSE_VOCABULARY}
-              onChange={(v) => setDemerit(i, v)}
-              placeholder="Demerit (optional)"
-              className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40"
+              value={relic.effects[i] ?? ""}
+              vocab={effectVocabulary(!!relic.deep)}
+              onChange={(v) => setEffect(i, v)}
+              placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
+              className="frame w-full rounded bg-night-800 px-2 py-1 font-body text-sm text-parchment placeholder:text-parchment-faint"
             />
-          )}
+            {showDemerits && (relic.effects[i] ?? "").trim() !== "" && (
+              <EffectSuggestInput
+                value={relic.demerits?.[i] ?? ""}
+                vocab={CURSE_VOCABULARY}
+                onChange={(v) => setDemerit(i, v)}
+                placeholder="Demerit (optional)"
+                className="ml-3 w-[calc(100%-0.75rem)] rounded border border-red-900/60 bg-night-800 px-2 py-0.5 font-body text-xs text-red-200/90 placeholder:text-red-300/40"
+              />
+            )}
+          </div>
+          <LineMoveButtons index={i} onSwap={swap} withDemerit={showDemerits} />
         </div>
       ))}
+      <LineGapNote lines={relic.effects} />
     </div>
   );
 }

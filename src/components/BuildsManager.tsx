@@ -533,10 +533,10 @@ export function BuildsManager() {
           onCreateTag={createTag}
           // Only a new build offers this — leaving drops the draft, which is
           // nothing yet on a build that hasn't been filled in.
-          onImportRelics={
+          onImportBuild={
             isNew
               ? () => {
-                  setImportTab("relics");
+                  setImportTab("build");
                   setView("import");
                   showList();
                 }

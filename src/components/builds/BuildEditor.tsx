@@ -44,6 +44,7 @@ import {
   RelicLineInputs,
   SlotIconImg,
   StepTrail,
+  lineGapError,
   type SlotRef,
 } from "./shared";
 
@@ -69,7 +70,7 @@ export function BuildEditor({
   onAddCustomRelic,
   onUpdateCustomRelic,
   onCreateTag,
-  onImportRelics,
+  onImportBuild,
 }: {
   initial: Build;
   store: BuildStore;
@@ -79,9 +80,11 @@ export function BuildEditor({
   backLabel?: string;
   /** Saved builds keep their Nightfarer — only a new build picks one. */
   lockCharacter?: boolean;
-  /** Leave for the relic importer — offered on a new build, which is where
-      "I don't have these relics in my pool yet" comes up. */
-  onImportRelics?: () => void;
+  /** Leave for the build importer — offered on a new build, which is where
+      "I have screenshots, not a filled pool" comes up. It lands on the build
+      importer rather than the relic one: that reads the relics *and* the build
+      in one go, so the trip out ends where this flow was headed anyway. */
+  onImportBuild?: () => void;
   onAddCustomRelic: (r: CustomRelic) => void;
   onUpdateCustomRelic: (r: CustomRelic) => void;
   onCreateTag: (name: string) => void;
@@ -350,15 +353,15 @@ export function BuildEditor({
         </button>
         <StepTrail steps={STEP_LABELS} at={0} />
 
-        {/* What this flow builds from, and where to go if the relics you want
-            aren't in the pool yet. */}
-        {onImportRelics && (
+        {/* What this flow builds from, and the way out for someone who has
+            screenshots rather than a pool to pick from. */}
+        {onImportBuild && (
           <p className="mb-5 max-w-prose font-body text-base text-parchment-muted">
-            Create a build from relics you have in your relic pool. If you want to add new
-            relics from screenshots,{" "}
+            Create a build from relics you have in your relic pool. If you&rsquo;d rather read a
+            whole build off screenshots,{" "}
             <button
               type="button"
-              onClick={onImportRelics}
+              onClick={onImportBuild}
               className="font-semibold text-gold-bright underline underline-offset-2 hover:text-parchment"
             >
               click here
@@ -624,6 +627,9 @@ function SlotLineEditor({
     <form
       onSubmit={(e) => {
         e.preventDefault();
+        // A move can leave a gap in the lines; the note under them says so,
+        // and this is where it stops being saveable.
+        if (lineGapError(draft.effects)) return;
         onSave(draft);
       }}
       onKeyDown={(e) => {
