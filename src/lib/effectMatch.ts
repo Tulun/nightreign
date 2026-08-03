@@ -964,10 +964,12 @@ export function refitGroupsToScreen(groups: ParsedRelicGroup[]): ParsedRelicGrou
   const pool = screenIsDeep(groups) ? "deep" : "normal";
   const legal = pool === "deep" ? DEEP_LEGAL : NORMAL_LEGAL;
   return groups.map((g) => {
-    // The legal candidate must land within 0.1 of the original score: an
-    // illegal match at 0.99 is the pool data lagging the game (crystal tears
-    // do roll on Deep relics; the catalogue disagreed), not a misread — only
-    // a garbled line, where the scores sit close anyway, gets re-snapped.
+    // The legal candidate must land within 0.1 of the original score. An
+    // illegal match at 0.99 means something upstream is wrong — the kind
+    // vote misfired, or the pool data lags the game — and "correcting" it
+    // to a distant sibling manufactures a confident misread (a mis-voted
+    // ps-3 turned a 0.997 crystal-tear line into "Lightning Grease…").
+    // Only a garbled line, where the scores sit close anyway, is re-snapped.
     const effects = g.effects.map((e) =>
       legal.has(e.effect) ? e : bestEffectMatch(e.line, Math.max(0.5, e.score - 0.1), pool) ?? e,
     );
