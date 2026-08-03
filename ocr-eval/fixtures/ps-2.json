@@ -1,0 +1,20 @@
+{
+  "notes": "Native PS5 screen grab 2026-08-03 — vessel Slot 1 pane; the vessel's first relic slot is empty, so the pane's top region has no lines at all.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "Improved Blood Loss Resistance",
+        "Improved Frost Resistance"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "HP Restoration upon Thrusting Sword Attacks",
+        "Dormant Power Helps Discover Greatshields",
+        "Character Skill Cooldown Reduction +3"
+      ]
+    }
+  ]
+}

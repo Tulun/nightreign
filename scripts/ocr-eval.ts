@@ -25,6 +25,7 @@ import {
   identifyUniqueRelic,
   parseRelicGroups,
   pickBestOcrPass,
+  refitGroupsToScreen,
   resolveEffectAlias,
   screenIsDeep,
   similarity,
@@ -670,7 +671,7 @@ async function main() {
     }
 
     // Same pipeline as ScreenshotImport.tsx.
-    const rawGroups = parseRelicGroups(lines);
+    const rawGroups = refitGroupsToScreen(parseRelicGroups(lines));
     const allDeep = screenIsDeep(rawGroups);
     // Same unique-relic identification as readScreenshot: a unique's fixed
     // effect set names it, and the catalogue's effects replace OCR's.

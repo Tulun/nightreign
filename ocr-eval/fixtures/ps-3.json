@@ -1,0 +1,31 @@
+{
+  "deep": true,
+  "notes": "Native PS5 screen grab 2026-08-03 — vessel Slot 1 pane; relics 2 and 3 open with other characters' stat-swap lines rendered grayed out (Undertaker can't use them).",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "Lightning-Shrouding Cracked Tear in possession at start of expedition",
+        "Improved Poison Resistance +1",
+        "Improved Affinity Attack Power +2"
+      ],
+      "demerits": [null, null, "Reduced Damage Negation for Flask Usages"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Duchess] Improved Mind and Faith, Reduced Intelligence",
+        "Improved Carian Sword Sorcery",
+        "Improved Sleep Resistance"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Ironeye] Improved Arcane, Reduced Dexterity",
+        "FP Restoration upon Thrusting Sword Attacks",
+        "Improved Madness Resistance"
+      ]
+    }
+  ]
+}

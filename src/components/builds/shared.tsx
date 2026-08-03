@@ -20,6 +20,7 @@ import {
   identifyUniqueRelic,
   parseRelicGroups,
   pickBestOcrPass,
+  refitGroupsToScreen,
   screenIsDeep,
 } from "@/lib/effectMatch";
 import type { EffectState } from "@/lib/effectCompat";
@@ -487,6 +488,11 @@ export interface ScreenshotRelic {
   effects: string[];
   /** demerits[i] belongs to effects[i]. */
   demerits: string[];
+  /**
+   * alternates[i] is a runner-up reading for effects[i] when the match was a
+   * near-tie ("" otherwise) — review UIs offer it as a one-tap swap.
+   */
+  alternates: string[];
   color: CustomRelic["color"] | null;
 }
 
@@ -510,7 +516,7 @@ export async function readScreenshot(
   opts: { session?: OcrSession; maxGroups?: number } = {},
 ): Promise<ScreenshotRead> {
   const ocr = await ocrLines(file, onProgress, opts.session);
-  const all = parseRelicGroups(ocr);
+  const all = refitGroupsToScreen(parseRelicGroups(ocr));
   const found = opts.maxGroups === undefined ? all : all.slice(0, opts.maxGroups);
   const deep = screenIsDeep(found);
   // A unique relic's fixed effect set names it even though list screens
@@ -544,6 +550,7 @@ export async function readScreenshot(
           name: unique.name,
           effects: [0, 1, 2].map((j) => unique.effects[j] ?? ""),
           demerits: ["", "", ""],
+          alternates: ["", "", ""],
           color: unique.color,
         };
       }
@@ -551,6 +558,7 @@ export async function readScreenshot(
         name: g.name,
         effects: [0, 1, 2].map((j) => g.effects[j]?.effect ?? ""),
         demerits: [0, 1, 2].map((j) => g.demerits[j] ?? ""),
+        alternates: [0, 1, 2].map((j) => g.effects[j]?.alternate ?? ""),
         color: colorFromRelicName(g.name) ?? colors[i],
       };
     }),
@@ -861,19 +869,25 @@ export function ReviewLineInputs({
   lines,
   demerits,
   deep,
+  alternates,
   disabled = false,
   onLine,
   onDemerit,
   onSwap,
+  onAlternate,
 }: {
   lines: string[];
   demerits: string[];
   deep: boolean;
+  /** Near-tie runner-up readings per line ("" = none); tap to swap in. */
+  alternates?: string[];
   disabled?: boolean;
   onLine: (index: number, text: string) => void;
   onDemerit: (index: number, text: string) => void;
   /** Trade line `a` with line `b` — effect and demerit together. */
   onSwap: (a: number, b: number) => void;
+  /** Swap line `i` with its alternate; the parent keeps both reachable. */
+  onAlternate?: (index: number) => void;
 }) {
   return (
     <div className="mt-2 space-y-1.5">
@@ -891,6 +905,20 @@ export function ReviewLineInputs({
               placeholder={`Effect ${i + 1}${i === 0 ? "" : " (optional)"}`}
               className="frame w-full rounded bg-night-800 px-2 py-1.5 font-body text-base text-parchment placeholder:text-parchment-faint disabled:opacity-60"
             />
+            {(alternates?.[i] ?? "") !== "" && alternates![i] !== lines[i] && (
+              /* The scan couldn't decide between two lines — offer the loser
+                 as one tap. Swapping keeps the current text as the new
+                 alternate, so the choice stays reversible. */
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => (onAlternate ? onAlternate(i) : onLine(i, alternates![i]))}
+                className="ml-3 block max-w-[calc(100%-0.75rem)] truncate rounded border border-parchment-faint/30 bg-night-900 px-2 py-0.5 text-left font-body text-sm text-parchment-dim hover:border-parchment-faint/60 hover:text-parchment disabled:opacity-60"
+                title="The scan almost read this line as:"
+              >
+                ⇄ {alternates![i]}
+              </button>
+            )}
             {deep && (lines[i] ?? "").trim() !== "" && (
               <EffectSuggestInput
                 value={demerits[i] ?? ""}

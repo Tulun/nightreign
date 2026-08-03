@@ -445,6 +445,13 @@ export interface EffectMatch {
   score: number;
   /** The OCR line that matched. */
   line: string;
+  /**
+   * A different effect that scored nearly as well — set only when the win
+   * wasn't decisive, so review UIs can offer the runner-up as a one-tap
+   * correction ("poison-afflicted" vs "frostbite-afflicted" on a line whose
+   * status word blurred out).
+   */
+  alternate?: string;
 }
 
 /**
@@ -557,22 +564,52 @@ function characterTag(text: string): string | null {
  * matched "[Undertaker] Attack power increased by landing the final blow of a
  * chain attack", which shares that clause word for word.
  */
-function bestEffectMatch(line: string, minScore: number): EffectMatch | null {
-  return memoizedMatch(MATCH_ENTRIES, `${minScore}|${line}`, () => {
+// The effects a screen of each kind can legally show. A screen is all-Deep
+// or all-normal, so once the kind is known, a match outside its pool is a
+// misread of something inside it (see refitGroupsToScreen). Crossover Deep
+// entries appear on normal relics too — "HP Restored When Using Medicinal
+// Boluses, etc." on a normal screen (yt-5) is real, not a misread.
+const DEEP_LEGAL = new Set<string>([...DEEP_EFFECT_VOCABULARY, ...Array.from(CURSE_EFFECTS)]);
+const NORMAL_LEGAL = new Set<string>([
+  ...Array.from(NORMAL_EFFECT_NAMES),
+  ...deepRelics.filter((d) => d.crossover).flatMap((d) => expandCanonical(d.name)),
+]);
+
+function bestEffectMatch(line: string, minScore: number, pool?: "deep" | "normal"): EffectMatch | null {
+  return memoizedMatch(MATCH_ENTRIES, `${minScore}|${pool ?? "all"}|${line}`, () => {
+    const legal = pool === "deep" ? DEEP_LEGAL : pool === "normal" ? NORMAL_LEGAL : null;
     const tag = characterTag(line);
     let top: EffectMatch | null = null;
+    let runnerUp: { effect: string; score: number } | null = null;
     for (const entry of MATCH_ENTRIES) {
+      if (legal && !legal.has(entry.canonical)) continue;
       const entryTag = characterTag(entry.text);
       // An untagged entry stays eligible for a tagged line: OCR reads the tag
       // off some rows and not others, and a tagged line that matches nothing
       // is worse than one matched to a general effect.
       if (tag && entryTag && entryTag !== tag) continue;
       const score = similarity(line, entry.text);
-      if (score >= minScore && (!top || score > top.score)) {
+      if (score < minScore) continue;
+      if (!top || score > top.score) {
+        if (top && top.effect !== entry.canonical) runnerUp = { effect: top.effect, score: top.score };
         top = { effect: entry.canonical, score, line };
+      } else if (entry.canonical !== top.effect && (!runnerUp || score > runnerUp.score)) {
+        runnerUp = { effect: entry.canonical, score };
       }
     }
-    return top ? rescueTierSuffix(line, top) : null;
+    if (!top) return null;
+    const rescued = rescueTierSuffix(line, top);
+    // Offer the runner-up only when the win wasn't decisive: a confident read
+    // (≥0.98) has no ambiguity worth a chip, and a distant second is noise.
+    if (
+      runnerUp &&
+      runnerUp.effect !== rescued.effect &&
+      top.score < 0.98 &&
+      top.score - runnerUp.score <= 0.08
+    ) {
+      rescued.alternate = runnerUp.effect;
+    }
+    return rescued;
   });
 }
 
@@ -714,6 +751,20 @@ function isBlankSlotDash(text: string): boolean {
 }
 
 /**
+ * The horizontal rule between relic blocks, as OCR renders it: a run of
+ * dashes with almost no real letters ("EE ————— —_ —————————"). Too long for
+ * isEmptySlotRow's ≤8 test, but it's chrome, not text — and if it counts as
+ * occupying its row, the divider itself hides the blank span that is the
+ * only boundary between two relics (dayman-4 ran relics 2 and 3 together
+ * exactly this way).
+ */
+function isRuleRow(text: string): boolean {
+  const t = text.trim();
+  if (!/[-–—―_=~]{3}/.test(t)) return false;
+  return t.replace(/[^a-z0-9]/gi, "").length <= 3;
+}
+
+/**
  * The geometry thresholds parseRelicGroups clusters with, in units of the
  * learned line pitch. The defaults are what the app ships with; the eval's
  * --sweep mode grids over them, which is the only reason they're exposed.
@@ -800,7 +851,7 @@ export function parseRelicGroups(
   // effect but long enough to fill the gap that was the only boundary left
   // once the dash itself went unread.
   const boxes = joined
-    .filter((l) => l.text.trim().length >= 8 && !isEmptySlotRow(l.text))
+    .filter((l) => l.text.trim().length >= 8 && !isEmptySlotRow(l.text) && !isRuleRow(l.text))
     .map((l) => l.bbox)
     .filter((b): b is NonNullable<ParseLine["bbox"]> => b != null);
   const spanIsEmpty = (above: NonNullable<ParseLine["bbox"]>, below: NonNullable<ParseLine["bbox"]>) =>
@@ -824,7 +875,13 @@ export function parseRelicGroups(
     if (isBlankSlotDash(line)) {
       const inColumn =
         !pl.bbox || pitch === 0 || Math.abs(pl.bbox.x0 - columnX) <= Math.max(pitch, 40);
-      if (inColumn && current && current.effects.length > 0) current = null;
+      // A dash whose center sits inside another row's vertical span is a
+      // sliver of that row — an icon-frame edge OCR'd on its own (ps-3 read
+      // a 3px bar riding the next effect's row) — not a slot marker. A real
+      // blank-slot dash owns its row.
+      const cy = pl.bbox ? (pl.bbox.y0 + pl.bbox.y1) / 2 : null;
+      const ridesAnotherRow = cy != null && boxes.some((b) => cy > b.y0 && cy < b.y1);
+      if (inColumn && !ridesAnotherRow && current && current.effects.length > 0) current = null;
       continue;
     }
     if (line.length < 8) continue;
@@ -884,7 +941,54 @@ export function parseRelicGroups(
  * deep-only match on a normal screen can't flip the whole import.
  */
 export function screenIsDeep(groups: ParsedRelicGroup[]): boolean {
+  // A parsed demerit is decisive on its own: normal relics never render one,
+  // and a vessel pane can hold one Deep relic with a demerit among relics
+  // whose effects all exist in both pools — a majority vote reads that
+  // screen as normal (ps-3).
+  if (groups.some((g) => g.demerits.some(Boolean))) return true;
   return groups.filter((g) => g.deep).length * 2 > groups.length;
+}
+
+/**
+ * Re-snap effects that can't exist on this screen's relic kind. Matching runs
+ * before anyone knows whether the screen shows Deep relics, so a garbled line
+ * is free to land on a lexically-closer sibling from the wrong pool — a Deep
+ * screen's "[Duchess] Use Character Skill…" (Deep-only, verified in game)
+ * came back as "[Duchess] Improved Character Skill Attack Power" (normal
+ * pool) by 0.03 of score. Once the screen's kind is voted, every effect
+ * outside its pool gets re-matched within the pool; the original stays only
+ * when nothing legal clears the normal floor (the kind vote itself can be
+ * wrong, and an illegal-but-visible line is a thing the review UI can show).
+ */
+export function refitGroupsToScreen(groups: ParsedRelicGroup[]): ParsedRelicGroup[] {
+  const pool = screenIsDeep(groups) ? "deep" : "normal";
+  const legal = pool === "deep" ? DEEP_LEGAL : NORMAL_LEGAL;
+  return groups.map((g) => {
+    // The legal candidate must land within 0.1 of the original score: an
+    // illegal match at 0.99 is the pool data lagging the game (crystal tears
+    // do roll on Deep relics; the catalogue disagreed), not a misread — only
+    // a garbled line, where the scores sit close anyway, gets re-snapped.
+    const effects = g.effects.map((e) =>
+      legal.has(e.effect) ? e : bestEffectMatch(e.line, Math.max(0.5, e.score - 0.1), pool) ?? e,
+    );
+    // A re-snap can land on an effect the group already holds — keep one.
+    const seen = new Set<string>();
+    const demerits: (string | null)[] = [];
+    const deduped = effects.filter((e, i) => {
+      if (seen.has(e.effect)) return false;
+      seen.add(e.effect);
+      demerits.push(g.demerits[i] ?? null);
+      return true;
+    });
+    const changed = deduped.some((e, i) => e !== g.effects[i]) || deduped.length !== g.effects.length;
+    if (!changed) return g;
+    return {
+      ...g,
+      effects: deduped,
+      demerits,
+      deep: g.deep || deduped.some((e) => DEEP_ONLY_EFFECTS.has(e.effect)),
+    };
+  });
 }
 
 // ── Unique-relic identification ──────────────────────────────────────────
@@ -1000,7 +1104,7 @@ export function retryCandidates(lines: ParseLine[]): RetryStrip[] {
 
   const strips: RetryStrip[] = [];
   for (const r of rows) {
-    if (!r.bbox || r.text.length === 0 || isMatched.has(r) || isEmptySlotRow(r.text)) continue;
+    if (!r.bbox || r.text.length === 0 || isMatched.has(r) || isEmptySlotRow(r.text) || isRuleRow(r.text)) continue;
     const cy = rowCenter(r.bbox);
     if (cy < top || cy > bottom) continue;
     if (r.bbox.x1 < columnX - pitch || r.bbox.x0 > columnRight) continue;

@@ -42,6 +42,8 @@ interface ReviewRelic {
   lines: string[];
   /** demerits[i] belongs to lines[i]; only Deep relics carry them. */
   demerits: string[];
+  /** Near-tie runner-up readings per line ("" = none); a chip swaps them in. */
+  alternates: string[];
   color: CustomRelic["color"];
   /** Set once the card is handled — it collapses to say what happened. */
   outcome: "new" | "dupe" | null;
@@ -166,6 +168,7 @@ export function ImportRelics({
               name: r.name,
               lines: r.effects,
               demerits: r.demerits,
+              alternates: r.alternates,
               // The sample fails on shots where the icon is cropped or dim;
               // Red is only a starting point, every card has a color picker.
               color: r.color ?? "Red",
@@ -406,6 +409,16 @@ export function ImportRelics({
                 ...r,
                 lines: swapLines(r.lines, a, b),
                 demerits: swapLines(r.demerits, a, b),
+                alternates: swapLines(r.alternates, a, b),
+              }))
+            }
+            onAlternate={(ri, li) =>
+              // Trade the line for its runner-up; the old reading becomes the
+              // new alternate, so the tap is reversible.
+              setRelic(si, ri, (r) => ({
+                ...r,
+                lines: r.lines.map((l, j) => (j === li ? r.alternates[li] : l)),
+                alternates: r.alternates.map((a, j) => (j === li ? r.lines[li] : a)),
               }))
             }
             onColor={(ri, color) => setRelic(si, ri, (r) => ({ ...r, color }))}
@@ -434,6 +447,7 @@ function ShotSection({
   onLine,
   onDemerit,
   onSwap,
+  onAlternate,
   onColor,
   onAddRelic,
   onDropRelic,
@@ -445,6 +459,7 @@ function ShotSection({
   onLine: (ri: number, li: number, v: string) => void;
   onDemerit: (ri: number, li: number, v: string) => void;
   onSwap: (ri: number, a: number, b: number) => void;
+  onAlternate: (ri: number, li: number) => void;
   onColor: (ri: number, color: CustomRelic["color"]) => void;
   onAddRelic: (ri: number) => void;
   onDropRelic: (ri: number) => void;
@@ -535,9 +550,11 @@ function ShotSection({
                   lines={r.lines}
                   demerits={r.demerits}
                   deep={shot.deep}
+                  alternates={r.alternates}
                   onLine={(li, v) => onLine(ri, li, v)}
                   onDemerit={(li, v) => onDemerit(ri, li, v)}
                   onSwap={(a, b) => onSwap(ri, a, b)}
+                  onAlternate={(li) => onAlternate(ri, li)}
                 />
                 <div className="mt-2 flex items-center gap-2">
                   <SlotIconImg color={r.color} size={18} />
