@@ -1,0 +1,28 @@
+{
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "Successful guarding fills more of the Art gauge",
+        "Attack power increased for each Night Invader defeated",
+        "Vigor +2"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Slowly restore HP for self and nearby allies when HP is low",
+        "Improved Damage Negation at Low HP",
+        "Vigor +3"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Raider] Damage taken while using Character Skill improves attack power and stamina",
+        "Taking attacks improves attack power",
+        "Character Skill Cooldown Reduction +3"
+      ]
+    }
+  ]
+}

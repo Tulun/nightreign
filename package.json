@@ -13,6 +13,7 @@
     "lint": "next lint",
     "rules": "npx --yes firebase-tools deploy --only firestore:rules",
     "rules:check": "npx --yes firebase-tools deploy --only firestore:rules --dry-run",
+    "functions:deploy": "npx --yes firebase-tools deploy --only functions",
     "ocr:eval": "tsx scripts/ocr-eval.ts",
     "icons:effects": "tsx scripts/effect-icons.ts"
   },
@@ -24,6 +25,7 @@
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
     "@types/node": "20.14.10",
     "@types/pngjs": "^6.0.5",
     "@types/react": "18.3.3",

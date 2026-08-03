@@ -1,0 +1,30 @@
+{
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "Improved Melee Attack Power",
+        "Improved Skill Attack Power",
+        "Occasionally Nullify Attacks When Damage Negation is Lowered"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks",
+        "Improved Damage Negation at Low HP",
+        "Physical Attack Up +1"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "Improved Damage Negation at Low HP",
+        "Attack power increased for each Night Invader defeated"
+      ]
+    }
+  ]
+}

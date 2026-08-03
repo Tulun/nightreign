@@ -4,7 +4,11 @@
 //  screenshots with verified expected output, and scores the results.
 //
 //  Usage:  npm run ocr:eval [-- --verbose] [-- --no-cache] [-- --filter <s>]
-//  Fixtures live in ocr-eval/fixtures/ — see ocr-eval/README.md.
+//                           [-- --engine claude]
+//  --engine claude scores the Claude vision reader (the same request the
+//  parseRelicScreenshot Firebase Function makes, called directly with your
+//  Anthropic credentials) instead of tesseract. Fixtures live in
+//  ocr-eval/fixtures/ — see ocr-eval/README.md.
 // ─────────────────────────────────────────────────────────────────────────
 
 import { createHash } from "node:crypto";
@@ -22,7 +26,7 @@ import {
   screenIsDeep,
   similarity,
 } from "@/lib/effectMatch";
-import { grayInvertStretch } from "@/lib/imagePrep";
+import { grayInvertStretch, maxChannelInvertStretch } from "@/lib/imagePrep";
 import { lineFromWords } from "@/lib/ocrClean";
 import {
   colorFromRelicName,
@@ -31,6 +35,14 @@ import {
   type IconBox,
   type RelicColor,
 } from "@/lib/relicColor";
+import {
+  VISION_MAX_TOKENS,
+  VISION_MODEL,
+  VISION_PROMPT,
+  VISION_PROMPT_VERSION,
+  VISION_SCHEMA,
+} from "@/lib/visionPrompt";
+import { parseVisionReply } from "@/lib/visionRead";
 
 const ROOT = path.join(__dirname, "..");
 const FIXTURES_DIR = path.join(ROOT, "ocr-eval", "fixtures");
@@ -38,7 +50,17 @@ const CACHE_DIR = path.join(ROOT, "ocr-eval", ".cache");
 
 // Bump when OCR settings change (engine params, preprocessing, tesseract
 // version) so cached OCR results from the old settings are not reused.
-const OCR_CONFIG_KEY = "tesseract7-eng-v6-best-pass";
+//
+// OCR_EXP holds comma-separated experiment flags, folded into the cache key
+// so each configuration caches separately:
+//   psm=<n>    set tessedit_pageseg_mode (default AUTO=3)
+//   whitelist  restrict tessedit_char_whitelist to game-text characters
+//   maxchan    add a third pass: max-channel grayscale (targets blue demerits)
+const OCR_EXP = (process.env.OCR_EXP ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const OCR_CONFIG_KEY = ["tesseract7-eng-v6-best-pass", ...OCR_EXP].join("+");
 
 // ── Expected-output fixture format ───────────────────────────────────────
 
@@ -137,11 +159,95 @@ async function ocrLines(worker: Worker, imagePath: string): Promise<OcrLine[]> {
   // parse quality and the better one wins per image.
   const img = decodeImage(imagePath);
   if (!img) return pass1;
-  const prepped = grayInvertStretch(img);
-  const png = new PNG({ width: prepped.width, height: prepped.height });
-  png.data = Buffer.from(prepped.data);
-  const { data: data2 } = await worker.recognize(PNG.sync.write(png), {}, { text: true, blocks: true });
-  return pickBestOcrPass([pass1, extract(data2)]);
+  const passes = [pass1];
+  const preps = [grayInvertStretch];
+  if (OCR_EXP.includes("maxchan")) preps.push(maxChannelInvertStretch);
+  for (const prep of preps) {
+    const prepped = prep(img);
+    const png = new PNG({ width: prepped.width, height: prepped.height });
+    png.data = Buffer.from(prepped.data);
+    const { data: d } = await worker.recognize(PNG.sync.write(png), {}, { text: true, blocks: true });
+    passes.push(extract(d));
+  }
+  return pickBestOcrPass(passes);
+}
+
+// ── Claude vision engine ─────────────────────────────────────────────────
+// The exact request the parseRelicScreenshot Firebase Function makes (same
+// model, prompt, and schema — all from src/lib/visionPrompt.ts), made
+// directly with local Anthropic credentials (ANTHROPIC_API_KEY, or an
+// `ant auth login` profile). Replies are cached by prompt version + image
+// bytes, like OCR results.
+
+type AnthropicClient = InstanceType<typeof import("@anthropic-ai/sdk").default>;
+let anthropic: AnthropicClient | null = null;
+
+// Eval-only model override for A/B runs (the app and function stay pinned to
+// visionPrompt.ts): VISION_MODEL=claude-sonnet-4-6 npm run ocr:eval -- --engine claude
+// Each model caches under its own key, so switching back re-costs nothing.
+const visionModel = process.env.VISION_MODEL || VISION_MODEL;
+
+async function visionReply(imagePath: string, bytes: Buffer): Promise<unknown> {
+  if (!anthropic) {
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    anthropic = new Anthropic();
+  }
+  const mediaType = bytes[0] === 0x89 && bytes[1] === 0x50 ? "image/png" : "image/jpeg";
+  let response: Awaited<ReturnType<AnthropicClient["messages"]["create"]>>;
+  try {
+    response = await anthropic.messages.create({
+      model: visionModel,
+      max_tokens: VISION_MAX_TOKENS,
+      output_config: {
+        format: { type: "json_schema", schema: VISION_SCHEMA as unknown as Record<string, unknown> },
+      },
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: mediaType, data: bytes.toString("base64") } },
+            { type: "text", text: VISION_PROMPT },
+          ],
+        },
+      ],
+    });
+  } catch (e) {
+    // The SDK resolves credentials at request time; surface the fix, not a
+    // stack trace, when there are none.
+    if (e instanceof Error && /api ?key|auth(entication)? (token|method)/i.test(e.message)) {
+      throw new Error(
+        "The claude engine needs Anthropic credentials — export ANTHROPIC_API_KEY (or sign in with `ant auth login`) and re-run.",
+      );
+    }
+    throw e;
+  }
+  if (response.stop_reason === "refusal") {
+    throw new Error(`${path.basename(imagePath)}: Claude declined this image`);
+  }
+  const text = response.content.find((b) => b.type === "text")?.text;
+  if (!text) throw new Error(`${path.basename(imagePath)}: no text in Claude reply`);
+  return JSON.parse(text);
+}
+
+// Kept apart from the tesseract cache: everything else under .cache/ costs
+// only CPU to rebuild, but these replies cost API money — clearing the OCR
+// cache shouldn't silently re-spend it.
+const VISION_CACHE_DIR = path.join(CACHE_DIR, "vision");
+
+async function cachedVisionReply(imagePath: string, useCache: boolean): Promise<unknown> {
+  const bytes = readFileSync(imagePath);
+  const key = createHash("sha1")
+    .update(`vision-${visionModel}-${VISION_PROMPT_VERSION}`)
+    .update(bytes)
+    .digest("hex");
+  const cacheFile = path.join(VISION_CACHE_DIR, `${key}.json`);
+  if (useCache && existsSync(cacheFile)) {
+    return JSON.parse(readFileSync(cacheFile, "utf8"));
+  }
+  const reply = await visionReply(imagePath, bytes);
+  mkdirSync(VISION_CACHE_DIR, { recursive: true });
+  writeFileSync(cacheFile, JSON.stringify(reply));
+  return reply;
 }
 
 /** OCR with a disk cache — tuning the matcher shouldn't re-OCR every run. */
@@ -364,6 +470,12 @@ async function main() {
   const dumpColors = argv.includes("--dump-colors");
   const filterIdx = argv.indexOf("--filter");
   const filter = filterIdx >= 0 ? argv[filterIdx + 1] : null;
+  const engineIdx = argv.indexOf("--engine");
+  const engine = engineIdx >= 0 ? argv[engineIdx + 1] : "ocr";
+  if (engine !== "ocr" && engine !== "claude") {
+    console.error(`Unknown engine "${engine}" — use "ocr" (default) or "claude"`);
+    process.exit(1);
+  }
 
   if (!existsSync(FIXTURES_DIR)) {
     console.error(`No fixtures directory at ${FIXTURES_DIR} — see ocr-eval/README.md`);
@@ -387,6 +499,14 @@ async function main() {
     if (!worker) {
       const { createWorker } = await import("tesseract.js");
       worker = await createWorker("eng", 1, { cachePath: CACHE_DIR });
+      const params: Record<string, string> = {};
+      const psm = OCR_EXP.find((f) => f.startsWith("psm="));
+      if (psm) params.tessedit_pageseg_mode = psm.slice(4);
+      if (OCR_EXP.includes("whitelist")) {
+        params.tessedit_char_whitelist =
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+&[]:%,.'- ";
+      }
+      if (Object.keys(params).length > 0) await worker.setParameters(params);
     }
     return worker;
   };
@@ -420,6 +540,24 @@ async function main() {
 
     const isLinesFixture = /\.lines\.json$/i.test(image);
     const imagePath = path.join(FIXTURES_DIR, image);
+
+    if (engine === "claude") {
+      if (isLinesFixture) {
+        console.log(`— ${image}: pre-supplied OCR lines carry no screenshot for the vision reader — skipped`);
+        continue;
+      }
+      process.stdout.write(`reading ${image} with Claude…\n`);
+      const read = parseVisionReply(await cachedVisionReply(imagePath, useCache));
+      if (verbose) {
+        read.groups.forEach((g, i) =>
+          console.log(`  relic ${i + 1}: ${g.name ?? "(unnamed)"} · ${g.effects.map((e) => e.effect).join(" | ")}`),
+        );
+      }
+      results.push(scoreFixture(image, fx, read.groups, read.deep, read.colors));
+      fixtures.set(image, fx);
+      continue;
+    }
+
     process.stdout.write(`reading ${image}…\n`);
     const lines = isLinesFixture
       ? (JSON.parse(readFileSync(imagePath, "utf8")) as OcrLine[])
@@ -479,7 +617,9 @@ async function main() {
 
   const colorsScored = tally.colorsRight + tally.colorsUnread + tally.colorsWrong;
   console.log(`\n${"━".repeat(64)}`);
-  console.log(`TOTALS · ${tally.fixtures} fixture${tally.fixtures === 1 ? "" : "s"}${fixtureErrors ? ` (${fixtureErrors} skipped with errors)` : ""}`);
+  console.log(
+    `TOTALS · ${engine === "claude" ? `claude vision (${visionModel}, prompt ${VISION_PROMPT_VERSION}) · ` : ""}${tally.fixtures} fixture${tally.fixtures === 1 ? "" : "s"}${fixtureErrors ? ` (${fixtureErrors} skipped with errors)` : ""}`,
+  );
   console.log(`  effects   ${tally.effectsMatched}/${tally.effectsExpected} matched (${pct(tally.effectsMatched, tally.effectsExpected)}) · ${tally.effectsSpurious} spurious`);
   console.log(`  names     ${tally.namesOk}/${tally.namesExpected} (${pct(tally.namesOk, tally.namesExpected)})`);
   console.log(`  demerits  ${tally.demeritsOk}/${tally.demeritsExpected} (${pct(tally.demeritsOk, tally.demeritsExpected)})`);

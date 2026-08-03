@@ -1,0 +1,28 @@
+{
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Duchess] Improved Mind and Faith, Reduced Intelligence",
+        "Mind +3",
+        "Faith +3"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks",
+        "Small Pouch in possession at start of expedition",
+        "Changes compatible armament's skill to Hoarfrost Stomp at start of expedition"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Max FP increased for each Sorcerer's Rise unlocked",
+        "Attack power increased for each Night Invader defeated",
+        "Changes compatible armament's skill to Storm Stomp at start of expedition"
+      ]
+    }
+  ]
+}

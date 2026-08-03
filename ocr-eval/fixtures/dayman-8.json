@@ -1,0 +1,19 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": "Deep Grand Drizzly Scene",
+      "color": "Blue",
+      "effects": [
+        "[Raider] Hit With Character Skill to Reduce Enemy Attack Power",
+        "Improved Sorceries +1",
+        "Increased Maximum HP"
+      ],
+      "demerits": [
+        null,
+        "Taking Damage Causes Frost Buildup",
+        "Reduced Intelligence and Dexterity"
+      ]
+    }
+  ]
+}

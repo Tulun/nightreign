@@ -1,0 +1,33 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "Uplifting Aromatic in possession at start of expedition",
+        "Dormant Power Helps Discover Colossal Weapons",
+        "Improved Damage Negation at Low HP"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "[Raider] Hit With Character Skill to Reduce Enemy Attack Power",
+        "Partial HP Restoration upon Post-Damage Attacks +1",
+        "Improved Damage Negation at Low HP"
+      ],
+      "demerits": [null, "Repeated Evasions Lower Damage Negation", null]
+    },
+    {
+      "name": null,
+      "color": "Yellow",
+      "effects": [
+        "Cerulean Hidden Tear in possession at start of expedition",
+        "Dormant Power Helps Discover Halberds",
+        "Improved Damage Negation at Low HP"
+      ]
+    }
+  ]
+}

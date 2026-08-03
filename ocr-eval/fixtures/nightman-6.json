@@ -1,0 +1,28 @@
+{
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Undertaker] Attack power increased by landing the final blow of a chain attack",
+        "Improved Damage Negation at Low HP",
+        "Changes compatible armament's skill to Quickstep at start of expedition"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Undertaker] Attack power increased by landing the final blow of a chain attack",
+        "Ultimate Art Auto Charge +3"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "[Undertaker] Attack power increased by landing the final blow of a chain attack",
+        "Strength +2",
+        "Faith +2"
+      ]
+    }
+  ]
+}

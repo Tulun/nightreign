@@ -185,6 +185,10 @@ const EFFECT_ALIASES: Record<string, string> = {
   "Max FP increased for each Sorcerer's Rise unlocked":
     "Max FP permanently increased after releasing Sorcerer's Rise mechanism",
   "Reduced Damage Negation After Evading": "Repeated Evasions Lower Damage Negation",
+  // The game's own line for the crit → Art gauge effect (seen in-game
+  // 2026-08-02); the catalogue keeps the community sheet's wording, which is
+  // the odd one out of the three "…fills more of the Art gauge" lines.
+  "Critical hits fill more of the Art gauge": "Art gauge fills moderately upon critical hit",
   "Extended Spell Duration": "Extend Spell Duration",
   "Max stamina increased for each great enemy defeated at a Great Encampment":
     "Max Stamina increased per Great Encampment boss",

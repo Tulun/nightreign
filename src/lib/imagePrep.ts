@@ -18,13 +18,26 @@ export interface RawImage {
  * lines the original reads, so neither pass is authoritative alone.
  */
 export function grayInvertStretch(img: RawImage): RawImage {
+  return invertStretch(img, (r, g, b) => 0.299 * r + 0.587 * g + 0.114 * b);
+}
+
+/**
+ * Like grayInvertStretch, but grayscales by the brightest channel instead of
+ * Rec.601 luminance. Demerit lines render as light blue on the dark blue UI;
+ * luminance weights blue at 0.114, so that text all but vanishes in the gray
+ * pass. Taking max(R,G,B) keeps blue text as bright as white text. A third
+ * competing pass — pickBestOcrPass decides per image.
+ */
+export function maxChannelInvertStretch(img: RawImage): RawImage {
+  return invertStretch(img, (r, g, b) => Math.max(r, g, b));
+}
+
+function invertStretch(img: RawImage, lumOf: (r: number, g: number, b: number) => number): RawImage {
   const n = img.width * img.height;
   const lum = new Uint8Array(n);
   const hist = new Uint32Array(256);
   for (let i = 0; i < n; i++) {
-    const v = Math.round(
-      0.299 * img.data[i * 4] + 0.587 * img.data[i * 4 + 1] + 0.114 * img.data[i * 4 + 2],
-    );
+    const v = Math.round(lumOf(img.data[i * 4], img.data[i * 4 + 1], img.data[i * 4 + 2]));
     lum[i] = v;
     hist[v] += 1;
   }

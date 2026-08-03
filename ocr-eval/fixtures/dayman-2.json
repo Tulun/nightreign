@@ -1,0 +1,31 @@
+{
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "Improved Melee Attack Power",
+        "Improved Skill Attack Power",
+        "Occasionally Nullify Attacks When Damage Negation is Lowered"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Blue",
+      "effects": [
+        "Increased Maximum HP",
+        "Continuous HP Recovery",
+        "Slowly restore HP for self and nearby allies when HP is low"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "[Executor] Character Skill Boosts Attack but Lowers Damage Negation While Attacking",
+        "Raised stamina recovery for nearby allies, but not for self",
+        "Attack power increased for each Night Invader defeated"
+      ]
+    }
+  ]
+}

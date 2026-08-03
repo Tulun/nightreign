@@ -1,0 +1,30 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "HP Restoration upon Thrusting Sword Attacks",
+        "Dormant Power Helps Discover Staves",
+        "Stamina Recovery upon Landing Attacks"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Attack power up when facing frostbite-afflicted enemy",
+        "Improved Affinity Attack Power +2"
+      ],
+      "demerits": [null, "Reduced Faith and Strength"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Duchess] Use Character Skill for Brief Invulnerability",
+        "Improved Affinity Attack Power",
+        "Improved Physical Damage Negation +2"
+      ],
+      "demerits": [null, null, "Taking Damage Causes Rot Buildup"]
+    }
+  ]
+}

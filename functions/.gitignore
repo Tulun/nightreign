@@ -1,0 +1,4 @@
+node_modules/
+lib/
+# Generated copy of src/lib/visionPrompt.ts — `npm run build` refreshes it.
+src/visionPrompt.ts

@@ -36,6 +36,46 @@ If you change anything about how OCR itself runs (engine options,
 preprocessing), bump `OCR_CONFIG_KEY` in `scripts/ocr-eval.ts` so stale cached
 results aren't reused.
 
+## The Claude vision engine
+
+```bash
+npm run ocr:eval -- --engine claude
+```
+
+Scores the Claude vision reader on the same fixtures with the same scorer.
+**Benchmarked 2026-08-03 and shelved — it lost to tesseract; the app is
+OCR-only** (numbers and post-mortem in `docs/claude-vision.md`). The engine
+stays for future experiments: model, prompt, and schema all come from
+`src/lib/visionPrompt.ts`, called directly with your local Anthropic
+credentials (`ANTHROPIC_API_KEY`, or an `ant auth login` profile). Replies
+are cached in `.cache/vision/` by prompt version + image bytes, so only the
+first run costs anything (~half a cent per screenshot on Haiku 4.5); bump
+`VISION_PROMPT_VERSION` in `visionPrompt.ts` when you change the prompt, or
+use `--no-cache`. `.lines.json` fixtures are skipped — there's no screenshot
+to send. `--filter` and `--verbose` work as usual.
+
+To A/B a different model without touching the app (the function stays pinned
+to `visionPrompt.ts`), set `VISION_MODEL` — each model caches separately:
+
+```bash
+VISION_MODEL=claude-sonnet-4-6 npm run ocr:eval -- --engine claude
+```
+
+To try alternative tesseract settings without touching the app, set `OCR_EXP`
+(comma-separated flags, each cached under its own key):
+
+```bash
+OCR_EXP=psm=4 npm run ocr:eval        # page segmentation mode
+OCR_EXP=whitelist npm run ocr:eval    # game-text character whitelist
+OCR_EXP=maxchan npm run ocr:eval      # extra max-channel grayscale pass
+```
+
+Measured 2026-08-02 against the then-current 21 fixtures: all three LOSE to
+the defaults (psm=4: 80% effects; whitelist: 157/161 +1 spurious; maxchan:
+151/161 +8 spurious — pass competition picks whole passes, so a pass that
+recovers blue demerit lines but garbles others wins images it shouldn't).
+The defaults are the tuned state, not an accident.
+
 ## Adding a fixture
 
 A fixture is a screenshot plus a JSON file with the same base name, both in
@@ -183,7 +223,10 @@ effect recall, spurious count, name/demerit/color accuracy.
   it grows. When the importer misreads a screenshot in real use, that
   screenshot (with its corrected output) is a perfect new fixture.
 - `ocr-eval/.cache/` — tesseract language data + cached OCR output.
-  Gitignored; safe to delete anytime.
+  Gitignored; safe to delete anytime — **except** `.cache/vision/`, which
+  holds the Claude engine's cached replies. Everything else re-populates for
+  free (CPU time); deleting `vision/` means the next `--engine claude` run
+  re-pays the API for every fixture (~half a cent each).
 - `scripts/ocr-eval.ts` — the harness. It imports the production matching
   code (`src/lib/effectMatch.ts`, `src/lib/relicColor.ts`) rather than
   copying it, so what it measures is what the app ships.

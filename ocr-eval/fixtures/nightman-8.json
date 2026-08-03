@@ -1,0 +1,28 @@
+{
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Undertaker] Activating Ultimate Art increases attack power",
+        "Successive Attacks Boost Attack Power",
+        "Ultimate Art Auto Charge +3"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Taking attacks improves attack power",
+        "Improved Poise & Damage Negation When Knocked Back by Damage",
+        "Physical Attack Up +2"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Scholar] Continuous damage inflicted on targets threaded by Ultimate Art",
+        "Critical hits fill more of the Art gauge",
+        "Attack power increased for each Night Invader defeated"
+      ]
+    }
+  ]
+}

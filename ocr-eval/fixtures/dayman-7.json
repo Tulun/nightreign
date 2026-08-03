@@ -1,0 +1,28 @@
+{
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Duchess] Defeating enemies while Art is active ups attack power",
+        "Changes compatible armament's skill to Hoarfrost Stomp at start of expedition",
+        "Faith +2"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Max FP increased for each Sorcerer's Rise unlocked",
+        "Attack power increased for each Night Invader defeated",
+        "Changes compatible armament's skill to Storm Stomp at start of expedition"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Increased Maximum HP",
+        "Continuous HP Recovery",
+        "Slowly restore HP for self and nearby allies when HP is low"
+      ]
+    }
+  ]
+}

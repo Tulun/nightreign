@@ -1,0 +1,20 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": "Deep Grand Burning Scene",
+      "color": "Red",
+      "effects": [
+        "Sleep in Vicinity Improves Attack Power +1",
+        "Rune discount for shop purchases while on expedition",
+        "Poise +3"
+      ],
+      "demerits": [
+        "Taking Damage Causes Sleep Buildup",
+        null,
+        null
+      ],
+      "notes": "Second effect line is cropped at the right edge of the photo after 'expedit'; full in-game wording 'while on expedition' assumed."
+    }
+  ]
+}

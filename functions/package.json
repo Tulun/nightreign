@@ -1,0 +1,20 @@
+{
+  "name": "nightreign-functions",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "sync-prompt": "cp ../src/lib/visionPrompt.ts src/visionPrompt.ts",
+    "build": "npm run sync-prompt && tsc",
+    "logs": "npx --yes firebase-tools functions:log"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
+    "firebase-functions": "^6.3.0"
+  },
+  "devDependencies": {
+    "typescript": "5.5.3"
+  }
+}

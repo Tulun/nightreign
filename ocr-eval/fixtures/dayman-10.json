@@ -1,0 +1,42 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "Critical Hit Boosts Stamina Recovery Speed +1",
+        "Improved Affinity Attack Power +2"
+      ],
+      "demerits": [
+        null,
+        "Reduced Dexterity and Faith"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Dormant Power Helps Discover Sacred Seals",
+        "Improved Gravity Sorcery",
+        "Physical Attack Up +3"
+      ],
+      "demerits": [
+        null,
+        null,
+        "Reduced Strength and Intelligence"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Duchess] Use Character Skill for Brief Invulnerability",
+        "Improved Affinity Attack Power",
+        "Improved Physical Damage Negation +2"
+      ],
+      "demerits": [
+        null,
+        null,
+        "Taking Damage Causes Rot Buildup"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Undertaker] Executing Art readies Character Skill",
+        "Improved Throwing Pot Damage",
+        "Physical Attack Up +2"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Partial HP Restoration upon Post-Damage Attacks +2",
+        "Improved Frost Resistance +1"
+      ],
+      "demerits": [
+        "Reduced Damage Negation After Evading",
+        null
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Undertaker] Improved Dexterity, Reduced Vigor and Faith",
+        "Dormant Power Helps Discover Straight Swords",
+        "Magic Attack Power Up +3"
+      ],
+      "demerits": [
+        null,
+        null,
+        "Taking Damage Causes Poison Buildup"
+      ]
+    }
+  ]
+}

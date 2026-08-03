@@ -49,6 +49,7 @@ export const deepRelics: DeepRelic[] = [
   { name: "Partial HP Restoration upon Post-Damage Attacks +1/2", effect: "As the base effect, but increases HP gained per hit by 25% / 35%", category: "regen", stack: "tiers", note: "+1 stacks with +2, but neither stacks with +0." },
   { name: "HP Restoration upon Thrusting Counterattack +1", effect: "Restores 3.3% of max HP on counterhits", category: "regen", stack: "tiers" },
   { name: "HP Restored When Using Medicinal Boluses, etc. +1", effect: "Replenishes 80 HP from certain consumables", category: "regen", stack: "tiers" },
+  { name: "Critical Hit Boosts Stamina Recovery Speed +1", effect: "As the base effect, with a stronger stamina-regen boost", category: "regen", stack: "tiers", note: "Tier seen in-game on a Deep relic (screenshot, 2026-08-02); exact regen numbers unverified." },
   { name: "Improved Flask HP Restoration", effect: "Increases HP gained from flasks by 1.1x", category: "regen", stack: "yes" },
 
   // ── Character (skills & stat-swaps) ─────────────────────────────────────────

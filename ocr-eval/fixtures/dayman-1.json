@@ -1,0 +1,43 @@
+{
+  "deep": true,
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "[Executor] Slowly Restore HP upon Ability Activation",
+        "Improved Affinity Damage Negation +1"
+      ],
+      "demerits": [
+        null,
+        "All Resistances Down"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Blue",
+      "effects": [
+        "Magic Attack Power Up +3",
+        "Improved Physical Damage Negation +2"
+      ],
+      "demerits": [
+        "Taking Damage Causes Sleep Buildup",
+        "Reduced Strength and Intelligence"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "[Executor] Improved Vigor and Endurance, Reduced Arcane",
+        "Holy Attack Power Up +3",
+        "Improved Magic Damage Negation +1"
+      ],
+      "demerits": [
+        null,
+        "All Resistances Down",
+        "Taking Damage Causes Rot Buildup"
+      ]
+    }
+  ]
+}
