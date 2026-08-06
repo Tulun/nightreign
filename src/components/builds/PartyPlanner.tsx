@@ -535,11 +535,17 @@ export function PartyPlanner() {
 
   const memberCount = party.slots.filter(Boolean).length;
 
+  // What Copy link puts on the clipboard: a caption, then the URL alone on
+  // its own line (see buildShareText for why). The caption is the name and
+  // roster, plus the blurb when there is one — the pitch travels with the
+  // link instead of waiting to be discovered on the page.
   const copy = async (url: string, kind: "cloud" | "hash") => {
     const roster = party.slots
       .map((s) => (s?.build ? s.build.build.character : s ? `${s.ownerName} (TBD)` : "open slot"))
       .join(" / ");
-    const text = `${party.name.trim() || "Nightreign party"} — ${roster}\n\n${url}`;
+    const blurb = party.blurb.trim();
+    const caption = `${party.name.trim() || "Nightreign party"} — ${roster}`;
+    const text = `${caption}${blurb ? `\n${blurb}` : ""}\n\n${url}`;
     try {
       await navigator.clipboard.writeText(text);
       setCopied(kind);
