@@ -66,7 +66,8 @@ function SubSection({ title, relics }: { title: string; relics: UniqueRelic[] })
   );
 }
 
-function RelicGrid({ relics }: { relics: UniqueRelic[] }) {
+/** Shared by the Collector Signboard page, which lists its own relic sets. */
+export function RelicGrid({ relics }: { relics: UniqueRelic[] }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {relics.map((r) => (
@@ -101,13 +102,17 @@ function RelicCard({ relic }: { relic: UniqueRelic }) {
         </span>
       </div>
       <ul className="mt-1 space-y-0.5">
-        {relic.effects.map((effect) => (
-          <li key={effect} className="font-body text-sm leading-snug text-parchment-muted">
+        {/* Index in the key: one signboard relic repeats the same line thrice */}
+        {relic.effects.map((effect, i) => (
+          <li key={`${effect}-${i}`} className="font-body text-sm leading-snug text-parchment-muted">
             {gameEffectName(effect)}
           </li>
         ))}
       </ul>
-      <p className="mt-auto pt-2 font-body text-xs text-parchment-faint">{relic.source}</p>
+      <p className="mt-auto pt-2 font-body text-xs text-parchment-faint">
+        {relic.source}
+        {relic.price != null && ` · ${relic.price} Sovereign Sigils`}
+      </p>
     </article>
   );
 }

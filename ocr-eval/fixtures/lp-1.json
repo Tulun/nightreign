@@ -1,0 +1,31 @@
+{
+  "deep": true,
+  "notes": "Phone photo of a TV (PS5) — Deep vessel Slot 1 detail pane, top half: the three deep relics. Same vessel as lp-2, which shows the three normal relics below. Relic 2's third row is the blank '-' marker.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Executor] Slowly Restore HP upon Ability Activation",
+        "Small Pouch in possession at start of expedition",
+        "Physical Attack Up +4"
+      ],
+      "demerits": [null, null, "Taking Damage Causes Sleep Buildup"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Successful guarding fills more of the Art gauge +1",
+        "Max HP increased for each great enemy defeated at a Great Church"
+      ],
+      "demerits": ["Repeated Evasions Lower Damage Negation", null]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Improved Strength and Dexterity, Reduced Vigor",
+        "Improved Damage Negation at Low HP",
+        "Improved Poise & Damage Negation When Knocked Back by Damage"
+      ]
+    }
+  ]
+}

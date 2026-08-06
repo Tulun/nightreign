@@ -1,0 +1,32 @@
+{
+  "deep": true,
+  "notes": "Phone photo of a TV (PS5) — Executor Deep vessel Slot 1 pane, top half: the three deep relics (lp-3 is the same vessel's normal half). First relic has two effects + the blank '-' marker.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Executor] Improved Vigor and Endurance, Reduced Arcane",
+        "Increased Maximum Stamina"
+      ],
+      "demerits": [null, "Continuous HP Loss"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Executor] Slowly Restore HP upon Ability Activation",
+        "Leaden Hardtear in possession at start of expedition",
+        "Increased Maximum HP"
+      ],
+      "demerits": [null, null, "All Resistances Down"]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Executor] Slowly Restore HP upon Ability Activation",
+        "HP Restoration upon Thrusting Counterattack +1",
+        "Defeating enemies fills more of the Art gauge"
+      ],
+      "demerits": [null, "Poison Buildup When Below Max HP", null]
+    }
+  ]
+}

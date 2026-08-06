@@ -2,7 +2,8 @@
 //  UNIQUE RELICS  ·  fixed-effect relics with their own look
 // ─────────────────────────────────────────────────────────────────────────
 //  Boss relics (Nightlord first clears, Everdark Sovereign purchases), the
-//  general shop uniques, and each Nightfarer's Remembrance/DLC relics.
+//  Collector Signboard's purchasable Grand Scenes, the general shop uniques,
+//  and each Nightfarer's Remembrance/DLC relics.
 //  Effects and colors from the Fextralife wiki; icons in /icons/relics.
 
 export type UniqueRelicColor = "Red" | "Blue" | "Green" | "Yellow";
@@ -14,7 +15,7 @@ export const UNIQUE_RELIC_COLOR_HEX: Record<UniqueRelicColor, string> = {
   Yellow: "#c9a227",
 };
 
-export type UniqueRelicGroup = "nightlord" | "everdark" | "boss" | "shop" | "character";
+export type UniqueRelicGroup = "nightlord" | "everdark" | "signboard" | "boss" | "shop" | "character";
 
 export interface UniqueRelic {
   name: string;
@@ -27,6 +28,8 @@ export interface UniqueRelic {
   effects: string[];
   /** How it's obtained. */
   source: string;
+  /** Cost at the Collector Signboard, in Sovereign Sigils. */
+  price?: number;
 }
 
 export const UNIQUE_RELIC_CREDIT = "Relic data from the Fextralife Nightreign wiki";
@@ -65,30 +68,81 @@ export const uniqueRelics: UniqueRelic[] = [
     source: "Defeat Balancers — Weapon-Bequeathed Harmonia (first clear, DLC)" },
 
   // ── Everdark Sovereigns · Collector Signboard ────────────────────────────
-  { name: "Dark Night of the Baron", color: "Red", icon: "dark-night-of-the-baron.png", group: "everdark",
+  { name: "Dark Night of the Baron", color: "Red", icon: "dark-night-of-the-baron.png", group: "everdark", price: 12,
     effects: ["Improved Critical Hits +1", "Improved Critical Hits", "Critical Hits Earn Runes"],
     source: "Collector Signboard, after Everdark Gaping Jaw" },
-  { name: "Dark Night of the Beast", color: "Yellow", icon: "night-of-the-beast.png", group: "everdark",
+  { name: "Dark Night of the Beast", color: "Yellow", icon: "night-of-the-beast.png", group: "everdark", price: 12,
     effects: ["Stamina Recovery upon Landing Attacks +1", "Taking attacks improves attack power", "Fire Attack Power Up +2"],
     source: "Collector Signboard, after Everdark Gladius" },
-  { name: "Dark Night of the Champion", color: "Yellow", icon: "night-of-the-champion.png", group: "everdark",
+  { name: "Dark Night of the Champion", color: "Yellow", icon: "night-of-the-champion.png", group: "everdark", price: 12,
     effects: ["Increased Maximum Stamina", "Boosts Attack Power of Added Affinity Attacks", "Defeating enemies fills more of the Art gauge"],
     source: "Collector Signboard, after Everdark Darkdrift Knight" },
-  { name: "Dark Night of the Demon", color: "Blue", icon: "night-of-the-demon.png", group: "everdark",
+  { name: "Dark Night of the Demon", color: "Blue", icon: "night-of-the-demon.png", group: "everdark", price: 12,
     effects: ["Taking attacks improves attack power", "Gesture “Crossed Legs” Builds Up Madness", "Madness Continually Recovers FP"],
     source: "Collector Signboard, after Everdark Libra" },
-  { name: "Dark Night of the Fathom", color: "Blue", icon: "night-of-the-fathom.png", group: "everdark",
+  { name: "Dark Night of the Fathom", color: "Blue", icon: "night-of-the-fathom.png", group: "everdark", price: 12,
     effects: ["Increased Maximum HP", "Continuous HP Recovery", "Slowly restore HP for self and nearby allies when HP is low"],
     source: "Collector Signboard, after Everdark Augur" },
-  { name: "Dark Night of the Miasma", color: "Green", icon: "night-of-the-miasma.png", group: "everdark",
+  { name: "Dark Night of the Miasma", color: "Green", icon: "night-of-the-miasma.png", group: "everdark", price: 12,
     effects: ["Frostbite in Vicinity Conceals Self", "Starting armament inflicts frost", "Improved Physical Damage Negation"],
     source: "Collector Signboard, after Everdark Caligo" },
-  { name: "Dark Night of the Wise", color: "Green", icon: "night-of-the-wise.png", group: "everdark",
+  { name: "Dark Night of the Wise", color: "Green", icon: "night-of-the-wise.png", group: "everdark", price: 12,
     effects: ["Increased Maximum FP", "FP Restoration upon Successive Attacks", "Max FP permanently increased after releasing Sorcerer's Rise mechanism"],
     source: "Collector Signboard, after Everdark Gnoster" },
-  { name: "The Will of Balance", color: "Red", icon: "the-will-of-balance.png", group: "everdark",
+  { name: "The Will of Balance", color: "Red", icon: "the-will-of-balance.png", group: "everdark", price: 12,
     effects: ["Improved Melee Attack Power", "Improved Skill Attack Power", "Occasionally Nullify Attacks When Damage Negation is Lowered"],
     source: "Collector Signboard, after Everdark Harmonia (DLC)" },
+
+  // ── Collector Signboard · purchasable Grand Scenes ───────────────────────
+  // Fixed-effect relics in the generic Grand Scene looks, 3 Sovereign Sigils
+  // each. In-game they are all named plain "Grand … Scene"; the parenthetical
+  // labels are ours, to keep names unique (name is the key everywhere).
+  // Several break custom-roll conventions — duplicate categories on one relic,
+  // even three copies of the same effect — which is why they're fixed relics.
+  { name: "Grand Drizzly Scene (Wylder)", color: "Blue", icon: "grand-drizzly-scene.png", group: "signboard", character: "Wylder", price: 3,
+    effects: ["[Wylder] Art activation spreads fire in area", "Changes compatible armament's skill to Flaming Strike at start of expedition", "Fire Attack Power Up +2"],
+    source: "Collector Signboard" },
+  // The wiki gives this the same "Reflect a portion of damage" wording it once
+  // wrongly had on the Witch's Brooch (in-game that one is the guard-shockwave
+  // line). Here it may genuinely be a reflect effect — unverified in-game.
+  { name: "Grand Burning Scene (Guardian)", color: "Red", icon: "grand-burning-scene.png", group: "signboard", character: "Guardian", price: 3,
+    effects: ["[Guardian] Reflect a portion of damage received when ability is activated", "Successful guarding fills more of the Art gauge", "Endurance +3"],
+    source: "Collector Signboard" },
+  { name: "Grand Tranquil Scene (Duchess)", color: "Green", icon: "grand-tranquil-scene.png", group: "signboard", character: "Duchess", price: 3,
+    effects: ["[Duchess] Become difficult to spot and silence footsteps after landing critical from behind", "Improved Critical Hits", "Character Skill Cooldown Reduction +2"],
+    source: "Collector Signboard" },
+  { name: "Grand Burning Scene (Ironeye)", color: "Red", icon: "grand-burning-scene.png", group: "signboard", character: "Ironeye", price: 3,
+    // The wiki's "Ultimate Art Gauge +3" is the sheet-ism for Auto Charge.
+    effects: ["[Ironeye] Art Charge Activation Adds Poison Effect", "Attack power up when facing poison-afflicted enemy", "Ultimate Art Auto Charge +3"],
+    source: "Collector Signboard" },
+  { name: "Grand Luminous Scene (Raider)", color: "Yellow", icon: "grand-luminous-scene.png", group: "signboard", character: "Raider", price: 3,
+    effects: ["[Raider] Duration of Ultimate Art extended", "Improved Colossal Weapon Attack Power", "Endurance +3"],
+    source: "Collector Signboard" },
+  { name: "Grand Drizzly Scene (Revenant)", color: "Blue", icon: "grand-drizzly-scene.png", group: "signboard", character: "Revenant", price: 3,
+    effects: ["[Revenant] Strengthens family and allies when Ultimate Art is activated", "Items confer effect to all nearby allies", "Starlight Shards in possession at start of expedition"],
+    source: "Collector Signboard" },
+  { name: "Grand Luminous Scene (Executor)", color: "Yellow", icon: "grand-luminous-scene.png", group: "signboard", character: "Executor", price: 3,
+    effects: ["[Executor] Character Skill Boosts Attack but Attacking Drains HP", "HP Recovery From Successful Guarding", "Successful guarding fills more of the Art gauge"],
+    source: "Collector Signboard" },
+  { name: "Grand Tranquil Scene (Sorcery)", color: "Green", icon: "grand-tranquil-scene.png", group: "signboard", price: 3,
+    effects: ["Max FP Up with 3+ Staves Equipped", "Max FP permanently increased after releasing Sorcerer's Rise mechanism", "Magic Attack Power Up"],
+    source: "Collector Signboard" },
+  { name: "Grand Burning Scene (Low HP Recovery)", color: "Red", icon: "grand-burning-scene.png", group: "signboard", price: 3,
+    effects: ["Slowly restore HP for self and nearby allies when HP is low", "Improved Damage Negation at Low HP", "Vigor +3"],
+    source: "Collector Signboard" },
+  { name: "Grand Tranquil Scene (Two-Handing)", color: "Green", icon: "grand-tranquil-scene.png", group: "signboard", price: 3,
+    effects: ["Improved Stance-Breaking when Two-Handing", "Improved Initial Standard Attack", "Poise +3"],
+    source: "Collector Signboard" },
+  { name: "Grand Burning Scene (Dual Wield)", color: "Red", icon: "grand-burning-scene.png", group: "signboard", price: 3,
+    effects: ["Improved Stance-Breaking when Wielding Two Armaments", "Stamina Recovery upon Landing Attacks", "Endurance +3"],
+    source: "Collector Signboard" },
+  { name: "Grand Luminous Scene (Evergaol)", color: "Yellow", icon: "grand-luminous-scene.png", group: "signboard", price: 3,
+    effects: ["Attack power permanently increased for each evergaol prisoner defeated", "Treasure marked upon map", "Stonesword Key in possession at start of expedition"],
+    source: "Collector Signboard" },
+  // Yes, really: the same starting-item line three times on one relic.
+  { name: "Grand Drizzly Scene (Starlight Shards)", color: "Blue", icon: "grand-drizzly-scene.png", group: "signboard", price: 3,
+    effects: ["Starlight Shards in possession at start of expedition", "Starlight Shards in possession at start of expedition", "Starlight Shards in possession at start of expedition"],
+    source: "Collector Signboard" },
 
   // ── Other bosses ─────────────────────────────────────────────────────────
   { name: "Fell Omen Fetish", color: "Blue", icon: "fell-omen-fetish.png", group: "boss",

@@ -192,12 +192,19 @@ const EFFECT_ALIASES: Record<string, string> = {
   "Extended Spell Duration": "Extend Spell Duration",
   "Max stamina increased for each great enemy defeated at a Great Encampment":
     "Max Stamina increased per Great Encampment boss",
+  "Max HP increased for each great enemy defeated at a Great Church":
+    "Max HP increased per Great Church boss",
   "[Raider] Hit With Character Skill to Reduce Enemy Attack Power":
     "[Raider] Hit With Skill to Reduce Enemy Attack Power",
   // Seen in-game 2026-08-03 (yt-4/yt-6 fixtures): the game writes "Character
   // Skill" where the catalogue shortens to "Skill".
   "[Guardian] Character Skill Boosts Damage Negation of Nearby Allies":
     "[Guardian] Skill Boosts Damage Negation of Nearby Allies",
+  // Same shortening on the Scholar line (dayman-14, seen in-game 2026-08-05)
+  // — without the alias the line drifted to the untagged "Reduced FP
+  // Consumption" entry.
+  "[Scholar] Reduced FP consumption when using Character Skill on self":
+    "[Scholar] Reduced FP Consumption When Using Skill on Self",
   // The catalogue's shorthand for the line the game writes out in full — the
   // in-game wording is the displayed name now, so this runs the other way.
   "[Undertaker] Attack Power Increased by Landing Chain Attack":
@@ -428,12 +435,25 @@ export function similarity(a: string, b: string): number {
   // Low-coverage short containment falls through to edit distance, which
   // scores fragments poorly on its own. Thresholds fixed by the 48-fixture
   // eval — re-measure there before moving them.
-  const contained = (needle: string, hay: string) =>
+  //
+  // The substring test itself ignores spaces: OCR glues words as often as it
+  // splits them ("ERotin Vicinity", "Negationat Low HP"), and a glued seam
+  // must not hide a full-line hit — with spaces honored, "Rot in Vicinity
+  // Causes Continuous HP Recovery" failed to contain inside its own OCR line
+  // while the shorter "Continuous HP Recovery" still did, and the fragment
+  // outscored the whole (lp-2's relic then mis-identified as a different
+  // unique). The length and coverage bars stay on the spaced forms the
+  // thresholds were fitted against — despaced lengths run ~1–2 shorter,
+  // which was enough to let the "hp restoration" fragment back through on
+  // nightman-2.
+  const dna = na.replace(/ /g, "");
+  const dnb = nb.replace(/ /g, "");
+  const contained = (needle: string, hay: string, dNeedle: string, dHay: string) =>
     needle.length >= 12 &&
     (needle.length >= 20 || needle.length * 2 >= hay.length) &&
-    hay.includes(needle);
-  if (contained(na, nb)) return 0.9 + 0.1 * (na.length / nb.length);
-  if (contained(nb, na)) return 0.9 + 0.1 * (nb.length / na.length);
+    dHay.includes(dNeedle);
+  if (contained(na, nb, dna, dnb)) return 0.9 + 0.1 * (na.length / nb.length);
+  if (contained(nb, na, dnb, dna)) return 0.9 + 0.1 * (nb.length / na.length);
   const dist = levenshtein(na, nb);
   return 1 - dist / Math.max(na.length, nb.length);
 }
@@ -672,6 +692,57 @@ export interface ParseLine {
 }
 
 /**
+ * Merge lines that are horizontal pieces of one physical row. Tesseract
+ * sometimes splits a row in the middle and emits the pieces as separate
+ * lines — in either order — and a stranded tail like "ion at start of
+ * expedition" then containment-matches some OTHER entry sharing the ending
+ * ("Small Pouch in possession …" grew a phantom relic on nightman-3 this
+ * way). Two lines whose centers sit inside each other's vertical span and
+ * whose boxes are horizontally adjacent (gap under 2.5× row height, the
+ * same spacing bar lineFromWords splits segments on) are one row: merge
+ * unconditionally in x order — no match test, because the thieving half
+ * can outscore the honest merge. Distant same-row text (the preset grid
+ * beside the list) fails the gap test and stays separate.
+ *
+ * Pieces of one row have near-disjoint x-ranges meeting at a seam. Two
+ * boxes that largely overlap are not pieces but duplicate reads of the
+ * whole row (tesseract emits those too, one usually more garbled) — gluing
+ * them doubles the junk until the real effect sinks below the match bar
+ * (exec-test-1's "Increased Maximum HP" died this way), so overlapping
+ * boxes are left alone.
+ */
+function mergeSplitRows(lines: ParseLine[]): ParseLine[] {
+  const out = lines.map((l) => ({ ...l }));
+  for (let i = 0; i < out.length; i++) {
+    const a = out[i];
+    if (!a.bbox || !a.text.trim()) continue;
+    for (let j = i + 1; j < out.length; j++) {
+      const b = out[j];
+      if (!b.bbox || !b.text.trim()) continue;
+      const cyA = (a.bbox.y0 + a.bbox.y1) / 2;
+      const cyB = (b.bbox.y0 + b.bbox.y1) / 2;
+      if (cyA < b.bbox.y0 || cyA > b.bbox.y1 || cyB < a.bbox.y0 || cyB > a.bbox.y1) continue;
+      const minH = Math.min(a.bbox.y1 - a.bbox.y0, b.bbox.y1 - b.bbox.y0);
+      const gap = Math.max(a.bbox.x0, b.bbox.x0) - Math.min(a.bbox.x1, b.bbox.x1);
+      if (gap > 2.5 * minH) continue;
+      const minW = Math.min(a.bbox.x1 - a.bbox.x0, b.bbox.x1 - b.bbox.x0);
+      if (-gap > 0.2 * minW) continue;
+      const [left, right] = a.bbox.x0 <= b.bbox.x0 ? [a, b] : [b, a];
+      a.text = `${left.text.trim()} ${right.text.trim()}`;
+      a.bbox = {
+        x0: Math.min(a.bbox.x0, b.bbox.x0),
+        y0: Math.min(a.bbox.y0, b.bbox.y0),
+        x1: Math.max(a.bbox.x1, b.bbox.x1),
+        y1: Math.max(a.bbox.y1, b.bbox.y1),
+      };
+      out.splice(j, 1);
+      j = i; // rescan: the widened box may now touch another piece
+    }
+  }
+  return out;
+}
+
+/**
  * Re-join effects that wrap onto a second screen line ("[Raider] Damage
  * taken while using Character Skill" / "improves attack power and stamina").
  * A pair is joined only when the joined text matches an effect better than
@@ -679,7 +750,8 @@ export interface ParseLine {
  * whole effects and their neighbors are left untouched. Relic-name lines
  * head their groups and are never absorbed into a join.
  */
-function joinWrappedLines(lines: ParseLine[]): ParseLine[] {
+function joinWrappedLines(rawLines: ParseLine[]): ParseLine[] {
+  const lines = mergeSplitRows(rawLines);
   const match = (s: string) => (s.length < 8 ? null : bestEffectMatch(s, 0.3));
   // A demerit renders as its own line under its effect — joining across it
   // would swallow the curse, so a curse-matching half is never joined.
@@ -761,7 +833,18 @@ function isBlankSlotDash(text: string): boolean {
 function isRuleRow(text: string): boolean {
   const t = text.trim();
   if (!/[-–—―_=~]{3}/.test(t)) return false;
-  return t.replace(/[^a-z0-9]/gi, "").length <= 3;
+  const alnum = t.replace(/[^a-z0-9]/gi, "").length;
+  if (alnum <= 3) return true;
+  // Glare off a TV screen dresses a divider in stray letters ("ee ————————e
+  // SERRE" on lp-1) — still a rule as long as the dashes dominate: a run of
+  // five or more (spaces ignored, OCR splits runs freely) with no more
+  // letters than dashes. A real effect line is the reverse shape — dozens of
+  // letters around at most a short smear of dashes.
+  const dashRun = t
+    .replace(/\s/g, "")
+    .match(/[-–—―_=~]+/g)
+    ?.reduce((m, r) => Math.max(m, r.length), 0) ?? 0;
+  return dashRun >= 5 && alnum <= dashRun;
 }
 
 /**
@@ -790,12 +873,13 @@ export function parseRelicGroups(
   maxGroups = 6,
   tuning?: RelicGroupTuning,
 ): ParsedRelicGroup[] {
-  // Defaults from the eval's --sweep over the 40-fixture set (2026-08-03):
-  // the boundary step is flat from 1.8–2.6 pitches so 2.4 sits mid-plateau;
-  // the blank span peaks on 1.02–1.08 with cliffs both at 1.0 (false splits)
-  // and past 1.1 (real boundaries missed), so 1.05 is the plateau's center.
-  const boundaryStepPitches = tuning?.boundaryStepPitches ?? 2.4;
-  const blankSpanPitches = tuning?.blankSpanPitches ?? 1.05;
+  // Defaults from the eval's --sweep over the 58-fixture set (2026-08-05):
+  // the top plateau spans steps 1.8–2.2 × spans 0.8–1.08 (the rule-row and
+  // wrap-continuation boundaries added that day made the geometry thresholds
+  // much less critical than the old 1.02–1.08 span ridge), so 2.0 / 1.0 sit
+  // mid-plateau; the old 2.4 / 1.05 measured one net point below it.
+  const boundaryStepPitches = tuning?.boundaryStepPitches ?? 2.0;
+  const blankSpanPitches = tuning?.blankSpanPitches ?? 1.0;
   const norm: ParseLine[] = lines.map((l) => (typeof l === "string" ? { text: l } : l));
   const groups: ParsedRelicGroup[] = [];
   let current: ParsedRelicGroup | null = null;
@@ -837,6 +921,11 @@ export function parseRelicGroups(
     .sort((a, b) => a - b);
   const columnX = acceptedX0s[acceptedX0s.length >> 1] ?? 0;
   let prevBox: ParseLine["bbox"] = null;
+  // Row position of each accepted effect, for the same-row duplicate test.
+  const groupBoxes = new Map<ParsedRelicGroup, (ParseLine["bbox"] | undefined)[]>();
+  // The last line accepted as an effect or curse, for the wrap-continuation
+  // test: the matched entry, the text the row itself showed, and its box.
+  let lastEffect: { entryKey: string; textKey: string; box: ParseLine["bbox"] } | null = null;
 
   // Whether OCR read *anything* — junk included — in the same column between
   // two line boxes. An unread-but-present line (a mangled effect) still
@@ -872,31 +961,68 @@ export function parseRelicGroups(
     // A dash elsewhere on screen must not close anything, so with positions
     // to hand the row has to sit in the effect column to count; without them
     // (line lists carry no boxes) the marker is all there is to go on.
+    // A row whose center sits inside another row's vertical span is a sliver
+    // of that row — an icon-frame edge OCR'd on its own (ps-3 read a 3px bar
+    // riding the next effect's row) — not a marker of anything. A real
+    // blank-slot dash or divider owns its row.
+    const cy = pl.bbox ? (pl.bbox.y0 + pl.bbox.y1) / 2 : null;
+    const ridesAnotherRow = cy != null && boxes.some((b) => cy > b.y0 && cy < b.y1);
+    // An OCR'd divider is the boundary itself. The blank-span geometry above
+    // only sees it once it's *excluded* from the span (dayman-4), but on
+    // tight layouts the remaining gap still comes in under the threshold
+    // (lp-2: 75px against a 120px bar, divider read plain as "——————") — so a
+    // rule row also closes the relic directly, the same way a blank-slot
+    // dash does. Checked before the dash branch: a short pure-dash run is
+    // both, and the dash branch's column test rejects real dividers, which
+    // are indented and wide rather than column-aligned — width is their
+    // test. Rules from line-list fixtures (no bbox) are taken on text alone.
+    if (isRuleRow(line)) {
+      const wide = !pl.bbox || pitch === 0 || pl.bbox.x1 - pl.bbox.x0 >= 2 * pitch;
+      if (wide && !ridesAnotherRow && current && current.effects.length > 0) current = null;
+      continue;
+    }
     if (isBlankSlotDash(line)) {
       const inColumn =
         !pl.bbox || pitch === 0 || Math.abs(pl.bbox.x0 - columnX) <= Math.max(pitch, 40);
-      // A dash whose center sits inside another row's vertical span is a
-      // sliver of that row — an icon-frame edge OCR'd on its own (ps-3 read
-      // a 3px bar riding the next effect's row) — not a slot marker. A real
-      // blank-slot dash owns its row.
-      const cy = pl.bbox ? (pl.bbox.y0 + pl.bbox.y1) / 2 : null;
-      const ridesAnotherRow = cy != null && boxes.some((b) => cy > b.y0 && cy < b.y1);
       if (inColumn && !ridesAnotherRow && current && current.effects.length > 0) current = null;
       continue;
     }
     if (line.length < 8) continue;
+    // Text that ends left of the effect column is another pane's — a preset
+    // label, a timestamp. Those score below the bar almost always, but not
+    // quite always ("__ Poison" hit "Poise +3" at exactly 0.50 on
+    // dayman-14), and one leaked label is a phantom effect.
+    if (pl.bbox && pitch > 0 && pl.bbox.x1 < columnX - Math.max(pitch, 40)) continue;
     const asName = bestMatch(line, RELIC_NAME_VOCABULARY, 0.62);
     const asEffect = bestEffectMatch(line, 0.5);
     if (asName && (!asEffect || asName.score >= asEffect.score)) {
       current = push({ name: asName.effect, effects: [], demerits: [], deep: /^deep /i.test(asName.effect) });
       prevBox = pl.bbox ?? prevBox;
+      lastEffect = null;
     } else if (asEffect) {
+      // The wrap continuation of the effect above, surviving as its own row
+      // because the join test lost by a hair (OCR dropped one letter of the
+      // head): its text is a piece of that effect's entry that the head's
+      // own text does NOT show. Left alone it matches some other entry
+      // sharing the tail — "at start of expedition" under a truncated Blood
+      // Blade swap line became "Fire Pots in possession …" on dayman-15. A
+      // row directly under a full read is different: the head's text
+      // containing this text means nothing was cut off, so a genuinely
+      // repeated fragment (a short sibling effect) still counts.
+      if (lastEffect && (!pl.bbox || !lastEffect.box || pitch === 0 || pl.bbox.y0 - lastEffect.box.y1 < 1.2 * pitch)) {
+        const k = despacedKey(line);
+        if (k.length >= 6 && lastEffect.entryKey.includes(k) && !lastEffect.textKey.includes(k)) {
+          prevBox = pl.bbox ?? prevBox;
+          continue;
+        }
+      }
       // A demerit rides with the effect above it, not as its own line.
       if (CURSE_EFFECTS.has(asEffect.effect)) {
         if (current && current.effects.length > 0) {
           current.demerits[current.effects.length - 1] = asEffect.effect;
           prevBox = pl.bbox ?? prevBox;
         }
+        lastEffect = { entryKey: despacedKey(asEffect.effect), textKey: despacedKey(line), box: pl.bbox ?? null };
         continue;
       }
       // A step of ~2 pitches is a missing line inside the block; a relic
@@ -918,11 +1044,27 @@ export function parseRelicGroups(
       ) {
         current = push({ name: null, effects: [], demerits: [], deep: false });
       }
-      // Skip duplicates within a group (OCR sometimes doubles lines).
-      if (!current.effects.some((e) => e.effect === asEffect.effect)) {
+      // Skip duplicates within a group (OCR sometimes doubles lines) — but
+      // only same-row doubles: a relic can genuinely carry the same line
+      // twice ("Small Pouch …" ×2 on dayman-13's unique), and those copies
+      // sit on separate, non-touching rows a full pitch apart. A double-read
+      // artifact either overlaps the first copy's box outright (lp-2's
+      // offset second read) or sits well under a pitch from it. Without
+      // positions the old blanket dedup stands.
+      const dupRow = current.effects.some((e, k) => {
+        if (e.effect !== asEffect.effect) return false;
+        const prior = groupBoxes.get(current!)?.[k];
+        if (!prior || !pl.bbox || pitch === 0) return true;
+        if (pl.bbox.y0 < prior.y1 && pl.bbox.y1 > prior.y0) return true;
+        return Math.abs((pl.bbox.y0 + pl.bbox.y1) / 2 - (prior.y0 + prior.y1) / 2) < 0.6 * pitch;
+      });
+      if (!dupRow) {
         current.effects.push(asEffect);
         current.demerits.push(null);
+        if (!groupBoxes.has(current)) groupBoxes.set(current, []);
+        groupBoxes.get(current)![current.effects.length - 1] = pl.bbox ?? null;
       }
+      lastEffect = { entryKey: despacedKey(asEffect.effect), textKey: despacedKey(line), box: pl.bbox ?? null };
       prevBox = pl.bbox ?? prevBox;
     }
   }
@@ -1055,13 +1197,31 @@ export function identifyUniqueRelic(parsedEffects: string[]): IdentifiedUnique |
   };
 }
 
-/** A strip of screenshot worth re-OCRing; replaces lines[index] on success. */
+/**
+ * A strip of screenshot worth re-OCRing; replaces lines[index] on success.
+ * index −1 marks a synthesized strip — a row position where OCR emitted no
+ * line at all — whose accepted text is inserted into the list in y-order
+ * instead of replacing anything. `speculative` marks strips above the
+ * topmost matched row, where nothing attests that a row exists at all;
+ * their acceptance bar is stricter (see retryUnmatchedLines).
+ */
 export interface RetryStrip {
   index: number;
   x0: number;
   y0: number;
   x1: number;
   y1: number;
+  speculative?: boolean;
+}
+
+/** Case/punctuation/spacing-insensitive key for substring comparisons. */
+export function despacedKey(s: string): string {
+  return nameKey(s).replace(/ /g, "");
+}
+
+/** The canonical effect a line matches at the parser's bar, if any. */
+export function matchedEffectEntry(text: string): string | null {
+  return bestEffectMatch(text.trim(), 0.5)?.effect ?? null;
 }
 
 /**
@@ -1099,7 +1259,13 @@ export function retryCandidates(lines: ParseLine[]): RetryStrip[] {
   const x0s = matched.map((r) => r.bbox!.x0).sort((a, b) => a - b);
   const columnX = x0s[x0s.length >> 1];
   const columnRight = Math.max(...matched.map((r) => r.bbox!.x1));
-  const top = Math.min(...matched.map((r) => r.bbox!.y0)) - 1.2 * pitch;
+  // The band reaches a whole relic block above the first matched row — three
+  // effect rows plus a curse — not just one pitch: TV-photo glare pools at
+  // the top of the pane and can garble the entire first relic while every
+  // relic below reads fine (lp-3/lp-4), and those rows' strips re-OCR
+  // cleanly. Header chrome and icon-strip junk that falls in the widened
+  // band cost a strip attempt each, but the match-bar gate keeps them out.
+  const top = Math.min(...matched.map((r) => r.bbox!.y0)) - 4.6 * pitch;
   const bottom = Math.max(...matched.map((r) => r.bbox!.y1)) + 1.6 * pitch;
   const isMatched = new Set(matched);
   const rowCenter = (b: NonNullable<ParseLine["bbox"]>) => (b.y0 + b.y1) / 2;
@@ -1120,6 +1286,29 @@ export function retryCandidates(lines: ParseLine[]): RetryStrip[] {
       y0: Math.max(0, cy - h / 2 - 0.12 * pitch),
       x1: columnRight + 0.2 * pitch,
       y1: cy + h / 2 + 0.12 * pitch,
+      speculative: cy < Math.min(...matched.map((m) => rowCenter(m.bbox!))) - 0.5 * pitch,
+    });
+  }
+  // Glare can erase a row outright — no junk fragment, no line, nothing to
+  // anchor a strip on (lp-3's swap line left literally no trace in the line
+  // list). Rows are pitch-spaced, so step upward from the topmost matched
+  // row and synthesize a strip at each empty row position in the band. A
+  // strip that lands on header chrome or between rows reads junk and the
+  // match-bar gate throws it away; one that lands on an erased effect row is
+  // the only shot that row gets.
+  const topCy = rowCenter(matched.reduce((a, b) => (a.bbox!.y0 < b.bbox!.y0 ? a : b)).bbox!);
+  for (let k = 1; k <= 4; k++) {
+    const cy = topCy - k * pitch;
+    if (cy < top || cy - 0.43 * pitch < 0) break;
+    if (strips.some((s) => Math.abs((s.y0 + s.y1) / 2 - cy) < 0.5 * pitch)) continue;
+    const h = 0.62 * pitch;
+    strips.push({
+      index: -1,
+      x0: Math.max(0, columnX - 0.2 * pitch),
+      y0: cy - h / 2 - 0.12 * pitch,
+      x1: columnRight + 0.2 * pitch,
+      y1: cy + h / 2 + 0.12 * pitch,
+      speculative: true,
     });
   }
   return strips;

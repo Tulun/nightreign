@@ -421,7 +421,15 @@ export function ImportRelics({
                 alternates: r.alternates.map((a, j) => (j === li ? r.lines[li] : a)),
               }))
             }
-            onColor={(ri, color) => setRelic(si, ri, (r) => ({ ...r, color }))}
+            onColor={(ri, color) =>
+              setRelic(si, ri, (r) => ({
+                ...r,
+                color,
+                // A new color can make a "duplicate" a relic the pool doesn't
+                // have — let the card be judged again instead of staying skipped.
+                outcome: r.outcome === "dupe" ? null : r.outcome,
+              }))
+            }
             onAddRelic={(ri) => addOne(si, ri)}
             onDropRelic={(ri) => dropRelic(si, ri)}
             onDropShot={() => dropShot(si)}
@@ -510,18 +518,39 @@ function ShotSection({
             const note = dupeNotes[ri];
             // A handled card, and one the parser already knows is a repeat,
             // both collapse to a single line — the editable card has nothing
-            // left to do, and the line says why.
+            // left to do, and the line says why. A repeat keeps its color
+            // picker, though: "duplicate" is judged color and all, so a relic
+            // that only *reads* like one you have — the wrong color clicked,
+            // or a mismatch in the pool — is fixed right here, and correcting
+            // it brings the full card back.
             if (r.outcome || note) {
+              const settled = r.outcome === "new";
               return (
                 <div key={ri} className="frame flex items-center gap-2 rounded-md bg-night-900 p-3">
                   <SlotIconImg color={r.color} size={18} />
+                  {!settled && (
+                    <select
+                      value={r.color}
+                      onChange={(e) => onColor(ri, e.target.value as CustomRelic["color"])}
+                      aria-label="Relic color"
+                      title="Wrong color? Changing it re-checks this card against your pool."
+                      className="frame rounded bg-night-800 px-2 py-1 font-body text-xs text-parchment"
+                    >
+                      {RELIC_COLORS.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <p className="min-w-0 flex-1 font-body text-sm">
                     <span className="text-parchment">{r.name || "Unnamed relic"}</span>{" "}
-                    {r.outcome === "new" ? (
+                    {settled ? (
                       <span className="text-gold-bright">added to your pool ✓</span>
                     ) : (
                       <span className="text-parchment-faint">
-                        {note ?? "is already in your pool"} — skipped
+                        {note ?? "is already in your pool"} — skipped. Wrong color? Change it to
+                        re-check.
                       </span>
                     )}
                   </p>

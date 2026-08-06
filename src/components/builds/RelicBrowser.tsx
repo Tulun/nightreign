@@ -122,7 +122,7 @@ export function RelicPicker({
 /** The fixed-relic groupings shown as tables in the browser. */
 const FIXED_SECTIONS: { key: "nightlord" | "other"; title: string; groups: FixedRelicOption["group"][] }[] = [
   { key: "nightlord", title: "Nightlord Relics", groups: ["nightlord", "everdark"] },
-  { key: "other", title: "Remembrance & Other", groups: ["swap", "character", "shop", "boss"] },
+  { key: "other", title: "Remembrance & Other", groups: ["swap", "signboard", "character", "shop", "boss"] },
 ];
 
 const BROWSER_TABS = [

@@ -241,9 +241,12 @@ function differsOnlyByTier(
 /**
  * The pool relic each newly added relic reads most like, where that's close
  * enough to be worth asking about but not identical (identical ones never get
- * here — they're reused during the save). Same color and same deep-ness are
- * required: a Red relic is not a misread of a Blue one, and neither is a relic
- * that matches line for line but for a tier.
+ * here — they're reused during the save). Same deep-ness is required, and for
+ * fuzzy matches so is same color: a Red relic is not a misread of a Blue one,
+ * and neither is a relic that matches line for line but for a tier. A relic
+ * whose lines match a differently-colored pool relic *exactly* is the one
+ * cross-color case worth raising — that's usually the wrong color clicked on
+ * one side, not a second roll.
  */
 function nearDupes(added: CustomRelic[], pool: CustomRelic[]): NearDupe[] {
   const out: NearDupe[] = [];
@@ -252,10 +255,14 @@ function nearDupes(added: CustomRelic[], pool: CustomRelic[]): NearDupe[] {
     if (!text) continue;
     let best: { relic: CustomRelic; score: number } | null = null;
     for (const p of pool) {
-      if (p.color !== a.color || !!p.deep !== !!a.deep) continue;
+      if (!!p.deep !== !!a.deep) continue;
       if (differsOnlyByTier(a, p)) continue;
       const score = similarity(text, linesText(p));
-      if (score >= NEAR_DUPE_SCORE && score < 1 && (!best || score > best.score)) {
+      const close =
+        p.color === a.color
+          ? score >= NEAR_DUPE_SCORE && score < 1
+          : score === 1;
+      if (close && (!best || score > best.score)) {
         best = { relic: p, score };
       }
     }
@@ -1487,7 +1494,8 @@ function SavedPanel({
                         <p className="font-body text-sm uppercase tracking-wide text-gold-dim">
                           Just imported
                         </p>
-                        <p className="mt-0.5 font-body text-base text-parchment">
+                        <p className="mt-0.5 flex items-center gap-1.5 font-body text-base text-parchment">
+                          <SlotIconImg color={n.added.color} size={16} />
                           {n.added.name || `${n.added.color} relic`}
                         </p>
                         <EffectLines
@@ -1503,7 +1511,8 @@ function SavedPanel({
                         <p className="font-body text-sm uppercase tracking-wide text-parchment-faint">
                           Already in your pool
                         </p>
-                        <p className="mt-0.5 font-body text-base text-parchment">
+                        <p className="mt-0.5 flex items-center gap-1.5 font-body text-base text-parchment">
+                          <SlotIconImg color={n.existing.color} size={16} />
                           {n.existing.name || `${n.existing.color} relic`}
                         </p>
                         <EffectLines
@@ -1516,6 +1525,13 @@ function SavedPanel({
                         />
                       </div>
                     </div>
+                    {n.added.color !== n.existing.color && (
+                      <p className="mt-2 max-w-prose font-body text-sm text-gold-dim">
+                        Same lines, different color — {n.added.color} was imported but your pool
+                        has it in {n.existing.color}. If the color was clicked wrong on the way
+                        in, use the one you had.
+                      </p>
+                    )}
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"

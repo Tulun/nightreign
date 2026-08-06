@@ -1,0 +1,31 @@
+{
+  "deep": false,
+  "notes": "Phone photo of a TV (PS5) — same Deep vessel Slot 1 pane as lp-1, scrolled to the three normal relics. First relic is the unique The Night of Dregs (name not on screen; identified from its fixed effect set).",
+  "relics": [
+    {
+      "name": "The Night of Dregs",
+      "color": "Red",
+      "effects": [
+        "Status Ailment Gauges Slowly Increase Attack Power",
+        "Attacks Inflict Rot when Damage is Taken",
+        "Rot in Vicinity Causes Continuous HP Recovery"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "Slowly restore HP for self and nearby allies when HP is low",
+        "Improved Damage Negation at Low HP",
+        "Vigor +3"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Executor] Character Skill Boosts Attack but Lowers Damage Negation While Attacking",
+        "HP Recovery From Successful Guarding",
+        "Successful guarding fills more of the Art gauge"
+      ]
+    }
+  ]
+}

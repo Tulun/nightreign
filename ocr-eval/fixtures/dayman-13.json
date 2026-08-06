@@ -1,0 +1,29 @@
+{
+  "deep": false,
+  "notes": "Native PS5 grab 2026-08-05 — All Presets screen, POCKETS preset. First relic is a unique that legitimately carries Small Pouch twice (not in the uniqueRelics catalogue yet, so name unscored); pins the double-line dedup fix. Third relic pins the wrapped Hoarfrost Stomp swap line, whose continuation row ('Stomp at start of expedition') is bait for a Storm Stomp tail-steal.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Scholar] Earn runes for each additional specimen acquired with Character Skill",
+        "Small Pouch in possession at start of expedition",
+        "Small Pouch in possession at start of expedition"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Scholar] Continuous damage inflicted on targets threaded by Ultimate Art",
+        "Attack power increased for each Night Invader defeated"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Scholar] Allies targeted by Character Skill gain boosted attack",
+        "Changes compatible armament's skill to Hoarfrost Stomp at start of expedition",
+        "Character Skill Cooldown Reduction +2"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "deep": true,
+  "notes": "Native PS5 grab 2026-08-05 — All Presets screen, 4 skill preset, Deep relics. First relic's opening line is the [Scholar] FP-reduction character effect (game says 'Character Skill' where the catalogue shortens to 'Skill' — alias added), not the untagged Reduced FP Consumption. Second relic's first line renders greyed in-game (wrong-character effect) but is still shown.",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "[Scholar] Reduced FP consumption when using Character Skill on self",
+        "Partial HP Restoration upon Post-Damage Attacks",
+        "Draw enemy attention while guarding"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Guardian] Character Skill Boosts Damage Negation of Nearby Allies",
+        "Defeating enemies fills more of the Art gauge +1",
+        "Items confer effect to all nearby allies"
+      ],
+      "demerits": [null, "Near Death Reduces Max HP", null]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Scholar] Improved Endurance and Dexterity, Reduced Intelligence and Arcane",
+        "Improved Affinity Attack Power"
+      ]
+    }
+  ]
+}

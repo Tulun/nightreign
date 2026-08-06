@@ -1,0 +1,30 @@
+{
+  "deep": false,
+  "notes": "Phone photo of a TV (PS5) — Executor Deep vessel Slot 1 pane, scrolled to the three normal relics (lp-4 is the same vessel's deep half). First relic has two effects + the blank '-' marker; third is the unique The Night of Dregs (name not on screen).",
+  "relics": [
+    {
+      "name": null,
+      "effects": [
+        "Improved Damage Negation at Low HP",
+        "Changes compatible armament's skill to Seppuku at start of expedition"
+      ]
+    },
+    {
+      "name": null,
+      "effects": [
+        "[Executor] Character Skill Boosts Attack but Lowers Damage Negation While Attacking",
+        "HP Recovery From Successful Guarding",
+        "Successful guarding fills more of the Art gauge"
+      ]
+    },
+    {
+      "name": "The Night of Dregs",
+      "color": "Red",
+      "effects": [
+        "Status Ailment Gauges Slowly Increase Attack Power",
+        "Attacks Inflict Rot when Damage is Taken",
+        "Rot in Vicinity Causes Continuous HP Recovery"
+      ]
+    }
+  ]
+}

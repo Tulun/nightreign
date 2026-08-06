@@ -33,10 +33,12 @@ npm run ocr:eval -- --sweep           # grid over the relic-grouping thresholds
 `parseRelicGroups` geometry thresholds (relic-boundary y-step, blank-slot
 span — see `RelicGroupTuning` in `src/lib/effectMatch.ts`) and prints a table
 ranked by net effects (matched − spurious), with the shipped defaults marked.
-Matching-side only, so the whole grid runs in seconds. Swept 2026-08-03
-against 40 fixtures: the boundary step is flat across 1.8–2.6 pitches, and
-blank span 1.02–1.08 beats the old hand-tuned 1.2 (+2 matched, −2 spurious)
-with cliffs on both sides — hence the shipped 2.4 / 1.05.
+Matching-side only, so the whole grid runs in seconds. Swept 2026-08-05
+against 58 fixtures: the top plateau spans steps 1.8–2.2 × spans 0.8–1.08 —
+much broader than the old 1.02–1.08 span ridge, because divider rule rows and
+wrap-continuation consumption now find boundaries the raw geometry used to
+carry alone — hence the shipped 2.0 / 1.0 (the old 2.4 / 1.05 measures one
+net point below the plateau).
 
 `--dump-colors` also logs the sampled region's coordinates per relic — when a
 color is wrong or unread, look at the dumped crop first; it shows exactly what
