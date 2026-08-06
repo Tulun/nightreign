@@ -25,7 +25,11 @@ import {
 type Step = "character" | "buffs" | "results";
 interface Inst { effectId: string; element?: NegType }
 interface Relic { enabled: boolean; effects: Inst[]; curses: Inst[] }
-interface Loadout { relics: Relic[]; weapons: Inst[]; talismanSlots: string[]; block: string; condOn: Record<string, boolean> }
+interface Loadout {
+  relics: Relic[]; weapons: Inst[]; talismanSlots: string[]; block: string; condOn: Record<string, boolean>;
+  /** For stacked conditionals, how many copies to assume (absent = all). Missing on loadouts saved before pips. */
+  condCount?: Record<string, number>;
+}
 
 interface BlockStats { name: string; physical: number; negation: { magic: number; fire: number; lightning: number; holy: number }; guardBoost: number }
 
@@ -89,6 +93,7 @@ export function NegationCalculator() {
   const [talismanSlots, setTalismanSlots] = useState<string[]>(["", ""]);
   const [block, setBlock] = useState("");
   const [condOn, setCondOn] = useState<Record<string, boolean>>({});
+  const [condCount, setCondCount] = useState<Record<string, number>>({});
   const [hit, setHit] = useState(1000);
   const [profiles, setProfiles] = useState<SavedProfile[]>([]);
   /** Shared save-name input — prefilled on load so re-saving overwrites. */
@@ -104,6 +109,7 @@ export function NegationCalculator() {
     setTalismanSlots(l?.talismanSlots ?? ["", ""]);
     setBlock(l?.block ?? "");
     setCondOn(l?.condOn ?? {});
+    setCondCount(l?.condCount ?? {});
   }
 
   // Restore the last-used character and its loadout on mount.
@@ -122,9 +128,9 @@ export function NegationCalculator() {
   useEffect(() => {
     if (!loaded) return;
     const s = readStore();
-    s[charName] = { relics, weapons, talismanSlots, block, condOn };
+    s[charName] = { relics, weapons, talismanSlots, block, condOn, condCount };
     writeStore(s);
-  }, [loaded, charName, relics, weapons, talismanSlots, block, condOn]);
+  }, [loaded, charName, relics, weapons, talismanSlots, block, condOn, condCount]);
 
   function selectChar(name: string) {
     try { localStorage.setItem("nr-negation-char", name); } catch { /* ignore */ }
@@ -141,7 +147,7 @@ export function NegationCalculator() {
   function saveProfile(name: string) {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const loadout: Loadout = { relics, weapons, talismanSlots, block, condOn };
+    const loadout: Loadout = { relics, weapons, talismanSlots, block, condOn, condCount };
     setProfiles((prev) => {
       const existing = prev.find((p) => p.name.toLowerCase() === trimmed.toLowerCase());
       const next = existing
@@ -247,13 +253,22 @@ export function NegationCalculator() {
   const condKeys = condGroups.map((g) => g.key);
   const allCondOn = condKeys.length > 0 && condKeys.every((k) => condOn[k]);
 
-  const applied: AppliedNeg[] = useMemo(
-    () =>
-      activeEffects
-        .filter(({ eff, element }) => !eff.condition || condOn[eff.source === "shield" ? "blocking" : `${eff.id}:${element ?? ""}`])
-        .map(({ eff, element }) => ({ scope: eff.scope, value: eff.value, element })),
-    [activeEffects, condOn],
-  );
+  const applied: AppliedNeg[] = useMemo(() => {
+    // Enabled conditions apply, capped at the pip count chosen for the stack
+    // (absent = every copy) — the first `limit` copies count, the rest sit out.
+    const used = new Map<string, number>();
+    return activeEffects
+      .filter(({ eff, element }) => {
+        if (!eff.condition) return true;
+        if (!condOn[condKeyOf(eff, element)]) return false;
+        const limit = condCount[effKey(eff, element)];
+        if (limit === undefined) return true;
+        const n = used.get(effKey(eff, element)) ?? 0;
+        used.set(effKey(eff, element), n + 1);
+        return n < limit;
+      })
+      .map(({ eff, element }) => ({ scope: eff.scope, value: eff.value, element }));
+  }, [activeEffects, condOn, condCount]);
   const final = useMemo(() => computeNegations(character.negations, applied), [character, applied]);
 
   return (
@@ -460,6 +475,12 @@ export function NegationCalculator() {
                     {condGroups.map((g) => {
                       const on = !!condOn[g.key];
                       const toggle = () => setCondOn((p) => ({ ...p, [g.key]: !p[g.key] }));
+                      // A pip picks how many copies of the stack to assume — and is
+                      // itself a statement the condition is live, so it switches it on.
+                      const setStackCount = (key: string, n: number) => {
+                        setCondCount((p) => ({ ...p, [key]: n }));
+                        setCondOn((p) => (p[key] ? p : { ...p, [key]: true }));
+                      };
                       const wrap = on ? "border-emerald-500/50 bg-emerald-500/10" : "border-night-700 bg-night-900/40 hover:bg-night-800";
                       const pill = (
                         <span className={`inline-flex h-4 w-7 shrink-0 items-center rounded-full px-0.5 transition-colors ${on ? "bg-emerald-500" : "bg-night-600"}`}>
@@ -489,22 +510,43 @@ export function NegationCalculator() {
                       }
 
                       const { eff, element, count } = g.items[0];
+                      // How many copies the pips assume — absent means all of them.
+                      const chosen = Math.min(condCount[g.key] ?? count, count);
                       return (
                         <li key={g.key}>
-                          <button type="button" onClick={toggle} className={`flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left font-body text-sm transition-colors ${wrap}`}>
-                            {pill}
-                            <span className="min-w-0 flex-1">
-                              <span className="inline-flex items-center gap-1 text-parchment">{element && NEG_ICONS[element] && <StatIcon src={NEG_ICONS[element]!} alt="" size={13} />}{effLabel(eff, element)}</span>
-                              {count > 1 && <span className="ml-1.5 rounded bg-night-700 px-1 text-[0.65rem] font-semibold text-gold-bright">×{count}</span>}
-                              <span className="block text-[0.7rem] text-parchment-faint">{eff.condition} · {scopeLabel(eff.scope, element)}{stackNote(eff.stack) && ` · ${stackNote(eff.stack)}`}</span>
-                            </span>
-                            <span className={`shrink-0 font-semibold tabular-nums ${eff.value < 0 ? "text-red-300" : "text-sky-300"}`}>{eff.value > 0 ? `+${eff.value}` : eff.value}%</span>
-                          </button>
+                          <div className={`rounded-md border transition-colors ${wrap}`}>
+                            <button type="button" onClick={toggle} className="flex w-full items-center gap-2 px-3 py-2 text-left font-body text-sm">
+                              {pill}
+                              <span className="min-w-0 flex-1">
+                                <span className="inline-flex items-center gap-1 text-parchment">{element && NEG_ICONS[element] && <StatIcon src={NEG_ICONS[element]!} alt="" size={13} />}{effLabel(eff, element)}</span>
+                                {count > 1 && <span className="ml-1.5 rounded bg-night-700 px-1 text-[0.65rem] font-semibold text-gold-bright">×{chosen < count ? `${chosen} of ${count}` : count}</span>}
+                                <span className="block text-[0.7rem] text-parchment-faint">{eff.condition} · {scopeLabel(eff.scope, element)}{stackNote(eff.stack) && ` · ${stackNote(eff.stack)}`}</span>
+                              </span>
+                              <span className={`shrink-0 font-semibold tabular-nums ${eff.value < 0 ? "text-red-300" : "text-sky-300"}`}>{eff.value > 0 ? `+${eff.value}` : eff.value}%</span>
+                            </button>
+                            {/* One pip per copy of the stack — click to assume that many.
+                                Outside the row button (buttons can't nest); picking a
+                                count also switches the condition on. */}
+                            {count > 1 && (
+                              <div className={`flex items-center gap-1.5 px-3 pb-2 pl-12 ${on ? "" : "opacity-50"}`}>
+                                {Array.from({ length: count }, (_, i) => (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => setStackCount(g.key, i + 1)}
+                                    aria-label={`Assume ${i + 1} of ${count} copies`}
+                                    className={`h-3.5 w-3.5 rounded-full border transition-colors ${i < chosen ? "border-emerald-400 bg-emerald-500" : "border-night-500 hover:border-emerald-400"}`}
+                                  />
+                                ))}
+                                <span className="ml-1 font-body text-[0.7rem] tabular-nums text-parchment-faint">{chosen} of {count} copies</span>
+                              </div>
+                            )}
+                          </div>
                         </li>
                       );
                     })}
                   </ul>
-                  <p className="mt-2 font-body text-[0.7rem] italic text-parchment-faint">Toggle the conditions you want to assume are active. Some are mutually exclusive (e.g. low HP vs. full HP).</p>
+                  <p className="mt-2 font-body text-[0.7rem] italic text-parchment-faint">Toggle the conditions you want to assume are active. Stacked effects carry bubbles — click one to assume that many copies. Some conditions are mutually exclusive (e.g. low HP vs. full HP).</p>
                 </>
               )}
             </Section>
