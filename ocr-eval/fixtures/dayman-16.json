@@ -1,0 +1,33 @@
+{
+  "deep": false,
+  "notes": "Native PS5 grab 2026-08-06 — Raider vessel Relic Rites screen, 'Low HP' preset. Six slots but only the first three relics' effects are above the fold. Both wrapped first lines ([Raider] skill effect, Slowly restore HP) are followed tightly by their next effect — the divider rules sit only after Physical Attack Up and after the first Vigor +3. Relic 2 is in fact the signboard unique Grand Burning Scene (Low HP Recovery), but all three of its effects are custom-rollable so identification is intentionally impossible (no anchor) — name stays null.",
+  "relics": [
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "[Raider] Damage taken while using Character Skill improves attack power and stamina",
+        "Improved Damage Negation at Low HP",
+        "Physical Attack Up"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Red",
+      "effects": [
+        "Slowly restore HP for self and nearby allies when HP is low",
+        "Improved Damage Negation at Low HP",
+        "Vigor +3"
+      ]
+    },
+    {
+      "name": null,
+      "color": "Green",
+      "effects": [
+        "Improved Godslayer Incantations",
+        "Attack power increased for each Night Invader defeated",
+        "Vigor +3"
+      ]
+    }
+  ]
+}
