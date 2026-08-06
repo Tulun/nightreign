@@ -25,11 +25,18 @@ import {
 type Step = "character" | "buffs" | "results";
 interface Inst { effectId: string; element?: NegType }
 interface Relic { enabled: boolean; effects: Inst[]; curses: Inst[] }
+/** One Quick Passives line: an effect and how many copies of it you have. */
+interface QuickInst { effectId: string; element?: NegType; count: number }
 interface Loadout {
   relics: Relic[]; weapons: Inst[]; talismanSlots: string[]; block: string; condOn: Record<string, boolean>;
   /** For stacked conditionals, how many copies to assume (absent = all). Missing on loadouts saved before pips. */
   condCount?: Record<string, number>;
+  /** Quick Passives lines — the relic-free way in. Missing on older loadouts. */
+  quick?: QuickInst[];
 }
+
+/** Copy cap on a Quick Passives line (six relics is the realistic ceiling). */
+const MAX_QUICK_COPIES = 6;
 
 interface BlockStats { name: string; physical: number; negation: { magic: number; fire: number; lightning: number; holy: number }; guardBoost: number }
 
@@ -81,6 +88,7 @@ function profileEffectCount(l: Loadout): number {
   l.relics?.forEach((r) => { if (r.enabled) n += r.effects.filter((e) => e.effectId).length + r.curses.filter((e) => e.effectId).length; });
   n += (l.talismanSlots ?? []).filter(Boolean).length;
   n += (l.weapons ?? []).filter((w) => w.effectId).length;
+  n += (l.quick ?? []).filter((q) => q.effectId).length;
   if (l.block) n += 1;
   return n;
 }
@@ -94,6 +102,9 @@ export function NegationCalculator() {
   const [block, setBlock] = useState("");
   const [condOn, setCondOn] = useState<Record<string, boolean>>({});
   const [condCount, setCondCount] = useState<Record<string, number>>({});
+  const [quick, setQuick] = useState<QuickInst[]>([]);
+  /** Which way into the buffs step is showing — both feed the results. */
+  const [buffView, setBuffView] = useState<"relics" | "quick">("relics");
   const [hit, setHit] = useState(1000);
   const [profiles, setProfiles] = useState<SavedProfile[]>([]);
   /** Shared save-name input — prefilled on load so re-saving overwrites. */
@@ -110,12 +121,14 @@ export function NegationCalculator() {
     setBlock(l?.block ?? "");
     setCondOn(l?.condOn ?? {});
     setCondCount(l?.condCount ?? {});
+    setQuick(l?.quick ?? []);
   }
 
   // Restore the last-used character and its loadout on mount.
   useEffect(() => {
     let last: string | null = null;
     try { last = localStorage.getItem("nr-negation-char"); } catch { /* ignore */ }
+    try { if (localStorage.getItem("nr-negation-view") === "quick") setBuffView("quick"); } catch { /* ignore */ }
     const initial = last && nightfarers.some((c) => c.name === last) ? last : charName;
     if (initial !== charName) setCharName(initial);
     applyLoadout(readStore()[initial]);
@@ -128,14 +141,19 @@ export function NegationCalculator() {
   useEffect(() => {
     if (!loaded) return;
     const s = readStore();
-    s[charName] = { relics, weapons, talismanSlots, block, condOn, condCount };
+    s[charName] = { relics, weapons, talismanSlots, block, condOn, condCount, quick };
     writeStore(s);
-  }, [loaded, charName, relics, weapons, talismanSlots, block, condOn, condCount]);
+  }, [loaded, charName, relics, weapons, talismanSlots, block, condOn, condCount, quick]);
 
   function selectChar(name: string) {
     try { localStorage.setItem("nr-negation-char", name); } catch { /* ignore */ }
     applyLoadout(readStore()[name]);
     setCharName(name);
+  }
+
+  function selectView(v: "relics" | "quick") {
+    setBuffView(v);
+    try { localStorage.setItem("nr-negation-view", v); } catch { /* ignore */ }
   }
 
   function clearAll() {
@@ -147,7 +165,7 @@ export function NegationCalculator() {
   function saveProfile(name: string) {
     const trimmed = name.trim();
     if (!trimmed) return;
-    const loadout: Loadout = { relics, weapons, talismanSlots, block, condOn, condCount };
+    const loadout: Loadout = { relics, weapons, talismanSlots, block, condOn, condCount, quick };
     setProfiles((prev) => {
       const existing = prev.find((p) => p.name.toLowerCase() === trimmed.toLowerCase());
       const next = existing
@@ -203,6 +221,13 @@ export function NegationCalculator() {
     relics.forEach((r) => { if (r.enabled) { r.effects.forEach(add); r.curses.forEach(add); } });
     talismanSlots.forEach((id) => { if (id) add({ effectId: id }); });
     weapons.forEach(add);
+    // Quick Passives lines add their copies here, so both views land in one
+    // pool — the dedupe above already caps non-stacking effects at one copy.
+    quick.forEach((q) => {
+      if (!q.effectId) return;
+      const copies = Math.min(Math.max(1, q.count), MAX_QUICK_COPIES);
+      for (let i = 0; i < copies; i++) add({ effectId: q.effectId, element: q.element });
+    });
 
     // A guarding block source blocks 100% physical (a given on every shield and
     // colossal arm), so only its affinity Guarded Damage Negation is added.
@@ -218,7 +243,7 @@ export function NegationCalculator() {
         }));
     }
     return out;
-  }, [relics, weapons, talismanSlots, block]);
+  }, [relics, weapons, talismanSlots, block, quick]);
 
   const effKey = (eff: NegEffect, element?: NegType) => `${eff.id}:${element ?? ""}`;
 
@@ -315,6 +340,40 @@ export function NegationCalculator() {
             </div>
           </div>
 
+          {/* Two ways in: rebuild your relic setup, or just list passives with
+              copy counts. Both feed the same results — use either or both. */}
+          <div className="flex gap-2">
+            <ViewTab active={buffView === "relics"} onClick={() => selectView("relics")}
+              count={profileEffectCount({ relics, weapons, talismanSlots, block, condOn })}>
+              Relics
+            </ViewTab>
+            <ViewTab active={buffView === "quick"} onClick={() => selectView("quick")}
+              count={quick.filter((q) => q.effectId).length}>
+              Quick Passives
+            </ViewTab>
+          </div>
+
+          {buffView === "quick" && (
+            <Section title="Quick Passives">
+              <p className="mb-3 rounded-lg border border-night-600 bg-night-800/60 px-4 py-2 font-body text-sm text-parchment-muted">
+                Just list the negation passives you have and set how many copies with the bubbles — no relic
+                bookkeeping. Effects that don&rsquo;t stack (e.g. poise &amp; knockback) are capped at one copy;
+                &ldquo;tiers only&rdquo; effects go on separate lines, one per tier. Anything set up under Relics
+                counts too — the results combine both views.
+              </p>
+              <div className="space-y-1.5">
+                {quick.map((inst, j) => (
+                  <QuickRow key={j} inst={inst}
+                    onChange={(v) => setQuick((q) => q.map((e, k) => (k === j ? v : e)))}
+                    onRemove={() => setQuick((q) => q.filter((_, k) => k !== j))} />
+                ))}
+              </div>
+              <button type="button" onClick={() => setQuick((q) => [...q, { effectId: "", count: 1 }])}
+                className="mt-2 w-full rounded border border-dashed border-night-600 px-2 py-1.5 font-body text-xs text-sky-300 hover:bg-night-700">+ Add Passive</button>
+            </Section>
+          )}
+
+          {buffView === "relics" && (<>
           <Section title="Negation Relics">
             <p className="mb-3 rounded-lg border border-night-600 bg-night-800/60 px-4 py-2 font-body text-sm text-parchment-muted">
               Up to 6 relics, each holding negation effects. Most stack with every copy; some only stack across
@@ -417,6 +476,7 @@ export function NegationCalculator() {
               );
             })()}
           </Section>
+          </>)}
 
           <SaveProfileRow profiles={profiles} name={profileName} onName={setProfileName} onSave={saveProfile} />
 
@@ -747,6 +807,78 @@ function EffectRow({ source, inst, onChange, onRemove, curse }: {
           onChange={(v) => onChange({ ...inst, element: v as NegType })} />
       )}
       <button type="button" onClick={onRemove} aria-label="Remove" className="grid h-9 w-9 shrink-0 place-items-center rounded border border-night-600 text-parchment-faint hover:text-gold">×</button>
+    </div>
+  );
+}
+
+/** Buffs-step view switcher — the count shows each view holds effects of its own. */
+function ViewTab({ active, count, onClick, children }: {
+  active: boolean; count: number; onClick: () => void; children: React.ReactNode;
+}) {
+  return (
+    <button type="button" onClick={onClick}
+      className={`rounded-lg border px-4 py-2 font-body text-sm transition-colors ${active ? "border-sky-400 bg-sky-500/15 font-semibold text-sky-300" : "border-night-600 bg-night-800 text-parchment-muted hover:bg-night-700"}`}>
+      {children}
+      {count > 0 && <span className="ml-1.5 rounded bg-night-700 px-1.5 text-[0.7rem] font-semibold tabular-nums">{count}</span>}
+    </button>
+  );
+}
+
+/** Every effect from every source in one picker — Quick Passives doesn't care where a passive lives. */
+function quickOptions() {
+  return NEG_EFFECTS
+    .slice()
+    .sort((a, b) => GROUP_ORDER.indexOf(a.group) - GROUP_ORDER.indexOf(b.group))
+    .map((o) => {
+      const note = stackNote(o.stack);
+      return {
+        value: o.id,
+        group: o.group,
+        icon: o.element ? NEG_ICONS[o.element] : undefined,
+        label: `${o.label} (${o.value > 0 ? `+${o.value}` : o.value}%${o.element ? ` ${NEG_LABELS[o.element]}` : ""})${note ? ` · ${note}` : ""}`,
+      };
+    });
+}
+
+/** One Quick Passives line: pick the effect, then bubble in how many copies. */
+function QuickRow({ inst, onChange, onRemove }: {
+  inst: QuickInst; onChange: (v: QuickInst) => void; onRemove: () => void;
+}) {
+  const eff = inst.effectId ? NEG_EFFECT_MAP[inst.effectId] : undefined;
+  const max = eff && eff.stack === "yes" ? MAX_QUICK_COPIES : 1;
+  const count = Math.min(Math.max(1, inst.count), max);
+  const curse = eff?.source === "curse";
+  return (
+    <div className="rounded-lg border border-night-700 bg-night-900/40 p-2">
+      <div className="flex items-center gap-1.5">
+        <Dropdown value={inst.effectId} className="min-w-0 flex-1" searchable tone={curse ? "curse" : "default"}
+          placeholder="Select passive…" options={quickOptions()}
+          onChange={(v) => onChange({ effectId: v, element: inst.element, count: 1 })} />
+        {eff?.needsElement && (
+          <Dropdown value={inst.element ?? "magic"} clearable={false} className="w-32 shrink-0"
+            options={ELEMENTS.map((el) => ({ value: el, label: NEG_LABELS[el], icon: NEG_ICONS[el] }))}
+            onChange={(v) => onChange({ ...inst, element: v as NegType })} />
+        )}
+        <button type="button" onClick={onRemove} aria-label="Remove" className="grid h-9 w-9 shrink-0 place-items-center rounded border border-night-600 text-parchment-faint hover:text-gold">×</button>
+      </div>
+      {eff && (max > 1 ? (
+        <div className="mt-1.5 flex items-center gap-1.5 px-1">
+          {Array.from({ length: max }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onChange({ ...inst, count: i + 1 })}
+              aria-label={`${i + 1} cop${i === 0 ? "y" : "ies"}`}
+              className={`h-3.5 w-3.5 rounded-full border transition-colors ${i < count ? "border-emerald-400 bg-emerald-500" : "border-night-500 hover:border-emerald-400"}`}
+            />
+          ))}
+          <span className="ml-1 font-body text-[0.7rem] tabular-nums text-parchment-faint">{count} cop{count === 1 ? "y" : "ies"}</span>
+        </div>
+      ) : (
+        <p className="mt-1 px-1 font-body text-[0.7rem] text-parchment-faint">
+          {eff.stack === "no" ? "Does not stack — one copy counts." : "Only different tiers stack — add each tier as its own line."}
+        </p>
+      ))}
     </div>
   );
 }
