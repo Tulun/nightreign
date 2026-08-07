@@ -36,6 +36,7 @@ const groups: NavGroup[] = [
       { label: "Greatshield Affinity", href: "/greatshields" },
       { label: "Negation Calculator", href: "/negation" },
       { label: "Attack Calculator", href: "/attack" },
+      { label: "Revive Damage", href: "/revive" },
     ],
   },
   {
@@ -57,6 +58,7 @@ const groups: NavGroup[] = [
       { label: "Boss Codex", href: "/bosses" },
       { label: "Boss Loot", href: "/field-bosses" },
       { label: "Nightlords", href: "/nightlords" },
+      { label: "Aggro & Targeting", href: "/aggro" },
     ],
   },
   {
